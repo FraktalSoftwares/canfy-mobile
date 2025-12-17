@@ -1,0 +1,264 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'catalog_filters_modal.dart';
+
+class PatientCatalogPage extends StatefulWidget {
+  const PatientCatalogPage({super.key});
+
+  @override
+  State<PatientCatalogPage> createState() => _PatientCatalogPageState();
+}
+
+class _PatientCatalogPageState extends State<PatientCatalogPage> {
+  // Mock data - será substituído por dados reais do backend
+  final List<Map<String, dynamic>> _products = [
+    {
+      'id': '1',
+      'name': 'Óleo\nCanabidiol',
+      'indications': ['Ansiedade', 'Dor crônica'],
+      'isSelected': true,
+    },
+    {
+      'id': '2',
+      'name': 'Óleo\nCanabidiol',
+      'indications': ['Ansiedade', 'Dor crônica'],
+      'isSelected': false,
+    },
+    {
+      'id': '3',
+      'name': 'Óleo\nCanabidiol',
+      'indications': ['Ansiedade', 'Dor crônica'],
+      'isSelected': false,
+    },
+    {
+      'id': '4',
+      'name': 'Óleo\nCanabidiol',
+      'indications': ['Ansiedade', 'Dor crônica'],
+      'isSelected': false,
+    },
+    {
+      'id': '5',
+      'name': 'Óleo\nCanabidiol',
+      'indications': ['Ansiedade', 'Dor crônica'],
+      'isSelected': false,
+    },
+    {
+      'id': '6',
+      'name': 'Óleo\nCanabidiol',
+      'indications': ['Ansiedade', 'Dor crônica'],
+      'isSelected': false,
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF212121)),
+          onPressed: () {
+            context.pop();
+          },
+        ),
+        title: const Text(
+          'Catálogo',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF212121),
+            fontFamily: 'Truculenta',
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFF9067F1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(Icons.tune, color: Colors.white, size: 20),
+            ),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const CatalogFiltersModal(),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.grey[300],
+              child: const Icon(Icons.person, color: Colors.grey),
+            ),
+          ),
+        ],
+      ),
+      body: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 0.56,
+        ),
+        itemCount: _products.length,
+        itemBuilder: (context, index) {
+          final product = _products[index];
+          return _buildProductCard(product);
+        },
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              offset: const Offset(0, -4),
+              blurRadius: 12,
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: 0, // Home tab is active
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: const Color(0xFF3F3F3D),
+          unselectedItemColor: const Color(0xFF3F3F3D),
+          selectedLabelStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.normal,
+          ),
+          onTap: (index) {
+            if (index == 0) {
+              context.go('/patient/home');
+            } else if (index == 1) {
+              context.go('/patient/orders');
+            } else if (index == 2) {
+              context.go('/patient/consultations');
+            }
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.local_mall),
+              label: 'Pedidos',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_today),
+              label: 'Consultas',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductCard(Map<String, dynamic> product) {
+    final isSelected = product['isSelected'] as bool;
+    
+    return GestureDetector(
+      onTap: () {
+        context.push('/patient/catalog/product-details/${product['id']}');
+      },
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? const Color(0xFFC3A6F9) 
+              : const Color(0xFFF1EDFC),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          children: [
+            // Product image placeholder
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD7FA80),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: const Icon(Icons.local_pharmacy, size: 48, color: Colors.black54),
+            ),
+            const SizedBox(height: 12),
+            // Product name
+            Text(
+              product['name'],
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.normal,
+                color: Color(0xFF212121),
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Indicado para
+            const Text(
+              'Indicado para:',
+              style: TextStyle(
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+                color: Color(0xFF212121),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Indications tags
+            ...(product['indications'] as List<String>).map((indication) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSelected 
+                      ? const Color(0xFFD7FA80) 
+                      : const Color(0xFFD7FA80),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  indication,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF212121),
+                  ),
+                ),
+              );
+            }),
+            const Spacer(),
+            // Ver mais
+            Text(
+              'ver mais',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isSelected 
+                    ? const Color(0xFF7048C3) 
+                    : const Color(0xFF7048C3),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+
