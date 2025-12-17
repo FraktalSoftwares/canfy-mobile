@@ -396,6 +396,16 @@ flutter build ios --release
 
 [Especificar licença]
 
+## 👨‍💻 Desenvolvedor Responsável
+
+**Emerson Vale** - [@emersonsvale](https://github.com/emersonsvale)
+
+Lead Developer Sênior | Especialista em Flutter, Supabase, Android & iOS | Criação de SaaS com APIs e Automação.
+
+- 🌐 **Portfólio:** [valeapps.com.br](https://valeapps.com.br/)
+- 💼 **LinkedIn:** [linkedin.com/in/emersonsvale](https://www.linkedin.com/in/emersonsvale)
+- 📸 **Instagram:** [@emersonsvale](https://instagram.com/emersonsvale)
+
 ## 👥 Contribuidores
 
 [Lista de contribuidores]
