@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/common/safe_image_asset.dart';
 
 class PrescriptionDetailsPage extends StatefulWidget {
   const PrescriptionDetailsPage({super.key});
@@ -88,10 +89,10 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
                       color: const Color(0xFFF7F7F5),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -115,7 +116,7 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.chevron_right, color: Colors.transparent),
+                          icon: Icon(Icons.chevron_right, color: Colors.transparent),
                           onPressed: null,
                         ),
                       ],
@@ -198,8 +199,8 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
               ),
               Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle_outline),
+                  const IconButton(
+                    icon: Icon(Icons.remove_circle_outline),
                     onPressed: null,
                   ),
                   Container(
@@ -216,8 +217,8 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
+                  const IconButton(
+                    icon: Icon(Icons.add_circle_outline),
                     onPressed: null,
                   ),
                 ],
@@ -230,9 +231,10 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
               SizedBox(
                 width: 64,
                 height: 64,
-                child: Image.asset(
-                  'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+                child: SafeImageAsset(
+                  imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
                   fit: BoxFit.contain,
+                  placeholderIcon: Icons.local_pharmacy,
                 ),
               ),
               const SizedBox(width: 16),

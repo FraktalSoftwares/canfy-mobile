@@ -181,7 +181,7 @@ class OrdersHistoryPage extends StatelessWidget {
             if (context.canPop()) {
               context.pop();
             } else {
-              context.go('/home'); // Fallback to home if cannot pop
+              context.go('/patient/home'); // Fallback to home if cannot pop
             }
           },
         ),
@@ -249,6 +249,9 @@ class OrdersHistoryPage extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: Container(
+        constraints: const BoxConstraints(
+          minHeight: 110,
+        ),
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
@@ -272,6 +275,15 @@ class OrdersHistoryPage extends StatelessWidget {
             fontSize: 12,
             fontWeight: FontWeight.normal,
           ),
+          onTap: (index) {
+            if (index == 0) {
+              context.go('/patient/home');
+            } else if (index == 1) {
+              // Current page, do nothing
+            } else if (index == 2) {
+              context.go('/patient/consultations');
+            }
+          },
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
@@ -291,6 +303,7 @@ class OrdersHistoryPage extends StatelessWidget {
     );
   }
 }
+
 
 
 

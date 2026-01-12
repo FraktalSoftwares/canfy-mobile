@@ -5,7 +5,8 @@ class NewConsultationStep4Page extends StatefulWidget {
   const NewConsultationStep4Page({super.key});
 
   @override
-  State<NewConsultationStep4Page> createState() => _NewConsultationStep4PageState();
+  State<NewConsultationStep4Page> createState() =>
+      _NewConsultationStep4PageState();
 }
 
 class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
@@ -34,7 +35,8 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
           color: isSelected ? const Color(0xFFE6F8EF) : const Color(0xFFF7F7F5),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? const Color(0xFF00BB5A) : const Color(0xFFE7E7F1),
+            color:
+                isSelected ? const Color(0xFF00BB5A) : const Color(0xFFE7E7F1),
           ),
         ),
         child: Row(
@@ -124,7 +126,8 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
               },
               child: const CircleAvatar(
                 radius: 20,
-                backgroundImage: AssetImage('assets/images/avatar_pictures.png'),
+                backgroundImage:
+                    AssetImage('assets/images/avatar_pictures.png'),
               ),
             ),
           ),
@@ -192,7 +195,8 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE6F8EF),
                     borderRadius: BorderRadius.circular(999),
@@ -245,7 +249,8 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
                     runSpacing: 4,
                     children: ['Insônia', 'Estresse']
                         .map((symptom) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFE6F8EF),
                                 borderRadius: BorderRadius.circular(999),
@@ -283,7 +288,8 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
                 ),
                 filled: true,
                 fillColor: const Color(0xFFF7F7F5),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
             ),
             const SizedBox(height: 24),
@@ -353,10 +359,10 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFE7E7F1)),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Política de Cancelamento',
                     style: TextStyle(
                       fontSize: 16,
@@ -364,24 +370,24 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
                       color: Color(0xFF212121),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
+                  SizedBox(height: 12),
+                  Text(
                     'Cancelamento até 12h antes: reembolso integral',
                     style: TextStyle(
                       fontSize: 14,
                       color: Color(0xFF7C7C79),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'Cancelamento após 12h antes: sem reembolso',
                     style: TextStyle(
                       fontSize: 14,
                       color: Color(0xFF7C7C79),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'Reagendamento permitido até 2h antes',
                     style: TextStyle(
                       fontSize: 14,
@@ -452,8 +458,3 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
     );
   }
 }
-
-
-
-
-

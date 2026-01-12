@@ -87,9 +87,8 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
           color: const Color(0xFFF7F7F5),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF00994B)
-                : const Color(0xFFE7E7F1),
+            color:
+                isSelected ? const Color(0xFF00994B) : const Color(0xFFE7E7F1),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -160,7 +159,8 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
                     ),
                     child: Transform.rotate(
                       angle: -4.7124, // -270 graus para compensar
-                      child: const Icon(Icons.chevron_right, color: Colors.black),
+                      child:
+                          const Icon(Icons.chevron_right, color: Colors.black),
                     ),
                   ),
                 ),
@@ -264,10 +264,10 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
             const SizedBox(height: 24),
             _buildProgressIndicator(),
             const SizedBox(height: 40),
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Novo pedido',
                   style: TextStyle(
                     fontSize: 24,
@@ -282,7 +282,8 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF0F0EE),
                     borderRadius: BorderRadius.circular(6),
@@ -297,7 +298,8 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE6F8EF),
                     borderRadius: BorderRadius.circular(6),
@@ -314,7 +316,8 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
               ],
             ),
             const SizedBox(height: 24),
-            ...prescriptions.map((prescription) => _buildPrescriptionCard(prescription)),
+            ...prescriptions
+                .map((prescription) => _buildPrescriptionCard(prescription)),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -345,6 +348,9 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
         ),
       ),
       bottomNavigationBar: Container(
+        constraints: const BoxConstraints(
+          minHeight: 110,
+        ),
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
@@ -368,6 +374,15 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
             fontSize: 12,
             fontWeight: FontWeight.normal,
           ),
+          onTap: (index) {
+            if (index == 0) {
+              context.go('/patient/home');
+            } else if (index == 1) {
+              // Current page, do nothing
+            } else if (index == 2) {
+              context.go('/patient/consultations');
+            }
+          },
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
@@ -387,8 +402,3 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
     );
   }
 }
-
-
-
-
-

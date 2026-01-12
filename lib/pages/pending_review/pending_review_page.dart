@@ -47,7 +47,7 @@ class PendingReviewPage extends StatelessWidget {
                       color: AppTheme.canfyGreen.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.hourglass_empty,
                       size: 36,
                       color: AppTheme.canfyGreen,
@@ -91,7 +91,10 @@ class PendingReviewPage extends StatelessWidget {
                       height: 49,
                       child: ElevatedButton(
                         onPressed: () {
-                          context.go('/user-selection');
+                          // Pacientes vão para home, médicos para user-selection
+                          // Por enquanto, redirecionar todos para user-selection
+                          // (em produção, verificar tipo de usuário)
+                          context.go('/patient/home');
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.canfyGreen,
@@ -121,4 +124,3 @@ class PendingReviewPage extends StatelessWidget {
     );
   }
 }
-

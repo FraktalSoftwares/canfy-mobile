@@ -8,7 +8,8 @@ class AboutPage extends StatefulWidget {
   State<AboutPage> createState() => _AboutPageState();
 }
 
-class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMixin {
+class _AboutPageState extends State<AboutPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -75,10 +76,7 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildTermsTab(),
-          _buildPrivacyTab(),
-        ],
+        children: [_buildTermsTab(), _buildPrivacyTab()],
       ),
     );
   }
@@ -95,10 +93,10 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
               color: const Color(0xFFF7F7F5),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Column(
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Termos de uso',
                   style: TextStyle(
                     fontSize: 18,
@@ -106,8 +104,8 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                SizedBox(height: 16),
+                Text(
                   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
                   'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. '
                   'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris '
@@ -146,10 +144,10 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
               color: const Color(0xFFF7F7F5),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Column(
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Política de Privacidade',
                   style: TextStyle(
                     fontSize: 18,
@@ -157,8 +155,8 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                SizedBox(height: 16),
+                Text(
                   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
                   'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. '
                   'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris '
@@ -185,4 +183,3 @@ class _AboutPageState extends State<AboutPage> with SingleTickerProviderStateMix
     );
   }
 }
-

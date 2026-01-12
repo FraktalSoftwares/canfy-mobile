@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/common/safe_image_asset.dart';
 
 class PrescriptionProductsPage extends StatefulWidget {
   const PrescriptionProductsPage({super.key});
@@ -100,10 +101,10 @@ class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
                       color: const Color(0xFFF7F7F5),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -127,7 +128,7 @@ class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.chevron_right, color: Colors.transparent),
+                          icon: Icon(Icons.chevron_right, color: Colors.transparent),
                           onPressed: null,
                         ),
                       ],
@@ -170,7 +171,7 @@ class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 9,
                   offset: const Offset(0, -2),
                 ),
@@ -246,9 +247,10 @@ class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
             SizedBox(
               width: 96,
               height: 96,
-              child: Image.asset(
-                product['image'] as String,
+              child: SafeImageAsset(
+                imagePath: product['image'] as String,
                 fit: BoxFit.contain,
+                placeholderIcon: Icons.local_pharmacy,
               ),
             ),
             const SizedBox(height: 8),
@@ -317,6 +319,7 @@ class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
     );
   }
 }
+
 
 
 

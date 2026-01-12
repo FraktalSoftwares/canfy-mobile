@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/common/safe_image_asset.dart';
 
 class AppointmentDetailsPage extends StatelessWidget {
   const AppointmentDetailsPage({super.key});
@@ -203,9 +204,10 @@ class AppointmentDetailsPage extends StatelessWidget {
               SizedBox(
                 width: 64,
                 height: 64,
-                child: Image.asset(
-                  'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+                child: SafeImageAsset(
+                  imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
                   fit: BoxFit.contain,
+                  placeholderIcon: Icons.local_pharmacy,
                 ),
               ),
               const SizedBox(width: 16),
@@ -282,6 +284,9 @@ class AppointmentDetailsPage extends StatelessWidget {
 
   Widget _buildBottomNavigation() {
     return Container(
+      constraints: const BoxConstraints(
+        minHeight: 110,
+      ),
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
@@ -372,6 +377,7 @@ class _Tag extends StatelessWidget {
     );
   }
 }
+
 
 
 

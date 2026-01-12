@@ -68,7 +68,8 @@ class _FinishConsultationPageState extends State<FinishConsultationPage> {
               },
               child: const CircleAvatar(
                 radius: 20,
-                backgroundImage: AssetImage('assets/images/avatar_pictures.png'),
+                backgroundImage:
+                    AssetImage('assets/images/avatar_pictures.png'),
               ),
             ),
           ),
@@ -87,10 +88,10 @@ class _FinishConsultationPageState extends State<FinishConsultationPage> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFE7E7F1)),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Resumo da consulta',
                     style: TextStyle(
                       fontSize: 16,
@@ -98,10 +99,10 @@ class _FinishConsultationPageState extends State<FinishConsultationPage> {
                       color: Color(0xFF212121),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Consulta realizada com Dr. Luiz Carlos Souza em 01/09/25 às 10:00',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       color: Color(0xFF7C7C79),
                     ),
@@ -144,7 +145,9 @@ class _FinishConsultationPageState extends State<FinishConsultationPage> {
                           child: Icon(
                             index < _rating ? Icons.star : Icons.star_border,
                             size: 48,
-                            color: index < _rating ? const Color(0xFFF9CF58) : const Color(0xFFD6D6D3),
+                            color: index < _rating
+                                ? const Color(0xFFF9CF58)
+                                : const Color(0xFFD6D6D3),
                           ),
                         ),
                       );
@@ -215,8 +218,3 @@ class _FinishConsultationPageState extends State<FinishConsultationPage> {
     );
   }
 }
-
-
-
-
-

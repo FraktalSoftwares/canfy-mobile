@@ -11,33 +11,38 @@ class LiveConsultationPage extends StatefulWidget {
 class _LiveConsultationPageState extends State<LiveConsultationPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  bool _isConsultationEnded = false;
+  final bool _isConsultationEnded = false;
 
   final List<Map<String, dynamic>> _messages = [
     {
-      'text': 'Olá, Matheus! Vi que relatou sintomas de insônia e estresse. Pode me contar um pouco mais sobre como isso tem afetado o seu dia a dia?',
+      'text':
+          'Olá, Matheus! Vi que relatou sintomas de insônia e estresse. Pode me contar um pouco mais sobre como isso tem afetado o seu dia a dia?',
       'isDoctor': true,
       'time': '10h05',
     },
     {
-      'text': 'Oi, doutora. Tenho dormido muito mal há alguns dias, acordo várias vezes à noite e passo o dia cansado e irritado.',
+      'text':
+          'Oi, doutora. Tenho dormido muito mal há alguns dias, acordo várias vezes à noite e passo o dia cansado e irritado.',
       'isDoctor': false,
       'time': '15h35',
       'isRead': true,
     },
     {
-      'text': 'Entendi. Você tem percebido se esses sintomas estão ligados a alguma situação específica ou mudança na sua rotina?',
+      'text':
+          'Entendi. Você tem percebido se esses sintomas estão ligados a alguma situação específica ou mudança na sua rotina?',
       'isDoctor': true,
       'time': '15h35',
     },
     {
-      'text': 'Acho que sim, tenho trabalhado demais e não consigo relaxar antes de dormir. Minha mente não para.',
+      'text':
+          'Acho que sim, tenho trabalhado demais e não consigo relaxar antes de dormir. Minha mente não para.',
       'isDoctor': false,
       'time': '15h35',
       'isRead': true,
     },
     {
-      'text': 'Certo, obrigada por compartilhar. Vamos pensar em estratégias para melhorar seu sono e reduzir o estresse.',
+      'text':
+          'Certo, obrigada por compartilhar. Vamos pensar em estratégias para melhorar seu sono e reduzir o estresse.',
       'isDoctor': true,
       'time': '15h35',
     },
@@ -120,7 +125,8 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1EDFC),
                       borderRadius: BorderRadius.circular(999),
@@ -138,7 +144,8 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
                   if (_isConsultationEnded) ...[
                     const SizedBox(height: 16),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF0F0EE),
                         borderRadius: BorderRadius.circular(6),
@@ -209,7 +216,8 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
                         hintText: 'Mensagem',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(999),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE5E7EB)),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -245,9 +253,7 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: isDoctor
-              ? const Color(0xFFF7F7F5)
-              : const Color(0xFFC3A6F9),
+          color: isDoctor ? const Color(0xFFF7F7F5) : const Color(0xFFC3A6F9),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(12),
             topRight: const Radius.circular(12),
@@ -274,7 +280,9 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: isDoctor ? const Color(0xFF5E5E5B) : const Color(0xFF3F3F3D),
+                    color: isDoctor
+                        ? const Color(0xFF5E5E5B)
+                        : const Color(0xFF3F3F3D),
                   ),
                 ),
                 if (!isDoctor && isRead) ...[
@@ -289,8 +297,3 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
     );
   }
 }
-
-
-
-
-

@@ -9,7 +9,7 @@ class FinancialPage extends StatefulWidget {
 }
 
 class _FinancialPageState extends State<FinancialPage> {
-  String _selectedMonth = 'Setembro';
+  final String _selectedMonth = 'Setembro';
 
   final List<Map<String, dynamic>> _transfers = [
     {
@@ -101,7 +101,9 @@ class _FinancialPageState extends State<FinancialPage> {
                           color: Color(0xFF7C7C79),
                         ),
                         children: [
-                          TextSpan(text: transfer['consultation'].split(' • ')[0] + ' • '),
+                          TextSpan(
+                              text: transfer['consultation'].split(' • ')[0] +
+                                  ' • '),
                           TextSpan(
                             text: transfer['consultation'].split(' • ')[1],
                             style: const TextStyle(color: Color(0xFF212121)),
@@ -214,7 +216,8 @@ class _FinancialPageState extends State<FinancialPage> {
                     ),
                     const SizedBox(width: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         color: const Color(0xFFE6F8EF),
                         borderRadius: BorderRadius.circular(999),
@@ -259,18 +262,18 @@ class _FinancialPageState extends State<FinancialPage> {
                     color: const Color(0xFFF7F7F5),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Column(
+                  child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Total a receber',
                         style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFF7C7C79),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
+                      SizedBox(height: 12),
+                      Text(
                         'R\$3.000,00',
                         style: TextStyle(
                           fontSize: 20,
@@ -292,10 +295,10 @@ class _FinancialPageState extends State<FinancialPage> {
                           color: const Color(0xFFF7F7F5),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Column(
+                        child: const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               '10/09/25',
                               style: TextStyle(
                                 fontSize: 14,
@@ -303,16 +306,16 @@ class _FinancialPageState extends State<FinancialPage> {
                                 color: Color(0xFF3F3F3D),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            const Text(
+                            SizedBox(height: 12),
+                            Text(
                               'Último repasse',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF3F3F3D),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            const Text(
+                            SizedBox(height: 4),
+                            Text(
                               'R\$2.300,00',
                               style: TextStyle(
                                 fontSize: 20,
@@ -332,10 +335,10 @@ class _FinancialPageState extends State<FinancialPage> {
                           color: const Color(0xFFF7F7F5),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Column(
+                        child: const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               '10/10/25',
                               style: TextStyle(
                                 fontSize: 14,
@@ -343,16 +346,16 @@ class _FinancialPageState extends State<FinancialPage> {
                                 color: Color(0xFF3F3F3D),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            const Text(
+                            SizedBox(height: 12),
+                            Text(
                               'Próximo repasse',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF3F3F3D),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            const Text(
+                            SizedBox(height: 4),
+                            Text(
                               'R\$700,00',
                               style: TextStyle(
                                 fontSize: 20,
@@ -405,8 +408,3 @@ class _FinancialPageState extends State<FinancialPage> {
     );
   }
 }
-
-
-
-
-

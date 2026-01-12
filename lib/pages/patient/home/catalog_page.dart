@@ -118,6 +118,9 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
         },
       ),
       bottomNavigationBar: Container(
+        constraints: const BoxConstraints(
+          minHeight: 110,
+        ),
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
@@ -257,6 +260,7 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
     );
   }
 }
+
 
 
 

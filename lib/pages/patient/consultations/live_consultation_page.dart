@@ -15,29 +15,34 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
 
   final List<Map<String, dynamic>> messages = [
     {
-      'text': 'Olá, Matheus! Vi que relatou sintomas de insônia e estresse. Pode me contar um pouco mais sobre como isso tem afetado o seu dia a dia?',
+      'text':
+          'Olá, Matheus! Vi que relatou sintomas de insônia e estresse. Pode me contar um pouco mais sobre como isso tem afetado o seu dia a dia?',
       'sender': 'doctor',
       'time': '10h05',
     },
     {
-      'text': 'Oi, doutora. Tenho dormido muito mal há alguns dias, acordo várias vezes à noite e passo o dia cansado e irritado.',
+      'text':
+          'Oi, doutora. Tenho dormido muito mal há alguns dias, acordo várias vezes à noite e passo o dia cansado e irritado.',
       'sender': 'patient',
       'time': '15h35',
       'read': true,
     },
     {
-      'text': 'Entendi. Você tem percebido se esses sintomas estão ligados a alguma situação específica ou mudança na sua rotina?',
+      'text':
+          'Entendi. Você tem percebido se esses sintomas estão ligados a alguma situação específica ou mudança na sua rotina?',
       'sender': 'doctor',
       'time': '15h35',
     },
     {
-      'text': 'Acho que sim, tenho trabalhado demais e não consigo relaxar antes de dormir. Minha mente não para.',
+      'text':
+          'Acho que sim, tenho trabalhado demais e não consigo relaxar antes de dormir. Minha mente não para.',
       'sender': 'patient',
       'time': '15h35',
       'read': true,
     },
     {
-      'text': 'Certo, obrigada por compartilhar. Vamos pensar em estratégias para melhorar seu sono e reduzir o estresse.',
+      'text':
+          'Certo, obrigada por compartilhar. Vamos pensar em estratégias para melhorar seu sono e reduzir o estresse.',
       'sender': 'doctor',
       'time': '15h35',
     },
@@ -78,7 +83,8 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
             ),
             const SizedBox(height: 8),
             Row(
-              mainAxisAlignment: isDoctor ? MainAxisAlignment.start : MainAxisAlignment.end,
+              mainAxisAlignment:
+                  isDoctor ? MainAxisAlignment.start : MainAxisAlignment.end,
               children: [
                 Text(
                   message['time'] as String,
@@ -130,18 +136,18 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
             }
           },
         ),
-        title: Row(
+        title: const Row(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 20,
               backgroundImage: AssetImage('assets/images/avatar_pictures.png'),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Dr Luiz Carlos Souza',
                     style: TextStyle(
                       fontSize: 14,
@@ -151,15 +157,15 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
                   ),
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         'Digitando...',
                         style: TextStyle(
                           fontSize: 12,
                           color: Color(0xFF7C7C79),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Text(
+                      SizedBox(width: 8),
+                      Text(
                         'Consulta iniciada às 10h00',
                         style: TextStyle(
                           fontSize: 12,
@@ -243,7 +249,8 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
                       ),
                       filled: true,
                       fillColor: const Color(0xFFF7F7F5),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                     ),
                   ),
                 ),
@@ -256,7 +263,8 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
                       color: const Color(0xFF00BB5A),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: const Icon(Icons.send, color: Colors.white, size: 20),
+                    child:
+                        const Icon(Icons.send, color: Colors.white, size: 20),
                   ),
                   onPressed: () {
                     if (_messageController.text.isNotEmpty) {
@@ -316,7 +324,8 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
               height: 48,
               child: ElevatedButton(
                 onPressed: () {
-                  context.push('/patient/consultations/finish/${widget.consultationId}');
+                  context.push(
+                      '/patient/consultations/finish/${widget.consultationId}');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF00BB5A),
@@ -340,8 +349,3 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
     );
   }
 }
-
-
-
-
-

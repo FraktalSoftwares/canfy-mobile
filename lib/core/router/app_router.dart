@@ -42,6 +42,7 @@ import '../../pages/patient/orders/new_order_step1_page.dart';
 import '../../pages/patient/orders/new_order_step2_page.dart';
 import '../../pages/patient/orders/new_order_step3_page.dart';
 import '../../pages/patient/orders/new_order_step4_page.dart';
+import '../../pages/patient/orders/new_order_step5_page.dart';
 import '../../pages/patient/consultations/consultations_page.dart';
 import '../../pages/patient/consultations/consultation_details_page.dart';
 import '../../pages/patient/consultations/live_consultation_page.dart';
@@ -281,6 +282,7 @@ class AppRouter {
           GoRoute(
             path: 'new',
             name: 'patient-new-order',
+            redirect: (context, state) => '/patient/orders/new/step1',
             routes: [
               GoRoute(
                 path: 'step1',
@@ -301,6 +303,11 @@ class AppRouter {
                 path: 'step4',
                 name: 'patient-new-order-step4',
                 builder: (context, state) => const NewOrderStep4Page(),
+              ),
+              GoRoute(
+                path: 'step5',
+                name: 'patient-new-order-step5',
+                builder: (context, state) => const NewOrderStep5Page(),
               ),
             ],
           ),
@@ -338,6 +345,7 @@ class AppRouter {
           GoRoute(
             path: 'new',
             name: 'patient-new-consultation',
+            redirect: (context, state) => '/patient/consultations/new/step1',
             routes: [
               GoRoute(
                 path: 'step1',

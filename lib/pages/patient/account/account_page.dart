@@ -1,8 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../services/api/patient_service.dart';
+import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 
-class PatientAccountPage extends StatelessWidget {
+class PatientAccountPage extends StatefulWidget {
   const PatientAccountPage({super.key});
+
+  @override
+  State<PatientAccountPage> createState() => _PatientAccountPageState();
+}
+
+class _PatientAccountPageState extends State<PatientAccountPage> {
+  final PatientService _patientService = PatientService();
+  
+  String _patientName = 'Usuário';
+  String? _patientAvatar;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPatientData();
+  }
+
+  Future<void> _loadPatientData() async {
+    final result = await _patientService.getCurrentPatient();
+    if (result['success'] == true && mounted) {
+      final data = result['data'] as Map<String, dynamic>?;
+      final profile = data?['profile'] as Map<String, dynamic>?;
+      if (profile != null) {
+        setState(() {
+          _patientName = profile['nome_completo'] as String? ?? 'Usuário';
+          _patientAvatar = profile['foto_perfil_url'] as String?;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   Widget _buildMenuItem(BuildContext context, {
     required IconData icon,
@@ -83,11 +125,23 @@ class PatientAccountPage extends StatelessWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.black),
-            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : _patientAvatar != null && _patientAvatar!.isNotEmpty
+                    ? CircleAvatar(
+                        radius: 20,
+                        backgroundImage: NetworkImage(_patientAvatar!),
+                        onBackgroundImageError: (_, __) {},
+                      )
+                    : CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.grey[300],
+                        child: const Icon(Icons.person, color: Colors.black),
+                      ),
           ),
         ],
       ),
@@ -96,14 +150,24 @@ class PatientAccountPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Conta e configurações',
-              style: TextStyle(
+            Text(
+              _isLoading ? 'Carregando...' : 'Conta e configurações',
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF212121),
               ),
             ),
+            if (!_isLoading && _patientName != 'Usuário') ...[
+              const SizedBox(height: 8),
+              Text(
+                _patientName,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF7C7C79),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             Column(
               children: [
@@ -139,9 +203,13 @@ class PatientAccountPage extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: const PatientBottomNavigationBar(
+        currentIndex: 0, // Usar índice 0 (Home) já que conta não está no menu
+      ),
     );
   }
 }
+
 
 
 

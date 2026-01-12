@@ -130,10 +130,10 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
             const SizedBox(height: 24),
             _buildProgressIndicator(),
             const SizedBox(height: 40),
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Novo pedido',
                   style: TextStyle(
                     fontSize: 24,
@@ -148,7 +148,8 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF0F0EE),
                     borderRadius: BorderRadius.circular(6),
@@ -163,7 +164,8 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE6F8EF),
                     borderRadius: BorderRadius.circular(6),
@@ -204,7 +206,8 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.remove, color: Color(0xFF007A3B)),
+                            icon: const Icon(Icons.remove,
+                                color: Color(0xFF007A3B)),
                             onPressed: () {
                               if (quantity > 1) {
                                 setState(() {
@@ -222,7 +225,8 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFF007A3B)),
+                              border:
+                                  Border.all(color: const Color(0xFF007A3B)),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Center(
@@ -237,7 +241,8 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.add, color: Color(0xFF007A3B)),
+                            icon:
+                                const Icon(Icons.add, color: Color(0xFF007A3B)),
                             onPressed: () {
                               setState(() {
                                 quantity++;
@@ -273,11 +278,11 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Expanded(
+                      const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Canabidiol',
                               style: TextStyle(
                                 fontSize: 16,
@@ -285,17 +290,17 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                                 color: Color(0xFF007A3B),
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            SizedBox(height: 2),
                             Row(
                               children: [
-                                const Text(
+                                Text(
                                   'Tipo de produto: ',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Color(0xFF7C7C79),
                                   ),
                                 ),
-                                const Text(
+                                Text(
                                   'Óleo',
                                   style: TextStyle(
                                     fontSize: 14,
@@ -307,14 +312,14 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                             ),
                             Row(
                               children: [
-                                const Text(
+                                Text(
                                   'Dosagem: ',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Color(0xFF7C7C79),
                                   ),
                                 ),
-                                const Text(
+                                Text(
                                   '20mg/ml',
                                   style: TextStyle(
                                     fontSize: 14,
@@ -326,14 +331,14 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                             ),
                             Row(
                               children: [
-                                const Text(
+                                Text(
                                   'Concentração: ',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Color(0xFF7C7C79),
                                   ),
                                 ),
-                                const Text(
+                                Text(
                                   '20mg/ml de THC',
                                   style: TextStyle(
                                     fontSize: 14,
@@ -373,16 +378,16 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                   const SizedBox(height: 8),
                   const Divider(color: Color(0xFFE6E6E3)),
                   const SizedBox(height: 8),
-                  Row(
+                  const Row(
                     children: [
-                      const Text(
+                      Text(
                         'Associação: ',
                         style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFF7C7C79),
                         ),
                       ),
-                      const Text(
+                      Text(
                         'ABC',
                         style: TextStyle(
                           fontSize: 14,
@@ -423,10 +428,10 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                 color: const Color(0xFFF7F7F5),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Entrega',
                     style: TextStyle(
                       fontSize: 18,
@@ -434,19 +439,19 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                       color: Color(0xFF212121),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Divider(color: Color(0xFFE6E6E3)),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
+                  Divider(color: Color(0xFFE6E6E3)),
+                  SizedBox(height: 8),
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         'Prazo: ',
                         style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFF7C7C79),
                         ),
                       ),
-                      const Text(
+                      Text(
                         'até 15 dias úteis e 30 dias úteis',
                         style: TextStyle(
                           fontSize: 14,
@@ -456,17 +461,17 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         'Requisitos: ',
                         style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFF7C7C79),
                         ),
                       ),
-                      const Text(
+                      Text(
                         'Receita válida até 6 meses',
                         style: TextStyle(
                           fontSize: 14,
@@ -487,10 +492,10 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                 color: const Color(0xFFF7F7F5),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Comentários do prescritor',
                     style: TextStyle(
                       fontSize: 18,
@@ -498,8 +503,8 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                       color: Color(0xFF212121),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'Uso contínuo, conforme orientação médica.\nNão interromper sem avisar o prescritor.',
                     style: TextStyle(
                       fontSize: 14,
@@ -536,6 +541,9 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
         ),
       ),
       bottomNavigationBar: Container(
+        constraints: const BoxConstraints(
+          minHeight: 110,
+        ),
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
@@ -559,6 +567,15 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
             fontSize: 12,
             fontWeight: FontWeight.normal,
           ),
+          onTap: (index) {
+            if (index == 0) {
+              context.go('/patient/home');
+            } else if (index == 1) {
+              // Current page, do nothing
+            } else if (index == 2) {
+              context.go('/patient/consultations');
+            }
+          },
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
@@ -578,8 +595,3 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
     );
   }
 }
-
-
-
-
-

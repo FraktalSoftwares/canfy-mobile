@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/api/auth_service.dart';
+import '../../utils/input_masks.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,8 +21,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   bool _hasError = false;
   String? _emailError;
   String? _passwordError;
+  bool _isLoading = false;
 
   bool _isLoginTab = true;
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -42,6 +46,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
         });
       }
     });
+
+    // Adicionar listeners para validação em tempo real
+    _emailController.addListener(() => _validateEmail());
+    _passwordController.addListener(() => _validatePassword());
   }
 
   @override
@@ -52,29 +60,200 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     super.dispose();
   }
 
-  void _handleLogin() {
+  void _validateEmail() {
     final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      setState(() => _emailError = 'Email é obrigatório');
+    } else if (!InputMasks.isValidEmail(email)) {
+      setState(() => _emailError = 'Email inválido');
+    } else {
+      setState(() => _emailError = null);
+    }
+  }
+
+  void _validatePassword() {
     final password = _passwordController.text;
+    if (password.isEmpty) {
+      setState(() => _passwordError = 'Senha é obrigatória');
+    } else if (password.length < 6) {
+      setState(() => _passwordError = 'Senha deve ter no mínimo 6 caracteres');
+    } else {
+      setState(() => _passwordError = null);
+    }
+  }
 
-    // Validação simples
-    if (email.isEmpty || !email.contains('@')) {
+  bool _isFormValid() {
+    return _emailError == null &&
+           _passwordError == null &&
+           _emailController.text.trim().isNotEmpty &&
+           _passwordController.text.isNotEmpty;
+  }
+
+  Future<void> _handleLogin() async {
+    print('=== INÍCIO DO LOGIN ===');
+    print('Login - Email: ${_emailController.text.trim()}');
+    print('Login - Senha preenchida: ${_passwordController.text.isNotEmpty}');
+    print('Login - _isFormValid(): ${_isFormValid()}');
+    print('Login - _emailError: $_emailError');
+    print('Login - _passwordError: $_passwordError');
+    
+    // Validar formulário novamente antes de prosseguir
+    _validateEmail();
+    _validatePassword();
+
+    // Verificar se o formulário está válido ANTES de fazer qualquer coisa
+    final isValid = _isFormValid();
+    print('Login - Formulário válido após validação: $isValid');
+    
+    if (!isValid) {
+      print('Login - Formulário inválido, abortando login');
       setState(() {
         _hasError = true;
-        _emailError = 'Email inválido';
+        // Forçar exibição dos erros
+        if (_emailController.text.trim().isEmpty) {
+          _emailError = 'Email é obrigatório';
+        }
+        if (_passwordController.text.isEmpty) {
+          _passwordError = 'Senha é obrigatória';
+        }
       });
       return;
     }
 
-    if (password.isEmpty || password.length < 6) {
-      setState(() {
-        _hasError = true;
-        _passwordError = 'Senha incorreta';
-      });
-      return;
-    }
+    print('Login - Formulário válido, iniciando autenticação...');
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+      _emailError = null;
+      _passwordError = null;
+    });
 
-    // Login bem-sucedido
-    context.go('/user-selection');
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      print('Login - Chamando AuthService.login...');
+      final result = await _authService.login(
+        email: email,
+        password: password,
+      );
+      print('Login - Resultado recebido: success=${result['success']}');
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (result['success'] == true) {
+          // Verificar tipo de usuário e redirecionar
+          final data = result['data'] as Map<String, dynamic>?;
+          final profile = data?['profile'];
+          
+          // Debug: imprimir dados recebidos
+          print('Login - Dados recebidos: $data');
+          print('Login - Profile: $profile');
+          print('Login - Tipo do profile: ${profile.runtimeType}');
+          
+          // O profile pode ser um Map ou uma lista com um Map
+          Map<String, dynamic>? profileMap;
+          if (profile is Map<String, dynamic>) {
+            profileMap = profile;
+            print('Login - Profile é Map');
+          } else if (profile is List) {
+            print('Login - Profile é List com ${profile.length} itens');
+            if (profile.isNotEmpty) {
+              profileMap = profile[0] as Map<String, dynamic>?;
+            }
+          } else if (profile != null) {
+            print('Login - Profile é de tipo desconhecido: ${profile.runtimeType}');
+          }
+          
+          // O tipo_usuario vem como string do Supabase
+          final tipoUsuario = profileMap?['tipo_usuario'] as String?;
+          print('Login - Tipo usuário: $tipoUsuario');
+          print('Login - Profile completo: $profileMap');
+
+          // Redirecionar baseado no tipo de usuário
+          // Por padrão, assumir paciente se não conseguir determinar
+          String targetRoute = '/patient/home';
+          
+          if (tipoUsuario != null) {
+            if (tipoUsuario == 'paciente') {
+              targetRoute = '/patient/home';
+              print('Login - Usuário é paciente, redirecionando para /patient/home');
+            } else if (tipoUsuario == 'medico' || tipoUsuario == 'prescritor') {
+              targetRoute = '/home';
+              print('Login - Usuário é médico/prescritor, redirecionando para /home');
+            } else {
+              print('Login - Tipo desconhecido ($tipoUsuario), usando fallback para /patient/home');
+            }
+          } else {
+            print('Login - Tipo usuário não encontrado, usando fallback para /patient/home');
+          }
+
+          // Redirecionar imediatamente após o frame atual
+          print('Login - Preparando redirecionamento para: $targetRoute');
+          
+          // Usar SchedulerBinding para garantir que o redirecionamento aconteça após o build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              print('Login - Executando redirecionamento para: $targetRoute');
+              try {
+                // Usar go() que substitui a rota atual
+                context.go(targetRoute);
+                print('Login - Redirecionamento para $targetRoute executado com sucesso');
+              } catch (e, stackTrace) {
+                print('Login - Erro ao redirecionar: $e');
+                print('Login - Stack trace: $stackTrace');
+                // Se falhar, tentar novamente após um delay
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (mounted) {
+                    print('Login - Tentando redirecionamento novamente para: $targetRoute');
+                    try {
+                      context.go(targetRoute);
+                    } catch (e2) {
+                      print('Login - Erro na segunda tentativa: $e2');
+                    }
+                  }
+                });
+              }
+            } else {
+              print('Login - Widget não está mais montado no callback');
+            }
+          });
+        } else {
+          setState(() {
+            _hasError = true;
+            _emailError = null;
+            _passwordError = result['message'] as String? ?? 'Erro ao fazer login';
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Erro ao fazer login'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+          _passwordError = 'Erro ao fazer login: ${e.toString()}';
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -196,23 +375,52 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   width: double.infinity,
                   height: 49,
                   child: ElevatedButton(
-                    onPressed: _handleLogin,
+                    onPressed: () {
+                      // Verificar novamente antes de chamar
+                      if (_isFormValid() && !_isLoading) {
+                        _handleLogin();
+                      } else {
+                        print('Login - Botão clicado mas formulário inválido ou carregando');
+                        // Forçar validação e mostrar erros
+                        _validateEmail();
+                        _validatePassword();
+                        setState(() {
+                          _hasError = true;
+                          if (_emailController.text.trim().isEmpty) {
+                            _emailError = 'Email é obrigatório';
+                          }
+                          if (_passwordController.text.isEmpty) {
+                            _passwordError = 'Senha é obrigatória';
+                          }
+                        });
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.canfyGreen,
                       foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0xFFE0E0E0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999),
                       ),
                       elevation: 0,
                     ),
-                    child: Text(
-                      'Entrar',
-                      style: AppTextStyles.arimo(
-                        fontSize: 14,
-                        fontWeight: FontWeight.normal,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            'Entrar',
+                            style: AppTextStyles.arimo(
+                              fontSize: 14,
+                              fontWeight: FontWeight.normal,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 8),

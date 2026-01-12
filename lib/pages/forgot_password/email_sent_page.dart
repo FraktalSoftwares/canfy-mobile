@@ -47,7 +47,7 @@ class EmailSentPage extends StatelessWidget {
                   color: AppTheme.canfyGreen.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.check,
                   size: 36,
                   color: AppTheme.canfyGreen,
@@ -98,4 +98,3 @@ class EmailSentPage extends StatelessWidget {
     );
   }
 }
-

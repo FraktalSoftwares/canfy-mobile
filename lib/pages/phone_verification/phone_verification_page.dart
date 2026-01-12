@@ -5,11 +5,8 @@ import '../../core/theme/app_theme.dart';
 
 class PhoneVerificationPage extends StatefulWidget {
   final String? phoneNumber;
-  
-  const PhoneVerificationPage({
-    super.key,
-    this.phoneNumber,
-  });
+
+  const PhoneVerificationPage({super.key, this.phoneNumber});
 
   @override
   State<PhoneVerificationPage> createState() => _PhoneVerificationPageState();
@@ -20,10 +17,7 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
     4,
     (index) => TextEditingController(),
   );
-  final List<FocusNode> _focusNodes = List.generate(
-    4,
-    (index) => FocusNode(),
-  );
+  final List<FocusNode> _focusNodes = List.generate(4, (index) => FocusNode());
   bool _isCodeValid = false;
 
   @override
@@ -42,7 +36,7 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
     setState(() {
       _isCodeValid = code.length == 4;
     });
-    
+
     if (code.length == 4) {
       // Auto-validar quando todos os campos estiverem preenchidos
       // context.go('/pending-review');
@@ -90,7 +84,7 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
                   color: AppTheme.canfyGreen.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.message,
                   size: 36,
                   color: AppTheme.canfyGreen,
@@ -149,7 +143,7 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
+                          borderSide: const BorderSide(
                             color: AppTheme.canfyGreen,
                             width: 2,
                           ),
@@ -206,7 +200,9 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
                   onPressed: _isCodeValid
                       ? () {
                           // Validar código e navegar
-                          context.go('/pending-review');
+                          // Pacientes vão direto para home, médicos vão para análise
+                          // Por enquanto, redirecionar pacientes para home
+                          context.go('/patient/home');
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
@@ -235,4 +231,3 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
     );
   }
 }
-

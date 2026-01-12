@@ -355,6 +355,9 @@ class _PatientProductDetailsPageState extends State<PatientProductDetailsPage> {
         ],
       ),
       bottomNavigationBar: Container(
+        constraints: const BoxConstraints(
+          minHeight: 110,
+        ),
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
@@ -430,6 +433,7 @@ class _PatientProductDetailsPageState extends State<PatientProductDetailsPage> {
     );
   }
 }
+
 
 
 

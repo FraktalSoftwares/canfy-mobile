@@ -13,6 +13,9 @@ class PatientBottomNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: const BoxConstraints(
+        minHeight: 110,
+      ),
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
@@ -63,6 +66,7 @@ class PatientBottomNavigationBar extends StatelessWidget {
     );
   }
 }
+
 
 
 

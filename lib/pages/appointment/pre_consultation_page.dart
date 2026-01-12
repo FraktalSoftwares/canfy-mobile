@@ -66,13 +66,13 @@ class PreConsultationPage extends StatelessWidget {
                 color: const Color(0xFFF7F7F5),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -96,13 +96,14 @@ class PreConsultationPage extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.chevron_right, color: Colors.transparent),
+                        icon: Icon(Icons.chevron_right,
+                            color: Colors.transparent),
                         onPressed: null,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  const Row(
+                  SizedBox(height: 16),
+                  Row(
                     children: [
                       Text(
                         'Telefone:',
@@ -122,8 +123,8 @@ class PreConsultationPage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  const Row(
+                  SizedBox(height: 4),
+                  Row(
                     children: [
                       Text(
                         'Principal queixa:',
@@ -294,6 +295,9 @@ class PreConsultationPage extends StatelessWidget {
 
   Widget _buildBottomNavigation() {
     return Container(
+      constraints: const BoxConstraints(
+        minHeight: 110,
+      ),
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
@@ -329,8 +333,3 @@ class PreConsultationPage extends StatelessWidget {
     );
   }
 }
-
-
-
-
-

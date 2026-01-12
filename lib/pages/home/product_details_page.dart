@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'share_product_modal.dart';
+import '../../widgets/common/safe_image_asset.dart';
 
 class ProductDetailsPage extends StatelessWidget {
   const ProductDetailsPage({super.key});
@@ -22,9 +23,10 @@ class ProductDetailsPage extends StatelessWidget {
               color: const Color(0xFFC3A6F9),
               borderRadius: BorderRadius.circular(999),
             ),
-            child: Image.asset(
-              'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+            child: SafeImageAsset(
+              imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
               fit: BoxFit.contain,
+              placeholderIcon: Icons.local_pharmacy,
             ),
           ),
           const SizedBox(height: 12),
@@ -215,18 +217,18 @@ class ProductDetailsPage extends StatelessWidget {
                               ),
                             ),
                           ),
-                          child: Column(
+                          child: const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Composição e concentração',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Color(0xFF7C7C79),
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              const Text(
+                              SizedBox(height: 4),
+                              Text(
                                 '20:1 CBD:THC',
                                 style: TextStyle(
                                   fontSize: 16,
@@ -248,18 +250,18 @@ class ProductDetailsPage extends StatelessWidget {
                               ),
                             ),
                           ),
-                          child: Column(
+                          child: const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Formas de uso',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Color(0xFF7C7C79),
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              const Text(
+                              SizedBox(height: 4),
+                              Text(
                                 'Óleo, cápsula, flor',
                                 style: TextStyle(
                                   fontSize: 16,
@@ -271,18 +273,18 @@ class ProductDetailsPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Column(
+                        const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Indicações clínicas',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF7C7C79),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            const Text(
+                            SizedBox(height: 4),
+                            Text(
                               'Dor crônica, ansiedade e insônia',
                               style: TextStyle(
                                 fontSize: 16,
@@ -293,18 +295,18 @@ class ProductDetailsPage extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        Column(
+                        const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Marca/Fornecedor',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF7C7C79),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            const Text(
+                            SizedBox(height: 4),
+                            Text(
                               'CBDMD',
                               style: TextStyle(
                                 fontSize: 16,
@@ -369,6 +371,7 @@ class ProductDetailsPage extends StatelessWidget {
     );
   }
 }
+
 
 
 

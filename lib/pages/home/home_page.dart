@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/common/safe_image_asset.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -128,9 +129,10 @@ class HomePage extends StatelessWidget {
               color: const Color(0xFFC3A6F9),
               borderRadius: BorderRadius.circular(999),
             ),
-            child: Image.asset(
-              'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+            child: SafeImageAsset(
+              imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
               fit: BoxFit.contain,
+              placeholderIcon: Icons.local_pharmacy,
             ),
           ),
           const SizedBox(height: 12),
@@ -245,19 +247,19 @@ class HomePage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
+                  const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Total a receber',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF7C7C79),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
+                        SizedBox(height: 12),
+                        Text(
                           'R\$3.000,00',
                           style: TextStyle(
                             fontSize: 20,
@@ -298,18 +300,18 @@ class HomePage extends StatelessWidget {
                       color: const Color(0xFFF7F7F5),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Column(
+                    child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Consultas realizadas',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF3F3F3D),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
+                        SizedBox(height: 12),
+                        Text(
                           '32',
                           style: TextStyle(
                             fontSize: 20,
@@ -329,18 +331,18 @@ class HomePage extends StatelessWidget {
                       color: const Color(0xFFF7F7F5),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Column(
+                    child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Atendimentos\nda semana',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF3F3F3D),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
+                        SizedBox(height: 12),
+                        Text(
                           '6',
                           style: TextStyle(
                             fontSize: 20,

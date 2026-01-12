@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/api/api_service.dart';
+import '../../utils/input_masks.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -12,11 +14,83 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
+  final ApiService _apiService = ApiService();
+  
+  bool _isLoading = false;
+  String? _emailError;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_validateEmail);
+  }
 
   @override
   void dispose() {
+    _emailController.removeListener(_validateEmail);
     _emailController.dispose();
     super.dispose();
+  }
+
+  void _validateEmail() {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      setState(() => _emailError = 'Email é obrigatório');
+    } else if (!InputMasks.isValidEmail(email)) {
+      setState(() => _emailError = 'Email inválido');
+    } else {
+      setState(() => _emailError = null);
+    }
+  }
+
+  Future<void> _handleSendResetEmail() async {
+    _validateEmail();
+    
+    if (_emailError != null || _emailController.text.trim().isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _emailError = null;
+    });
+
+    try {
+      final email = _emailController.text.trim();
+      final result = await _apiService.resetPasswordForEmail(email);
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (result['success'] == true) {
+          // Navegar para tela de confirmação
+          context.go('/forgot-password/email-sent');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Erro ao enviar email de recuperação'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -95,10 +169,30 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     color: const Color(0xFF9E9E9E),
                   ),
                   filled: true,
-                  fillColor: const Color(0xFFF5F5F5),
+                  fillColor: _emailError != null ? const Color(0xFFFFEBEE) : const Color(0xFFF5F5F5),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                    borderSide: _emailError != null
+                        ? const BorderSide(color: Colors.red, width: 1)
+                        : BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: _emailError != null
+                        ? const BorderSide(color: Colors.red, width: 1)
+                        : BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: _emailError != null ? Colors.red : AppTheme.canfyGreen,
+                      width: 2,
+                    ),
+                  ),
+                  errorText: _emailError,
+                  errorStyle: AppTextStyles.arimo(
+                    fontSize: 12,
+                    color: Colors.red,
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -112,26 +206,33 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 width: double.infinity,
                 height: 49,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Enviar email e navegar para tela de confirmação
-                    context.go('/forgot-password/email-sent');
-                  },
+                  onPressed: _isLoading || _emailError != null ? null : _handleSendResetEmail,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.canfyGreen,
                     foregroundColor: Colors.white,
+                    disabledBackgroundColor: const Color(0xFFE0E0E0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Enviar link de recuperação',
-                    style: AppTextStyles.arimo(
-                      fontSize: 14,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Enviar link de recuperação',
+                          style: AppTextStyles.arimo(
+                            fontSize: 14,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],

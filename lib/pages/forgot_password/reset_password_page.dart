@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/api/api_service.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -13,40 +14,119 @@ class ResetPasswordPage extends StatefulWidget {
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final ApiService _apiService = ApiService();
+
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
   bool _hasError = false;
   String? _confirmPasswordError;
+  String? _passwordError;
+
+  @override
+  void initState() {
+    super.initState();
+    _newPasswordController.addListener(_validatePassword);
+    _confirmPasswordController.addListener(_validateConfirmPassword);
+  }
 
   @override
   void dispose() {
+    _newPasswordController.removeListener(_validatePassword);
+    _confirmPasswordController.removeListener(_validateConfirmPassword);
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _handleReset() {
-    final newPassword = _newPasswordController.text;
+  void _validatePassword() {
+    final password = _newPasswordController.text;
+    if (password.isEmpty) {
+      setState(() => _passwordError = 'Senha é obrigatória');
+    } else if (password.length < 6) {
+      setState(() => _passwordError = 'Senha deve ter no mínimo 6 caracteres');
+    } else {
+      setState(() => _passwordError = null);
+    }
+    _validateConfirmPassword();
+  }
+
+  void _validateConfirmPassword() {
+    final password = _newPasswordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
-    if (newPassword != confirmPassword) {
+    if (confirmPassword.isEmpty) {
+      setState(() => _confirmPasswordError = null);
+    } else if (password != confirmPassword) {
+      setState(() => _confirmPasswordError = 'As senhas não coincidem');
+    } else {
+      setState(() => _confirmPasswordError = null);
+    }
+  }
+
+  bool _isFormValid() {
+    return _passwordError == null &&
+        _confirmPasswordError == null &&
+        _newPasswordController.text.isNotEmpty &&
+        _confirmPasswordController.text.isNotEmpty &&
+        _newPasswordController.text == _confirmPasswordController.text &&
+        _newPasswordController.text.length >= 6;
+  }
+
+  Future<void> _handleReset() async {
+    _validatePassword();
+    _validateConfirmPassword();
+
+    if (!_isFormValid()) {
       setState(() {
         _hasError = true;
-        _confirmPasswordError = 'As senhas não coincidem';
       });
       return;
     }
 
-    if (newPassword.length < 8) {
-      setState(() {
-        _hasError = true;
-        _confirmPasswordError = 'A senha deve ter no mínimo 8 caracteres';
-      });
-      return;
-    }
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+      _passwordError = null;
+      _confirmPasswordError = null;
+    });
 
-    // Senha resetada com sucesso
-    context.go('/forgot-password/password-updated');
+    try {
+      final newPassword = _newPasswordController.text;
+      final result = await _apiService.updatePassword(newPassword);
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (result['success'] == true) {
+          // Senha resetada com sucesso
+          context.go('/forgot-password/password-updated');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Erro ao atualizar senha'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -107,6 +187,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 label: 'Nova senha',
                 hint: 'Digite sua nova senha',
                 obscureText: _obscureNewPassword,
+                errorText: _passwordError,
+                hasError: _hasError && _passwordError != null,
                 onToggleVisibility: () {
                   setState(() {
                     _obscureNewPassword = !_obscureNewPassword;
@@ -139,34 +221,41 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              _buildRequirement('No mínimo 8 caracteres'),
-              _buildRequirement('Uma letra maiúscula'),
-              _buildRequirement('Uma letra minúscula'),
-              _buildRequirement('Um número'),
-              _buildRequirement('Um caractere especial'),
+              _buildRequirement('No mínimo 6 caracteres'),
               const SizedBox(height: 32),
               // Botão Atualizar senha
               SizedBox(
                 width: double.infinity,
                 height: 49,
                 child: ElevatedButton(
-                  onPressed: _handleReset,
+                  onPressed:
+                      _isFormValid() && !_isLoading ? _handleReset : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.canfyGreen,
                     foregroundColor: Colors.white,
+                    disabledBackgroundColor: const Color(0xFFE0E0E0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Atualizar senha',
-                    style: AppTextStyles.arimo(
-                      fontSize: 14,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Atualizar senha',
+                          style: AppTextStyles.arimo(
+                            fontSize: 14,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -211,7 +300,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               color: const Color(0xFF9E9E9E),
             ),
             filled: true,
-            fillColor: hasError ? const Color(0xFFFFEBEE) : const Color(0xFFF5F5F5),
+            fillColor:
+                hasError ? const Color(0xFFFFEBEE) : const Color(0xFFF5F5F5),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: hasError
@@ -258,7 +348,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.check_circle_outline,
             size: 16,
             color: AppTheme.canfyGreen,
@@ -276,4 +366,3 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     );
   }
 }
-

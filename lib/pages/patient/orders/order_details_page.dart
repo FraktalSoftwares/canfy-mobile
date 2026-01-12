@@ -19,9 +19,8 @@ class OrderDetailsPage extends StatelessWidget {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: isCompleted
-                    ? const Color(0xFF00994B)
-                    : Colors.transparent,
+                color:
+                    isCompleted ? const Color(0xFF00994B) : Colors.transparent,
                 shape: BoxShape.circle,
                 border: isCompleted
                     ? null
@@ -232,9 +231,9 @@ class OrderDetailsPage extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
+                      const Text(
                         '#12345 • 01/09/25',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           color: Color(0xFF7C7C79),
                         ),
@@ -367,10 +366,10 @@ class OrderDetailsPage extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Expanded(
+                        const Expanded(
                           child: Text(
                             '0019050 0954014 48160 6906 8093503 1433737 0000010 000093 50314 33',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF00994B),
@@ -505,6 +504,9 @@ class OrderDetailsPage extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: Container(
+        constraints: const BoxConstraints(
+          minHeight: 110,
+        ),
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
@@ -528,6 +530,15 @@ class OrderDetailsPage extends StatelessWidget {
             fontSize: 12,
             fontWeight: FontWeight.normal,
           ),
+          onTap: (index) {
+            if (index == 0) {
+              context.go('/patient/home');
+            } else if (index == 1) {
+              // Current page, do nothing
+            } else if (index == 2) {
+              context.go('/patient/consultations');
+            }
+          },
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
@@ -547,8 +558,3 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 }
-
-
-
-
-

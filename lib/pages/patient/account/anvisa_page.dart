@@ -117,10 +117,10 @@ class PatientAnvisaPage extends StatelessWidget {
                 color: const Color(0xFFF7F7F5),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Última solicitação',
                     style: TextStyle(
                       fontSize: 18,
@@ -128,8 +128,8 @@ class PatientAnvisaPage extends StatelessWidget {
                       color: Color(0xFF212121),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     '15/11/2024',
                     style: TextStyle(
                       fontSize: 14,
@@ -163,9 +163,9 @@ class PatientAnvisaPage extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
+                      const SizedBox(
                         width: 124,
-                        child: const Text(
+                        child: Text(
                           'Status',
                           style: TextStyle(
                             fontSize: 14,
@@ -175,7 +175,8 @@ class PatientAnvisaPage extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFF66DDA2),
                           borderRadius: BorderRadius.circular(999),
@@ -192,12 +193,12 @@ class PatientAnvisaPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Row(
+                  const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(
                         width: 124,
-                        child: const Text(
+                        child: Text(
                           'Data\nda solicitação',
                           style: TextStyle(
                             fontSize: 14,
@@ -206,7 +207,7 @@ class PatientAnvisaPage extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           '15/11/2024',
                           style: TextStyle(
@@ -243,8 +244,3 @@ class PatientAnvisaPage extends StatelessWidget {
     );
   }
 }
-
-
-
-
-

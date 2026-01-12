@@ -8,7 +8,8 @@ class PatientAboutPage extends StatefulWidget {
   State<PatientAboutPage> createState() => _PatientAboutPageState();
 }
 
-class _PatientAboutPageState extends State<PatientAboutPage> with SingleTickerProviderStateMixin {
+class _PatientAboutPageState extends State<PatientAboutPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -75,14 +76,14 @@ class _PatientAboutPageState extends State<PatientAboutPage> with SingleTickerPr
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
+        children: const [
           // Termos de uso
           SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Termos de uso',
                   style: TextStyle(
                     fontSize: 16,
@@ -90,8 +91,8 @@ class _PatientAboutPageState extends State<PatientAboutPage> with SingleTickerPr
                     color: Color(0xFF212121),
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                SizedBox(height: 16),
+                Text(
                   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
                   style: TextStyle(
                     fontSize: 14,
@@ -104,11 +105,11 @@ class _PatientAboutPageState extends State<PatientAboutPage> with SingleTickerPr
           ),
           // Política de Privacidade
           SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Política de Privacidade',
                   style: TextStyle(
                     fontSize: 16,
@@ -116,8 +117,8 @@ class _PatientAboutPageState extends State<PatientAboutPage> with SingleTickerPr
                     color: Color(0xFF212121),
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                SizedBox(height: 16),
+                Text(
                   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
                   style: TextStyle(
                     fontSize: 14,
@@ -133,8 +134,3 @@ class _PatientAboutPageState extends State<PatientAboutPage> with SingleTickerPr
     );
   }
 }
-
-
-
-
-

@@ -224,6 +224,9 @@ class _FinishAppointmentPageState extends State<FinishAppointmentPage> {
 
   Widget _buildBottomNavigation() {
     return Container(
+      constraints: const BoxConstraints(
+        minHeight: 110,
+      ),
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
@@ -259,6 +262,7 @@ class _FinishAppointmentPageState extends State<FinishAppointmentPage> {
     );
   }
 }
+
 
 
 

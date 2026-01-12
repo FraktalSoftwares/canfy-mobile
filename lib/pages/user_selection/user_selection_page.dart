@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/text_styles.dart';
+import '../../widgets/common/safe_image_asset.dart';
 import 'dart:math' as math;
 
 class UserSelectionPage extends StatelessWidget {
@@ -40,11 +41,12 @@ class UserSelectionPage extends StatelessWidget {
             top: 400,
             child: Transform.rotate(
               angle: 41.544 * math.pi / 180, // 41.544 graus em radianos
-              child: Image.asset(
-                'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+              child: SafeImageAsset(
+                imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
                 width: 176,
                 height: 202,
                 fit: BoxFit.contain,
+                placeholderIcon: Icons.local_pharmacy,
               ),
             ),
           ),
@@ -57,11 +59,12 @@ class UserSelectionPage extends StatelessWidget {
               angle: 138.456 * math.pi / 180, // 138.456 graus em radianos
               child: Transform.scale(
                 scaleY: -1, // Espelhar verticalmente
-                child: Image.asset(
-                  'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+                child: SafeImageAsset(
+                  imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
                   width: 176,
                   height: 202,
                   fit: BoxFit.contain,
+                  placeholderIcon: Icons.local_pharmacy,
                 ),
               ),
             ),
@@ -71,11 +74,12 @@ class UserSelectionPage extends StatelessWidget {
           Positioned(
             left: 16,
             top: screenHeight / 2 - 232.99,
-            child: Image.asset(
-              'assets/images/Vector.png',
+            child: SafeImageAsset(
+              imagePath: 'assets/images/Vector.png',
               width: 77,
               height: 40.02,
               fit: BoxFit.contain,
+              placeholderIcon: Icons.medical_services,
             ),
           ),
 

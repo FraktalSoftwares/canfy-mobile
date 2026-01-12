@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'catalog_filters_modal.dart';
+import '../../widgets/common/safe_image_asset.dart';
 
 class CatalogPage extends StatelessWidget {
   const CatalogPage({super.key});
@@ -30,9 +31,10 @@ class CatalogPage extends StatelessWidget {
                 color: const Color(0xFFC3A6F9),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: Image.asset(
-                'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+              child: SafeImageAsset(
+                imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
                 fit: BoxFit.contain,
+                placeholderIcon: Icons.local_pharmacy,
               ),
             ),
             const SizedBox(height: 12),

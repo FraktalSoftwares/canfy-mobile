@@ -286,10 +286,10 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
             const SizedBox(height: 24),
             _buildProgressIndicator(),
             const SizedBox(height: 40),
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Novo pedido',
                   style: TextStyle(
                     fontSize: 24,
@@ -304,7 +304,8 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF0F0EE),
                     borderRadius: BorderRadius.circular(6),
@@ -319,7 +320,8 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
@@ -458,6 +460,9 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
         ),
       ),
       bottomNavigationBar: Container(
+        constraints: const BoxConstraints(
+          minHeight: 110,
+        ),
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
@@ -481,6 +486,15 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
             fontSize: 12,
             fontWeight: FontWeight.normal,
           ),
+          onTap: (index) {
+            if (index == 0) {
+              context.go('/patient/home');
+            } else if (index == 1) {
+              // Current page, do nothing
+            } else if (index == 2) {
+              context.go('/patient/consultations');
+            }
+          },
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
@@ -500,8 +514,3 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
     );
   }
 }
-
-
-
-
-

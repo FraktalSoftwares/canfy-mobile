@@ -266,7 +266,7 @@ class _ConsultationsPageState extends State<ConsultationsPage> with SingleTicker
             if (context.canPop()) {
               context.pop();
             } else {
-              context.go('/home');
+              context.go('/patient/home');
             }
           },
         ),
@@ -344,11 +344,24 @@ class _ConsultationsPageState extends State<ConsultationsPage> with SingleTicker
         backgroundColor: const Color(0xFF00BB5A),
         child: const Icon(Icons.add, color: Colors.white),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2, // Assuming 'Consultas' is the third item
-        onTap: (index) {
+      bottomNavigationBar: Container(
+        constraints: const BoxConstraints(
+          minHeight: 110,
+        ),
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              offset: const Offset(0, -4),
+              blurRadius: 12,
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: 2, // Assuming 'Consultas' is the third item
+          onTap: (index) {
           if (index == 0) {
-            context.go('/home');
+            context.go('/patient/home');
           } else if (index == 1) {
             context.go('/patient/orders');
           } else if (index == 2) {
@@ -375,10 +388,12 @@ class _ConsultationsPageState extends State<ConsultationsPage> with SingleTicker
         unselectedItemColor: const Color(0xFF212121),
         backgroundColor: Colors.white,
         type: BottomNavigationBarType.fixed,
+        ),
       ),
     );
   }
 }
+
 
 
 
