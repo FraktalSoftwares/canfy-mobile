@@ -23,8 +23,9 @@ class ProductDetailsPage extends StatelessWidget {
               color: const Color(0xFFC3A6F9),
               borderRadius: BorderRadius.circular(999),
             ),
-            child: SafeImageAsset(
-              imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+            child: const SafeImageAsset(
+              imagePath:
+                  'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
               fit: BoxFit.contain,
               placeholderIcon: Icons.local_pharmacy,
             ),
@@ -69,7 +70,8 @@ class ProductDetailsPage extends StatelessWidget {
             leading: IconButton(
               icon: Transform.rotate(
                 angle: 1.5708,
-                child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
+                child:
+                    const Icon(Icons.keyboard_arrow_down, color: Colors.black),
               ),
               onPressed: () {
                 if (context.canPop()) {
@@ -371,9 +373,3 @@ class ProductDetailsPage extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-

@@ -6,7 +6,8 @@ class PrescriptionDetailsPage extends StatefulWidget {
   const PrescriptionDetailsPage({super.key});
 
   @override
-  State<PrescriptionDetailsPage> createState() => _PrescriptionDetailsPageState();
+  State<PrescriptionDetailsPage> createState() =>
+      _PrescriptionDetailsPageState();
 }
 
 class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
@@ -19,7 +20,8 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
       'validity': '04/03/2026 (6 meses)',
       'indications': ['Insônia', 'Ansiedade'],
       'observations': '',
-      'instructions': 'Deve ser usado 20mg/ml, sendo 10ml pela manhã e 10ml à noite, após as refeições.',
+      'instructions':
+          'Deve ser usado 20mg/ml, sendo 10ml pela manhã e 10ml à noite, após as refeições.',
     },
     {
       'form': 'Óleo',
@@ -29,7 +31,8 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
       'validity': '04/03/2026 (6 meses)',
       'indications': ['Insônia', 'Ansiedade'],
       'observations': '',
-      'instructions': 'Deve ser usado 20mg/ml, sendo 10ml pela manhã e 10ml à noite, após as refeições.',
+      'instructions':
+          'Deve ser usado 20mg/ml, sendo 10ml pela manhã e 10ml à noite, após as refeições.',
     },
   ];
 
@@ -116,7 +119,8 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.chevron_right, color: Colors.transparent),
+                          icon: Icon(Icons.chevron_right,
+                              color: Colors.transparent),
                           onPressed: null,
                         ),
                       ],
@@ -204,7 +208,8 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
                     onPressed: null,
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(999),
@@ -228,11 +233,12 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
           const SizedBox(height: 16),
           Row(
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 64,
                 height: 64,
                 child: SafeImageAsset(
-                  imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+                  imagePath:
+                      'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
                   fit: BoxFit.contain,
                   placeholderIcon: Icons.local_pharmacy,
                 ),
@@ -242,15 +248,19 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInfoRow('Formas de uso:', prescription['form'] as String),
+                    _buildInfoRow(
+                        'Formas de uso:', prescription['form'] as String),
                     const SizedBox(height: 4),
                     _buildInfoRow('Dosagem:', prescription['dosage'] as String),
                     const SizedBox(height: 4),
-                    _buildInfoRow('Concentração:', prescription['concentration'] as String),
+                    _buildInfoRow('Concentração:',
+                        prescription['concentration'] as String),
                     const SizedBox(height: 4),
-                    _buildInfoRow('Data de emissão:', prescription['issueDate'] as String),
+                    _buildInfoRow('Data de emissão:',
+                        prescription['issueDate'] as String),
                     const SizedBox(height: 4),
-                    _buildInfoRow('Validade:', prescription['validity'] as String),
+                    _buildInfoRow(
+                        'Validade:', prescription['validity'] as String),
                   ],
                 ),
               ),
@@ -297,7 +307,8 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
               ),
             ),
             maxLines: 4,
-            controller: TextEditingController(text: prescription['observations'] as String),
+            controller: TextEditingController(
+                text: prescription['observations'] as String),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -344,4 +355,3 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
     );
   }
 }
-

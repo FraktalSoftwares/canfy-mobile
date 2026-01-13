@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 
 class ConsultationsPage extends StatefulWidget {
   const ConsultationsPage({super.key});
@@ -344,51 +345,8 @@ class _ConsultationsPageState extends State<ConsultationsPage> with SingleTicker
         backgroundColor: const Color(0xFF00BB5A),
         child: const Icon(Icons.add, color: Colors.white),
       ),
-      bottomNavigationBar: Container(
-        constraints: const BoxConstraints(
-          minHeight: 110,
-        ),
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              offset: const Offset(0, -4),
-              blurRadius: 12,
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: 2, // Assuming 'Consultas' is the third item
-          onTap: (index) {
-          if (index == 0) {
-            context.go('/patient/home');
-          } else if (index == 1) {
-            context.go('/patient/orders');
-          } else if (index == 2) {
-            // Current page, do nothing
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home, color: Color(0xFF212121)),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_mall, color: Color(0xFF212121)),
-            label: 'Pedidos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month, color: Color(0xFF212121)),
-            label: 'Consultas',
-          ),
-        ],
-        selectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-        unselectedLabelStyle: const TextStyle(fontSize: 12),
-        selectedItemColor: const Color(0xFF212121),
-        unselectedItemColor: const Color(0xFF212121),
-        backgroundColor: Colors.white,
-        type: BottomNavigationBarType.fixed,
-        ),
+      bottomNavigationBar: const PatientBottomNavigationBar(
+        currentIndex: 2, // Consultas tab is active
       ),
     );
   }

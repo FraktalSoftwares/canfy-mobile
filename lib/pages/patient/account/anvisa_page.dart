@@ -109,9 +109,10 @@ class PatientAnvisaPage extends StatelessWidget {
                 color: Color(0xFF212121),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 24, width: double.infinity),
             // Última solicitação
             Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: const Color(0xFFF7F7F5),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/common/safe_image_asset.dart';
+import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 
 class AppointmentDetailsPage extends StatelessWidget {
   const AppointmentDetailsPage({super.key});
@@ -73,7 +74,8 @@ class AppointmentDetailsPage extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFF66DDA2),
                           borderRadius: BorderRadius.circular(999),
@@ -138,7 +140,8 @@ class AppointmentDetailsPage extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.more_vert, color: Color(0xFF00994B)),
+                        icon: const Icon(Icons.more_vert,
+                            color: Color(0xFF00994B)),
                         onPressed: () {},
                       ),
                     ],
@@ -176,7 +179,9 @@ class AppointmentDetailsPage extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
+      bottomNavigationBar: const DoctorBottomNavigationBar(
+        currentIndex: 1, // Atendimento tab is active
+      ),
     );
   }
 
@@ -187,10 +192,10 @@ class AppointmentDetailsPage extends StatelessWidget {
         color: const Color(0xFFF7F7F5),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Receita médica',
             style: TextStyle(
               fontSize: 18,
@@ -198,20 +203,21 @@ class AppointmentDetailsPage extends StatelessWidget {
               color: Colors.black,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             children: [
               SizedBox(
                 width: 64,
                 height: 64,
                 child: SafeImageAsset(
-                  imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+                  imagePath:
+                      'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
                   fit: BoxFit.contain,
                   placeholderIcon: Icons.local_pharmacy,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
+              SizedBox(width: 16),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -229,16 +235,16 @@ class AppointmentDetailsPage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             'Indicado para:',
             style: TextStyle(
               fontSize: 14,
               color: Color(0xFF7C7C79),
             ),
           ),
-          const SizedBox(height: 8),
-          const Wrap(
+          SizedBox(height: 8),
+          Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
@@ -282,45 +288,6 @@ class AppointmentDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomNavigation() {
-    return Container(
-      constraints: const BoxConstraints(
-        minHeight: 110,
-      ),
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: 1,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black,
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.medical_services),
-            label: 'Atendimento',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.monetization_on),
-            label: 'Financeiro',
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _InfoRow extends StatelessWidget {
@@ -377,9 +344,3 @@ class _Tag extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-

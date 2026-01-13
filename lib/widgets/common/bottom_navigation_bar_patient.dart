@@ -30,7 +30,7 @@ class PatientBottomNavigationBar extends StatelessWidget {
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         selectedItemColor: const Color(0xFF3F3F3D),
-        unselectedItemColor: const Color(0xFF3F3F3D),
+        unselectedItemColor: const Color.fromARGB(255, 153, 153, 146),
         selectedLabelStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
@@ -50,15 +50,24 @@ class PatientBottomNavigationBar extends StatelessWidget {
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Icon(Icons.home),
+            ),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.local_mall),
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Icon(Icons.local_mall),
+            ),
             label: 'Pedidos',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Icon(Icons.calendar_today),
+            ),
             label: 'Consultas',
           ),
         ],
@@ -66,9 +75,3 @@ class PatientBottomNavigationBar extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-

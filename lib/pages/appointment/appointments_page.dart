@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
@@ -97,7 +98,9 @@ class _AppointmentsPageState extends State<AppointmentsPage>
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
+      bottomNavigationBar: const DoctorBottomNavigationBar(
+        currentIndex: 1, // Atendimento tab is active
+      ),
     );
   }
 
@@ -279,45 +282,6 @@ class _AppointmentsPageState extends State<AppointmentsPage>
     );
   }
 
-  Widget _buildBottomNavigation() {
-    return Container(
-      constraints: const BoxConstraints(
-        minHeight: 110,
-      ),
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: 1,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black,
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.medical_services),
-            label: 'Atendimento',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.monetization_on),
-            label: 'Financeiro',
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 

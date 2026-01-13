@@ -41,8 +41,9 @@ class UserSelectionPage extends StatelessWidget {
             top: 400,
             child: Transform.rotate(
               angle: 41.544 * math.pi / 180, // 41.544 graus em radianos
-              child: SafeImageAsset(
-                imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+              child: const SafeImageAsset(
+                imagePath:
+                    'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
                 width: 176,
                 height: 202,
                 fit: BoxFit.contain,
@@ -59,8 +60,9 @@ class UserSelectionPage extends StatelessWidget {
               angle: 138.456 * math.pi / 180, // 138.456 graus em radianos
               child: Transform.scale(
                 scaleY: -1, // Espelhar verticalmente
-                child: SafeImageAsset(
-                  imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+                child: const SafeImageAsset(
+                  imagePath:
+                      'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
                   width: 176,
                   height: 202,
                   fit: BoxFit.contain,
@@ -74,7 +76,7 @@ class UserSelectionPage extends StatelessWidget {
           Positioned(
             left: 16,
             top: screenHeight / 2 - 232.99,
-            child: SafeImageAsset(
+            child: const SafeImageAsset(
               imagePath: 'assets/images/Vector.png',
               width: 77,
               height: 40.02,

@@ -11,7 +11,7 @@ import '../../utils/error_messages.dart';
 
 class RegisterPage extends StatefulWidget {
   final String? userType;
-  
+
   const RegisterPage({
     super.key,
     this.userType,
@@ -21,10 +21,11 @@ class RegisterPage extends StatefulWidget {
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderStateMixin {
+class _RegisterPageState extends State<RegisterPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isRegisterTab = true;
-  
+
   // Controllers dos campos
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -42,21 +43,21 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
   final _stateController = TextEditingController();
   final _crmController = TextEditingController();
   final _croController = TextEditingController();
-  
+
   // Máscaras
   final _cpfMask = InputMasks.cpf;
   final _phoneMask = InputMasks.phone;
   final _dateMask = InputMasks.date;
   final _cepMask = InputMasks.cep;
-  
+
   // Estados de visibilidade de senha
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  
+
   // Estados dos checkboxes
   bool _agreeTerms = false;
   bool _authorizeDataSharing = false;
-  
+
   // Estados de validação
   String? _nameError;
   String? _emailError;
@@ -66,7 +67,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
   String? _phoneError;
   String? _birthDateError;
   String? _cepError;
-  
+
   String? _selectedGender;
   bool _isDoctor = false;
   bool _isLoading = false;
@@ -97,7 +98,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
         }
       });
     });
-    
+
     // Adicionar listeners para validação em tempo real
     _nameController.addListener(() => _validateName());
     _emailController.addListener(() => _validateEmail());
@@ -227,9 +228,9 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
   /// Valida se o formulário de login está válido
   bool _isLoginFormValid() {
     return _emailError == null &&
-           _passwordError == null &&
-           _emailController.text.trim().isNotEmpty &&
-           _passwordController.text.isNotEmpty;
+        _passwordError == null &&
+        _emailController.text.trim().isNotEmpty &&
+        _passwordController.text.isNotEmpty;
   }
 
   /// Método para fazer login
@@ -237,7 +238,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
     print('=== INÍCIO DO LOGIN (RegisterPage) ===');
     print('Login - Email: ${_emailController.text.trim()}');
     print('Login - Senha preenchida: ${_passwordController.text.isNotEmpty}');
-    
+
     // Validar formulário novamente antes de prosseguir
     _validateEmail();
     _validatePassword();
@@ -245,7 +246,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
     // Verificar se o formulário está válido ANTES de fazer qualquer coisa
     final isValid = _isLoginFormValid();
     print('Login - Formulário válido após validação: $isValid');
-    
+
     if (!isValid) {
       print('Login - Formulário inválido, abortando login');
       setState(() {
@@ -285,11 +286,11 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
           // Verificar tipo de usuário e redirecionar
           final data = result['data'] as Map<String, dynamic>?;
           final profile = data?['profile'];
-          
+
           // Debug: imprimir dados recebidos
           print('Login - Dados recebidos: $data');
           print('Login - Profile: $profile');
-          
+
           // O profile pode ser um Map ou uma lista com um Map
           Map<String, dynamic>? profileMap;
           if (profile is Map<String, dynamic>) {
@@ -297,21 +298,23 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
           } else if (profile is List && profile.isNotEmpty) {
             profileMap = profile[0] as Map<String, dynamic>?;
           }
-          
+
           // O tipo_usuario vem como string do Supabase
           final tipoUsuario = profileMap?['tipo_usuario'] as String?;
           print('Login - Tipo usuário: $tipoUsuario');
 
           // Redirecionar baseado no tipo de usuário
           String targetRoute = '/patient/home';
-          
+
           if (tipoUsuario != null) {
             if (tipoUsuario == 'paciente') {
               targetRoute = '/patient/home';
-              print('Login - Usuário é paciente, redirecionando para /patient/home');
+              print(
+                  'Login - Usuário é paciente, redirecionando para /patient/home');
             } else if (tipoUsuario == 'medico' || tipoUsuario == 'prescritor') {
               targetRoute = '/home';
-              print('Login - Usuário é médico/prescritor, redirecionando para /home');
+              print(
+                  'Login - Usuário é médico/prescritor, redirecionando para /home');
             }
           }
 
@@ -328,7 +331,8 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                  const Icon(Icons.error_outline,
+                      color: Colors.white, size: 20),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -403,7 +407,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
   /// Busca endereço pelo CEP quando o campo está completo
   Future<void> _handleCepSearch() async {
     final cep = _cepMask.getUnmaskedText();
-    
+
     // Só busca se tiver 8 dígitos, não estiver carregando e for um CEP diferente do último buscado
     if (cep.length == 8 && !_isLoadingCep && cep != _lastSearchedCep) {
       setState(() {
@@ -415,9 +419,9 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
       try {
         // Pequeno delay para evitar múltiplas chamadas
         await Future.delayed(const Duration(milliseconds: 300));
-        
+
         final result = await _cepService.getAddressByCep(cep);
-        
+
         if (mounted) {
           setState(() {
             _isLoadingCep = false;
@@ -425,13 +429,13 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
 
           if (result['success'] == true) {
             final data = result['data'] as Map<String, dynamic>;
-            
+
             // Preencher campos automaticamente
             _addressController.text = data['logradouro'] as String? ?? '';
             _neighborhoodController.text = data['bairro'] as String? ?? '';
             _cityController.text = data['localidade'] as String? ?? '';
             _stateController.text = data['uf'] as String? ?? '';
-            
+
             // Complemento pode vir da API, mas não sobrescreve se já tiver algo
             if (_complementController.text.isEmpty) {
               _complementController.text = data['complemento'] as String? ?? '';
@@ -441,7 +445,8 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
             setState(() => _cepError = null);
           } else {
             setState(() {
-              final errorMsg = result['message'] as String? ?? 'CEP não encontrado';
+              final errorMsg =
+                  result['message'] as String? ?? 'CEP não encontrado';
               _cepError = ErrorMessages.formatError(errorMsg);
               _lastSearchedCep = null; // Permite tentar novamente
             });
@@ -708,7 +713,8 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                       _authorizeDataSharing = value ?? false;
                     });
                   },
-                  text: 'Autorizo o compartilhamento de dados com médicos e associações, quando necessário para meu tratamento.',
+                  text:
+                      'Autorizo o compartilhamento de dados com médicos e associações, quando necessário para meu tratamento.',
                 ),
                 const SizedBox(height: 32),
                 // Botão Criar conta
@@ -716,7 +722,9 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                   width: double.infinity,
                   height: 49,
                   child: ElevatedButton(
-                    onPressed: (_agreeTerms && !_isLoading && _isFormValid()) ? _handleRegister : null,
+                    onPressed: (_agreeTerms && !_isLoading && _isFormValid())
+                        ? _handleRegister
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.canfyGreen,
                       foregroundColor: Colors.white,
@@ -732,7 +740,8 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Text(
@@ -791,7 +800,8 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                       if (_isLoginFormValid() && !_isLoading) {
                         _handleLogin();
                       } else {
-                        print('Login - Botão clicado mas formulário inválido ou carregando');
+                        print(
+                            'Login - Botão clicado mas formulário inválido ou carregando');
                         // Forçar validação e mostrar erros
                         _validateEmail();
                         _validatePassword();
@@ -806,8 +816,8 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: (_isLoginFormValid() && !_isLoading) 
-                          ? AppTheme.canfyGreen 
+                      backgroundColor: (_isLoginFormValid() && !_isLoading)
+                          ? AppTheme.canfyGreen
                           : const Color(0xFFE0E0E0),
                       foregroundColor: Colors.white,
                       disabledBackgroundColor: const Color(0xFFE0E0E0),
@@ -822,7 +832,8 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Text(
@@ -871,19 +882,19 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
 
   bool _isFormValid() {
     return _nameError == null &&
-           _emailError == null &&
-           _passwordError == null &&
-           _confirmPasswordError == null &&
-           _cpfError == null &&
-           _phoneError == null &&
-           _birthDateError == null &&
-           _nameController.text.trim().isNotEmpty &&
-           _emailController.text.trim().isNotEmpty &&
-           _passwordController.text.isNotEmpty &&
-           _confirmPasswordController.text.isNotEmpty &&
-           _cpfMask.getUnmaskedText().isNotEmpty &&
-           _phoneMask.getUnmaskedText().isNotEmpty &&
-           _birthDateController.text.trim().isNotEmpty;
+        _emailError == null &&
+        _passwordError == null &&
+        _confirmPasswordError == null &&
+        _cpfError == null &&
+        _phoneError == null &&
+        _birthDateError == null &&
+        _nameController.text.trim().isNotEmpty &&
+        _emailController.text.trim().isNotEmpty &&
+        _passwordController.text.isNotEmpty &&
+        _confirmPasswordController.text.isNotEmpty &&
+        _cpfMask.getUnmaskedText().isNotEmpty &&
+        _phoneMask.getUnmaskedText().isNotEmpty &&
+        _birthDateController.text.trim().isNotEmpty;
   }
 
   Widget _buildTextField({
@@ -928,7 +939,8 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
+              borderSide:
+                  const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -994,7 +1006,8 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
+              borderSide:
+                  const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1012,14 +1025,15 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
               vertical: 16,
             ),
             suffixIcon: isLoading
-                ? Padding(
-                    padding: const EdgeInsets.all(12.0),
+                ? const Padding(
+                    padding: EdgeInsets.all(12.0),
                     child: SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.canfyGreen),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(AppTheme.canfyGreen),
                       ),
                     ),
                   )
@@ -1071,7 +1085,8 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
+              borderSide:
+                  const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1258,14 +1273,14 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
     if (!_isFormValid() || !_agreeTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
+          content: const Row(
             children: [
-              const Icon(Icons.info_outline, color: Colors.white, size: 20),
-              const SizedBox(width: 12),
+              Icon(Icons.info_outline, color: Colors.white, size: 20),
+              SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Por favor, preencha todos os campos obrigatórios corretamente e aceite os termos de uso.',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1319,13 +1334,27 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
         cpf: cpf,
         birthDate: birthDate,
         gender: _selectedGender,
-        cep: _cepMask.getUnmaskedText().isEmpty ? null : _cepMask.getUnmaskedText(),
-        address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-        addressNumber: _numberController.text.trim().isEmpty ? null : _numberController.text.trim(),
-        complement: _complementController.text.trim().isEmpty ? null : _complementController.text.trim(),
-        neighborhood: _neighborhoodController.text.trim().isEmpty ? null : _neighborhoodController.text.trim(),
-        city: _cityController.text.trim().isEmpty ? null : _cityController.text.trim(),
-        state: _stateController.text.trim().isEmpty ? null : _stateController.text.trim(),
+        cep: _cepMask.getUnmaskedText().isEmpty
+            ? null
+            : _cepMask.getUnmaskedText(),
+        address: _addressController.text.trim().isEmpty
+            ? null
+            : _addressController.text.trim(),
+        addressNumber: _numberController.text.trim().isEmpty
+            ? null
+            : _numberController.text.trim(),
+        complement: _complementController.text.trim().isEmpty
+            ? null
+            : _complementController.text.trim(),
+        neighborhood: _neighborhoodController.text.trim().isEmpty
+            ? null
+            : _neighborhoodController.text.trim(),
+        city: _cityController.text.trim().isEmpty
+            ? null
+            : _cityController.text.trim(),
+        state: _stateController.text.trim().isEmpty
+            ? null
+            : _stateController.text.trim(),
         authorizeDataSharing: _authorizeDataSharing,
       );
 
@@ -1343,7 +1372,8 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                  const Icon(Icons.error_outline,
+                      color: Colors.white, size: 20),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(

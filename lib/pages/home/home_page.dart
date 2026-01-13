@@ -5,7 +5,8 @@ import '../../widgets/common/safe_image_asset.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  Widget _buildAppointmentCard(BuildContext context, Map<String, dynamic> appointment) {
+  Widget _buildAppointmentCard(
+      BuildContext context, Map<String, dynamic> appointment) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -70,7 +71,8 @@ class HomePage extends StatelessWidget {
                   child: IconButton(
                     icon: Transform.rotate(
                       angle: 4.7124, // 270 graus
-                      child: const Icon(Icons.chevron_right, color: Colors.black),
+                      child:
+                          const Icon(Icons.chevron_right, color: Colors.black),
                     ),
                     onPressed: () {
                       context.push('/appointment/pre-consultation');
@@ -129,8 +131,9 @@ class HomePage extends StatelessWidget {
               color: const Color(0xFFC3A6F9),
               borderRadius: BorderRadius.circular(999),
             ),
-            child: SafeImageAsset(
-              imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+            child: const SafeImageAsset(
+              imagePath:
+                  'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
               fit: BoxFit.contain,
               placeholderIcon: Icons.local_pharmacy,
             ),
@@ -275,7 +278,8 @@ class HomePage extends StatelessWidget {
                     child: IconButton(
                       icon: Transform.rotate(
                         angle: 4.7124,
-                        child: const Icon(Icons.chevron_right, color: Colors.black),
+                        child: const Icon(Icons.chevron_right,
+                            color: Colors.black),
                       ),
                       onPressed: () {
                         context.push('/financial');
@@ -386,7 +390,8 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             // Lista de atendimentos
-            ...appointments.map((appointment) => _buildAppointmentCard(context, appointment)),
+            ...appointments.map(
+                (appointment) => _buildAppointmentCard(context, appointment)),
             const SizedBox(height: 32),
             // Catálogo
             Row(
@@ -437,4 +442,3 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-

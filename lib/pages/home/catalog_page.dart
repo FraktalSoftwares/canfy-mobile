@@ -31,8 +31,9 @@ class CatalogPage extends StatelessWidget {
                 color: const Color(0xFFC3A6F9),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: SafeImageAsset(
-                imagePath: 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
+              child: const SafeImageAsset(
+                imagePath:
+                    'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
                 fit: BoxFit.contain,
                 placeholderIcon: Icons.local_pharmacy,
               ),
@@ -220,7 +221,9 @@ class CatalogPage extends StatelessWidget {
             Wrap(
               spacing: 16,
               runSpacing: 16,
-              children: products.map((product) => _buildProductCard(context, product)).toList(),
+              children: products
+                  .map((product) => _buildProductCard(context, product))
+                  .toList(),
             ),
           ],
         ),
@@ -228,4 +231,3 @@ class CatalogPage extends StatelessWidget {
     );
   }
 }
-
