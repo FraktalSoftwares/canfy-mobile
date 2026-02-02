@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
+import '../../../widgets/patient/order_status_tag.dart';
+import '../../../widgets/patient/patient_app_bar.dart';
 
 class PatientHomePage extends StatefulWidget {
   const PatientHomePage({super.key});
@@ -13,15 +15,15 @@ class PatientHomePage extends StatefulWidget {
 
 class _PatientHomePageState extends State<PatientHomePage> {
   final PatientService _patientService = PatientService();
-  
+
   // Dados do paciente
   String _patientName = 'Usuário';
   String? _patientAvatar;
-  
+
   // Dados das consultas e pedidos
   List<Map<String, dynamic>> _upcomingConsultations = [];
   List<Map<String, dynamic>> _recentOrders = [];
-  
+
   // Estados de loading
   bool _isLoading = true;
 
@@ -62,7 +64,8 @@ class _PatientHomePageState extends State<PatientHomePage> {
             if (valorTotal != null) {
               try {
                 final valor = double.tryParse(valorTotal.toString()) ?? 0.0;
-                priceText = 'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+                priceText =
+                    'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
               } catch (e) {
                 priceText = 'R\$ 0,00';
               }
@@ -97,14 +100,29 @@ class _PatientHomePageState extends State<PatientHomePage> {
         });
       }
 
-      // Buscar consultas (por enquanto vazio)
-      final consultationsResult = await _patientService.getUpcomingConsultations(limit: 5);
-      if (consultationsResult['success'] == true && consultationsResult['data'] != null) {
-        setState(() {
-          _upcomingConsultations = (consultationsResult['data'] as List)
-              .map((e) => e as Map<String, dynamic>)
-              .toList();
-        });
+      // Buscar apenas consultas futuras (upcoming) para a Home
+      final consultationsResult = await _patientService.getConsultations();
+      if (consultationsResult['success'] == true &&
+          consultationsResult['data'] != null) {
+        final data = consultationsResult['data'] as Map<String, dynamic>;
+        final upcoming = data['upcoming'] as List? ?? [];
+        final upcomingList = <Map<String, dynamic>>[];
+        const limit = 5;
+
+        for (final e in upcoming) {
+          if (upcomingList.length >= limit) break;
+          if (e is Map<String, dynamic>) {
+            upcomingList.add(e);
+          } else if (e is Map) {
+            upcomingList.add(Map<String, dynamic>.from(e));
+          }
+        }
+
+        if (mounted) {
+          setState(() {
+            _upcomingConsultations = upcomingList;
+          });
+        }
       }
 
       setState(() {
@@ -133,22 +151,14 @@ class _PatientHomePageState extends State<PatientHomePage> {
     final hasOrders = _recentOrders.isNotEmpty;
 
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          title: const Text(
-            'Home',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF212121),
-            ),
-          ),
-          centerTitle: true,
+        appBar: PatientAppBar(
+          title: 'Home',
+          showLeading: false,
+          avatarTappable: false,
         ),
-        body: const Center(
+        body: Center(
           child: CircularProgressIndicator(),
         ),
       );
@@ -156,132 +166,107 @@ class _PatientHomePageState extends State<PatientHomePage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Home',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF212121),
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: () {
-                context.push('/patient/account');
-              },
-              child: _patientAvatar != null && _patientAvatar!.isNotEmpty
-                  ? CircleAvatar(
-                      radius: 20,
-                      backgroundImage: NetworkImage(_patientAvatar!),
-                      onBackgroundImageError: (_, __) {},
-                    )
-                  : CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.grey[300],
-                      child: const Icon(Icons.person, color: Colors.grey),
-                    ),
-            ),
-          ),
-        ],
+      appBar: PatientAppBar(
+        title: 'Home',
+        showLeading: false,
+        avatarUrl: _patientAvatar,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-            // Welcome message
-            Text(
-              'Boas Vindas, ${_patientName.split(' ').first}!',
-              style: AppTextStyles.truculenta(
-                fontSize: 32,
-                fontWeight: FontWeight.normal,
-                color: const Color(0xFF3F3F3D),
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        color: const Color(0xFF00994B),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              // Welcome message
+              Text(
+                'Boas Vindas, ${_patientName.split(' ').first}!',
+                style: AppTextStyles.truculenta(
+                  fontSize: 32,
+                  fontWeight: FontWeight.normal,
+                  color: const Color(0xFF3F3F3D),
+                ),
               ),
-            ),
-            const SizedBox(height: 40),
-            // Próximas consultas section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Próximas consultas',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF212121),
-                    fontFamily: 'Truculenta',
-                  ),
-                ),
-                if (hasConsultations)
-                  IconButton(
-                    icon: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00994B),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child:
-                          const Icon(Icons.add, color: Colors.white, size: 24),
+              const SizedBox(height: 40),
+              // Próximas consultas section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Próximas consultas',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF212121),
+                      fontFamily: 'Truculenta',
                     ),
-                    onPressed: () {
-                      context.push('/patient/consultations/new/step1');
-                    },
                   ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            if (!hasConsultations)
-              _buildEmptyConsultationsState()
-            else
-              ..._upcomingConsultations
-                  .map((consultation) => _buildConsultationCard(consultation)),
-            const SizedBox(height: 32),
-            // Últimos pedidos section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Últimos pedidos',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF212121),
-                    fontFamily: 'Truculenta',
-                  ),
-                ),
-                if (hasOrders)
-                  IconButton(
-                    icon: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00994B),
-                        borderRadius: BorderRadius.circular(20),
+                  if (hasConsultations)
+                    IconButton(
+                      icon: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00994B),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(Icons.add,
+                            color: Colors.white, size: 24),
                       ),
-                      child:
-                          const Icon(Icons.add, color: Colors.white, size: 24),
+                      onPressed: () {
+                        context.push('/patient/consultations/new/step1');
+                      },
                     ),
-                    onPressed: () {
-                      context.push('/patient/orders/new/step1');
-                    },
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (!hasConsultations)
+                _buildEmptyConsultationsState()
+              else
+                ..._upcomingConsultations.map(
+                    (consultation) => _buildConsultationCard(consultation)),
+              const SizedBox(height: 32),
+              // Últimos pedidos section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Últimos pedidos',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF212121),
+                      fontFamily: 'Truculenta',
+                    ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            if (!hasOrders)
-              _buildEmptyOrdersState()
-            else
-              ..._recentOrders.map((order) => _buildOrderCard(order)),
-          ],
+                  if (hasOrders)
+                    IconButton(
+                      icon: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00994B),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(Icons.add,
+                            color: Colors.white, size: 24),
+                      ),
+                      onPressed: () {
+                        context.push('/patient/orders/new/step1');
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (!hasOrders)
+                _buildEmptyOrdersState()
+              else
+                ..._recentOrders.map((order) => _buildOrderCard(order)),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: const PatientBottomNavigationBar(
@@ -310,7 +295,7 @@ class _PatientHomePageState extends State<PatientHomePage> {
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Text(
-                '${consultation['date']} • ${consultation['time']}',
+                '${consultation['date'] ?? '--'} • ${consultation['time'] ?? '--'}',
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -318,7 +303,7 @@ class _PatientHomePageState extends State<PatientHomePage> {
                 ),
               ),
             ),
-            // Doctor info
+            // Doctor info (mesmas chaves que getConsultations: doctorName, specialty/doctorSpecialty)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -335,7 +320,7 @@ class _PatientHomePageState extends State<PatientHomePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          consultation['doctorName'],
+                          consultation['doctorName'] as String? ?? 'Médico',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -343,7 +328,9 @@ class _PatientHomePageState extends State<PatientHomePage> {
                           ),
                         ),
                         Text(
-                          consultation['specialty'],
+                          (consultation['specialty'] ??
+                                  consultation['doctorSpecialty']) as String? ??
+                              'Especialidade',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF7C7C79),
@@ -378,24 +365,12 @@ class _PatientHomePageState extends State<PatientHomePage> {
   }
 
   Widget _buildOrderCard(Map<String, dynamic> order) {
-    Color statusColor;
-    Color statusTextColor;
-
-    switch (order['status']) {
-      case 'Em análise':
-        statusColor = const Color(0xFFF9E68C);
-        statusTextColor = const Color(0xFF654C01);
-        break;
-      default:
-        statusColor = const Color(0xFFF9E68C);
-        statusTextColor = const Color(0xFF654C01);
-    }
-
     return GestureDetector(
       onTap: () {
         context.push('/patient/orders/${order['id']}');
       },
       child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: const Color(0xFFF7F7F5),
@@ -405,22 +380,7 @@ class _PatientHomePageState extends State<PatientHomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status tag
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                order['status'],
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: statusTextColor,
-                ),
-              ),
-            ),
+            OrderStatusTag(status: order['status'] as String),
             const SizedBox(height: 16),
             // Product info
             Row(

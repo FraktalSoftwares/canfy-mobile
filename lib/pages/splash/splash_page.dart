@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/api/api_service.dart';
 
@@ -28,11 +27,11 @@ class _SplashPageState extends State<SplashPage> {
     try {
       // Verificar se há sessão ativa
       final session = Supabase.instance.client.auth.currentSession;
-      
+
       if (session != null) {
         // Usuário está logado, verificar tipo e redirecionar
         final userId = session.user.id;
-        
+
         // Buscar profile para determinar tipo de usuário
         final profileResult = await ApiService().getFiltered(
           'profiles',
@@ -55,7 +54,7 @@ class _SplashPageState extends State<SplashPage> {
             }
           }
         }
-        
+
         // Se não conseguir determinar, assumir paciente
         context.go('/patient/home');
       } else {
@@ -76,22 +75,14 @@ class _SplashPageState extends State<SplashPage> {
       backgroundColor: AppTheme.canfyGreen,
       body: SafeArea(
         child: Center(
-          child: Text(
-            'Canfy',
-            style: AppTextStyles.truculenta(
-              fontSize: 48,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-            ),
+          child: Image.asset(
+            'assets/images/Logo Canfy.png',
+            width: 200,
+            height: 200,
+            fit: BoxFit.contain,
           ),
         ),
       ),
     );
   }
 }
-
-
-
-
-
-

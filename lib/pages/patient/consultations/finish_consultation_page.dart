@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../widgets/patient/patient_app_bar.dart';
 
 class FinishConsultationPage extends StatefulWidget {
   final String consultationId;
@@ -23,57 +24,9 @@ class _FinishConsultationPageState extends State<FinishConsultationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708, // 90 graus
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6F8EF),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Transform.rotate(
-                angle: -1.5708, // -90 graus para compensar
-                child: const Icon(Icons.arrow_back, color: Colors.black),
-              ),
-            ),
-          ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/patient/consultations');
-            }
-          },
-        ),
-        title: const Text(
-          'Finalização da consulta',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF212121),
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: () {
-                context.push('/patient/account');
-              },
-              child: const CircleAvatar(
-                radius: 20,
-                backgroundImage:
-                    AssetImage('assets/images/avatar_pictures.png'),
-              ),
-            ),
-          ),
-        ],
+      appBar: const PatientAppBar(
+        title: 'Finalização da consulta',
+        fallbackRoute: '/patient/consultations',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

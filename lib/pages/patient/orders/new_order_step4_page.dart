@@ -1,67 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
+import '../../../widgets/patient/patient_app_bar.dart';
+import '../../../models/order/new_order_form_data.dart';
+import '../../../utils/currency_formatter.dart';
 
 class NewOrderStep4Page extends StatelessWidget {
-  const NewOrderStep4Page({super.key});
+  final NewOrderFormData? formData;
+
+  const NewOrderStep4Page({super.key, this.formData});
 
   Widget _buildProgressIndicator() {
     return Row(
-      children: [
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFF00BB5A),
-            borderRadius: BorderRadius.circular(999),
+      children: List.generate(
+        5,
+        (i) => Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Container(
+            width: 53,
+            height: 6,
+            decoration: BoxDecoration(
+              color: i < 4 ? const Color(0xFF00BB5A) : const Color(0xFFD6D6D3),
+              borderRadius: BorderRadius.circular(999),
+            ),
           ),
         ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFF00BB5A),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFF00BB5A),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFF00BB5A),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6D6D3),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6D6D3),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -75,23 +39,18 @@ class NewOrderStep4Page extends StatelessWidget {
         border: Border.all(color: const Color(0xFF33CC80)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Transform.rotate(
-            angle: 1.5708, // 90 graus
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6F8EF),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Transform.rotate(
-                angle: -1.5708, // -90 graus para compensar
-                child: const Icon(Icons.visibility, color: Colors.black),
-              ),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE6F8EF),
+              borderRadius: BorderRadius.circular(999),
             ),
+            child: const Icon(Icons.insert_drive_file,
+                color: Color(0xFF00994B), size: 20),
           ),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               fileName,
@@ -102,21 +61,6 @@ class NewOrderStep4Page extends StatelessWidget {
               ),
             ),
           ),
-          Transform.rotate(
-            angle: 1.5708, // 90 graus
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6F8EF),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Transform.rotate(
-                angle: -1.5708, // -90 graus para compensar
-                child: const Icon(Icons.download, color: Colors.black),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -124,54 +68,40 @@ class NewOrderStep4Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (formData == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) context.go('/patient/orders/new/step1');
+      });
+      return const Scaffold(
+        body:
+            Center(child: CircularProgressIndicator(color: Color(0xFF00994B))),
+      );
+    }
+
+    final f = formData!;
+    final productValue = f.productValue;
+    final shipping = f.shippingCost;
+    final total = f.totalWithShipping;
+
+    final documentNames = <String>[];
+    if (f.rgFileName != null && f.rgFileName!.isNotEmpty) {
+      documentNames.add(f.rgFileName!);
+    }
+    if (f.addressProofFileName != null && f.addressProofFileName!.isNotEmpty) {
+      documentNames.add(f.addressProofFileName!);
+    }
+    if (f.anvisaFileName != null && f.anvisaFileName!.isNotEmpty) {
+      documentNames.add(f.anvisaFileName!);
+    }
+    if (documentNames.isEmpty) {
+      documentNames.add('Nenhum documento anexado');
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708, // 90 graus
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6F8EF),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Transform.rotate(
-                angle: -1.5708, // -90 graus para compensar
-                child: const Icon(Icons.arrow_back, color: Colors.black),
-              ),
-            ),
-          ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/patient/orders/new/step3');
-            }
-          },
-        ),
-        title: const Text(
-          'Revisão do pedido',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF212121),
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.black),
-            ),
-          ),
-        ],
+      appBar: const PatientAppBar(
+        title: 'Revisão do pedido',
+        fallbackRoute: '/patient/orders/new/step3',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -181,18 +111,13 @@ class NewOrderStep4Page extends StatelessWidget {
             const SizedBox(height: 24),
             _buildProgressIndicator(),
             const SizedBox(height: 40),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Novo pedido',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF212121),
-                  ),
-                ),
-              ],
+            const Text(
+              'Novo pedido',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF212121),
+              ),
             ),
             const SizedBox(height: 4),
             Row(
@@ -218,22 +143,21 @@ class NewOrderStep4Page extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.transparent,
+                    color: const Color(0xFFE6F8EF),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Text(
-                    'Valor: R\$ 325,00',
-                    style: TextStyle(
+                  child: Text(
+                    'Valor: ${CurrencyFormatter.formatBRL(total)}',
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.transparent,
+                      color: Color(0xFF007A3B),
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            // Order summary
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -260,107 +184,35 @@ class NewOrderStep4Page extends StatelessWidget {
                         width: 64,
                         height: 64,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFC3A6F9),
+                          color: const Color(0xFFE6F8EF),
                           borderRadius: BorderRadius.circular(999),
                         ),
-                        child: Center(
-                          child: Image.asset(
-                            'assets/images/conta_gotas_sem_fundo_1.png',
-                            width: 57,
-                            height: 64,
-                            fit: BoxFit.contain,
-                          ),
+                        child: const Icon(
+                          Icons.medication_liquid,
+                          size: 32,
+                          color: Color(0xFF007A3B),
                         ),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Canabidiol',
-                              style: TextStyle(
+                              f.productName,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF007A3B),
                               ),
                             ),
-                            SizedBox(height: 2),
-                            Row(
-                              children: [
-                                Text(
-                                  'Tipo de produto: ',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF7C7C79),
-                                  ),
-                                ),
-                                Text(
-                                  'Óleo',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF3F3F3D),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  'Dosagem: ',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF7C7C79),
-                                  ),
-                                ),
-                                Text(
-                                  '20mg/ml',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF3F3F3D),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  'Concentração: ',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF7C7C79),
-                                  ),
-                                ),
-                                Text(
-                                  '20mg/ml de THC',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF3F3F3D),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  'Quantidade: ',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF7C7C79),
-                                  ),
-                                ),
-                                Text(
-                                  '3 unidades',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF3F3F3D),
-                                  ),
-                                ),
-                              ],
+                            const SizedBox(height: 4),
+                            Text(
+                              'Quantidade: ${f.quantity} unidade(s)',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF3F3F3D),
+                              ),
                             ),
                           ],
                         ),
@@ -371,17 +223,16 @@ class NewOrderStep4Page extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // Acquisition channel
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFFF7F7F5),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Canal de aquisição',
                     style: TextStyle(
                       fontSize: 18,
@@ -389,12 +240,12 @@ class NewOrderStep4Page extends StatelessWidget {
                       color: Color(0xFF212121),
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Divider(color: Color(0xFFE6E6E3)),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
+                  const Divider(color: Color(0xFFE6E6E3)),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text(
+                      const Text(
                         'Associação: ',
                         style: TextStyle(
                           fontSize: 14,
@@ -402,8 +253,8 @@ class NewOrderStep4Page extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'ABC',
-                        style: TextStyle(
+                        f.canalAquisicao,
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF3F3F3D),
@@ -411,10 +262,10 @@ class NewOrderStep4Page extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
-                      Text(
+                      const Text(
                         'Valor: ',
                         style: TextStyle(
                           fontSize: 14,
@@ -422,8 +273,8 @@ class NewOrderStep4Page extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'R\$ 975,00',
-                        style: TextStyle(
+                        CurrencyFormatter.formatBRL(productValue),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF007A3B),
@@ -435,17 +286,16 @@ class NewOrderStep4Page extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // Delivery
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFFF7F7F5),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Entrega',
                     style: TextStyle(
                       fontSize: 18,
@@ -453,10 +303,11 @@ class NewOrderStep4Page extends StatelessWidget {
                       color: Color(0xFF212121),
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    'Chega entre 10 e 12 de julho',
-                    style: TextStyle(
+                    f.deliveryDeadline ??
+                        'Prazo a confirmar após confirmação do pedido',
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF3F3F3D),
@@ -466,17 +317,16 @@ class NewOrderStep4Page extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // Total value
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFFF7F7F5),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Valor total',
                     style: TextStyle(
                       fontSize: 18,
@@ -484,11 +334,11 @@ class NewOrderStep4Page extends StatelessWidget {
                       color: Color(0xFF212121),
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
+                      const Text(
                         'Valor do produto',
                         style: TextStyle(
                           fontSize: 14,
@@ -497,8 +347,8 @@ class NewOrderStep4Page extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'R\$ 975,00',
-                        style: TextStyle(
+                        CurrencyFormatter.formatBRL(productValue),
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: Color(0xFF7C7C79),
@@ -506,35 +356,37 @@ class NewOrderStep4Page extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 4),
+                  if (shipping > 0) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Valor do frete',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF7C7C79),
+                          ),
+                        ),
+                        Text(
+                          CurrencyFormatter.formatBRL(shipping),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF7C7C79),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  const Divider(color: Color(0xFFE6E6E3)),
+                  const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Valor do frete',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF7C7C79),
-                        ),
-                      ),
-                      Text(
-                        'R\$ 25,00',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF7C7C79),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  Divider(color: Color(0xFFE6E6E3)),
-                  SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
+                      const Text(
                         'Total',
                         style: TextStyle(
                           fontSize: 16,
@@ -543,8 +395,8 @@ class NewOrderStep4Page extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'R\$ 1.000,00',
-                        style: TextStyle(
+                        CurrencyFormatter.formatBRL(total),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF3F3F3D),
@@ -556,7 +408,6 @@ class NewOrderStep4Page extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // Documents
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -566,33 +417,16 @@ class NewOrderStep4Page extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Documentos enviados',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF3F3F3D),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Transform.rotate(
-                          angle: 3.1416, // 180 graus
-                          child: const Icon(Icons.chevron_left,
-                              color: Colors.black),
-                        ),
-                        onPressed: () {
-                          // Expand/collapse
-                        },
-                      ),
-                    ],
+                  const Text(
+                    'Documentos enviados',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF3F3F3D),
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  _buildDocumentCard('RG.pdf'),
-                  _buildDocumentCard('Comprovante_de_residencia.pdf'),
-                  _buildDocumentCard('Autotização_Anvisa.pdf'),
+                  ...documentNames.map(_buildDocumentCard),
                 ],
               ),
             ),
@@ -602,8 +436,7 @@ class NewOrderStep4Page extends StatelessWidget {
               height: 48,
               child: ElevatedButton(
                 onPressed: () {
-                  // Navigate to address/payment step
-                  context.push('/patient/orders/new/step5');
+                  context.push('/patient/orders/new/step5', extra: f);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF00994B),
@@ -624,7 +457,7 @@ class NewOrderStep4Page extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: const PatientBottomNavigationBar(
-        currentIndex: 1, // Pedidos tab is active
+        currentIndex: 1,
       ),
     );
   }

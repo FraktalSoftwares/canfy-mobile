@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Bottom Navigation Bar reutilizável para usuários pacientes
+import '../../constants/app_colors.dart';
+
+/// Bottom Navigation Bar do paciente conforme design Figma (navMenu).
+/// Três abas: Home, Pedidos, Consultas.
+/// Item ativo: ícone preenchido, texto em negrito e indicador preto centralizado.
 class PatientBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
 
@@ -13,64 +17,117 @@ class PatientBottomNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(
-        minHeight: 110,
-      ),
       decoration: BoxDecoration(
+        color: AppColors.neutral000,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            offset: const Offset(0, -4),
-            blurRadius: 12,
+            color: Colors.black.withOpacity(0.08),
+            offset: const Offset(0, -2),
+            blurRadius: 8,
           ),
         ],
       ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF3F3F3D),
-        unselectedItemColor: const Color.fromARGB(255, 153, 153, 146),
-        selectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 12, bottom: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _NavItem(
+                label: 'Home',
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home,
+                isActive: currentIndex == 0,
+                onTap: () => context.go('/patient/home'),
+                showIndicator: currentIndex == 0,
+              ),
+              _NavItem(
+                label: 'Pedidos',
+                icon: Icons.shopping_bag_outlined,
+                activeIcon: Icons.shopping_bag,
+                isActive: currentIndex == 1,
+                onTap: () => context.go('/patient/orders'),
+                showIndicator: currentIndex == 1,
+              ),
+              _NavItem(
+                label: 'Consultas',
+                icon: Icons.calendar_today_outlined,
+                activeIcon: Icons.calendar_today,
+                isActive: currentIndex == 2,
+                onTap: () => context.go('/patient/consultations'),
+                showIndicator: currentIndex == 2,
+              ),
+            ],
+          ),
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.normal,
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final IconData activeIcon;
+  final bool isActive;
+  final VoidCallback onTap;
+  final bool showIndicator;
+
+  const _NavItem({
+    required this.label,
+    required this.icon,
+    required this.activeIcon,
+    required this.isActive,
+    required this.onTap,
+    required this.showIndicator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isActive ? activeIcon : icon,
+                  size: 24,
+                  color: isActive ? AppColors.neutral900 : AppColors.neutral600,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                    color:
+                        isActive ? AppColors.neutral900 : AppColors.neutral600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: showIndicator ? 24 : 0,
+                  height: showIndicator ? 3 : 0,
+                  decoration: BoxDecoration(
+                    color: showIndicator
+                        ? AppColors.neutral900
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        onTap: (index) {
-          if (index == 0) {
-            context.go('/patient/home');
-          } else if (index == 1) {
-            context.go('/patient/orders');
-          } else if (index == 2) {
-            context.go('/patient/consultations');
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: Icon(Icons.home),
-            ),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: Icon(Icons.local_mall),
-            ),
-            label: 'Pedidos',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: Icon(Icons.calendar_today),
-            ),
-            label: 'Consultas',
-          ),
-        ],
       ),
     );
   }

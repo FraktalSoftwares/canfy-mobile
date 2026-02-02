@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/api/auth_service.dart';
+import '../../services/api/asaas_service.dart';
 import '../../services/api/cep_service.dart';
 import '../../utils/input_masks.dart';
 import '../../utils/error_messages.dart';
@@ -74,6 +75,7 @@ class _RegisterPageState extends State<RegisterPage>
   bool _isLoadingCep = false;
   String? _lastSearchedCep;
   final AuthService _authService = AuthService();
+  final AsaasService _asaasService = AsaasService();
   final CepService _cepService = CepService();
   final List<String> _genders = [
     'Masculino',
@@ -1364,6 +1366,15 @@ class _RegisterPageState extends State<RegisterPage>
         });
 
         if (result['success'] == true) {
+          // Criar cliente no Asaas e salvar asaas_customer_id no profile (para pagamentos)
+          final cpf = _cpfMask.getUnmaskedText();
+          final phone = _phoneMask.getUnmaskedText();
+          await _asaasService.syncCustomer(
+            name: _nameController.text.trim(),
+            email: _emailController.text.trim(),
+            mobilePhone: phone.isNotEmpty ? phone : null,
+            cpfCnpj: cpf.isNotEmpty ? cpf : null,
+          );
           // Navegar para home do paciente (usuário já está logado após cadastro)
           context.go('/patient/home');
         } else {

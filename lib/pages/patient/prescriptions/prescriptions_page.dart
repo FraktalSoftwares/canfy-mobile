@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import '../../../services/api/patient_service.dart';
+import '../../../widgets/patient/patient_app_bar.dart';
 
 class PrescriptionsPage extends StatefulWidget {
   const PrescriptionsPage({super.key});
@@ -8,13 +9,20 @@ class PrescriptionsPage extends StatefulWidget {
   State<PrescriptionsPage> createState() => _PrescriptionsPageState();
 }
 
-class _PrescriptionsPageState extends State<PrescriptionsPage> with SingleTickerProviderStateMixin {
+class _PrescriptionsPageState extends State<PrescriptionsPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final PatientService _patientService = PatientService();
+  List<Map<String, dynamic>> _activePrescriptions = [];
+  List<Map<String, dynamic>> _pastPrescriptions = [];
+  bool _loading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadPrescriptions();
   }
 
   @override
@@ -23,7 +31,84 @@ class _PrescriptionsPageState extends State<PrescriptionsPage> with SingleTicker
     super.dispose();
   }
 
-  Widget _buildPrescriptionCard(BuildContext context, Map<String, dynamic> prescription) {
+  /// Parse "DD/MM/YYYY" to DateTime (null if invalid).
+  DateTime? _parseDDMMYYYY(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final parts = value.split('/');
+    if (parts.length != 3) return null;
+    final d = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    final y = int.tryParse(parts[2]);
+    if (d == null || m == null || y == null) return null;
+    if (m < 1 || m > 12) return null;
+    final lastDay = DateTime(y, m + 1, 0).day;
+    if (d < 1 || d > lastDay) return null;
+    return DateTime(y, m, d);
+  }
+
+  Future<void> _loadPrescriptions() async {
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+    try {
+      final result = await _patientService.getPrescriptions(onlyActive: false);
+      if (!mounted) return;
+      if (result['success'] == true && result['data'] != null) {
+        final all = List<Map<String, dynamic>>.from(result['data'] as List);
+        final today = DateTime(
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day,
+        );
+        final active = <Map<String, dynamic>>[];
+        final past = <Map<String, dynamic>>[];
+        for (final p in all) {
+          final validityStr = p['validity'] as String?;
+          final validityDate = _parseDDMMYYYY(validityStr);
+          if (validityDate != null && !validityDate.isBefore(today)) {
+            active.add(p);
+          } else {
+            past.add(p);
+          }
+        }
+        setState(() {
+          _activePrescriptions = active;
+          _pastPrescriptions = past;
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _activePrescriptions = [];
+          _pastPrescriptions = [];
+          _loading = false;
+          _errorMessage =
+              result['message'] as String? ?? 'Erro ao carregar receitas';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _activePrescriptions = [];
+          _pastPrescriptions = [];
+          _loading = false;
+          _errorMessage = 'Erro ao carregar receitas: ${e.toString()}';
+        });
+      }
+    }
+  }
+
+  /// Campos da API: issueDate, validity, product, doctor (observations opcional).
+  String _getEmissionDate(Map<String, dynamic> p) =>
+      p['issueDate'] as String? ?? p['emissionDate'] as String? ?? '--';
+  String _getValidityDate(Map<String, dynamic> p) =>
+      p['validity'] as String? ?? p['validityDate'] as String? ?? '--';
+  String _getProduct(Map<String, dynamic> p) => p['product'] as String? ?? '--';
+  String _getPrescribedBy(Map<String, dynamic> p) =>
+      p['doctor'] as String? ?? p['prescribedBy'] as String? ?? '--';
+
+  Widget _buildPrescriptionCard(
+      BuildContext context, Map<String, dynamic> prescription) {
     return GestureDetector(
       onTap: () {
         // Show prescription details modal
@@ -48,7 +133,7 @@ class _PrescriptionsPageState extends State<PrescriptionsPage> with SingleTicker
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Emissão: ${prescription['emissionDate']}',
+                  'Emissão: ${_getEmissionDate(prescription)}',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF7C7C79),
@@ -65,7 +150,8 @@ class _PrescriptionsPageState extends State<PrescriptionsPage> with SingleTicker
                     ),
                     child: Transform.rotate(
                       angle: -4.7124, // -270 graus para compensar
-                      child: const Icon(Icons.chevron_right, color: Colors.black),
+                      child:
+                          const Icon(Icons.chevron_right, color: Colors.black),
                     ),
                   ),
                 ),
@@ -73,7 +159,7 @@ class _PrescriptionsPageState extends State<PrescriptionsPage> with SingleTicker
             ),
             const SizedBox(height: 16),
             Text(
-              prescription['product'] as String,
+              _getProduct(prescription),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -82,7 +168,7 @@ class _PrescriptionsPageState extends State<PrescriptionsPage> with SingleTicker
             ),
             const SizedBox(height: 4),
             Text(
-              'Prescrito pelo ${prescription['prescribedBy']}',
+              'Prescrito pelo ${_getPrescribedBy(prescription)}',
               style: const TextStyle(
                 fontSize: 14,
                 color: Color(0xFF7C7C79),
@@ -100,7 +186,7 @@ class _PrescriptionsPageState extends State<PrescriptionsPage> with SingleTicker
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  prescription['validityDate'] as String,
+                  _getValidityDate(prescription),
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -115,7 +201,8 @@ class _PrescriptionsPageState extends State<PrescriptionsPage> with SingleTicker
     );
   }
 
-  Widget _buildPrescriptionModal(BuildContext context, Map<String, dynamic> prescription) {
+  Widget _buildPrescriptionModal(
+      BuildContext context, Map<String, dynamic> prescription) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
@@ -157,11 +244,12 @@ class _PrescriptionsPageState extends State<PrescriptionsPage> with SingleTicker
             ],
           ),
           const SizedBox(height: 24),
-          _buildDetailRow('Emissão:', prescription['emissionDate'] as String),
-          _buildDetailRow('Validade:', prescription['validityDate'] as String),
-          _buildDetailRow('Produto:', prescription['product'] as String),
-          _buildDetailRow('Prescrito por:', prescription['prescribedBy'] as String),
-          if (prescription['observations'] != null) ...[
+          _buildDetailRow('Emissão:', _getEmissionDate(prescription)),
+          _buildDetailRow('Validade:', _getValidityDate(prescription)),
+          _buildDetailRow('Produto:', _getProduct(prescription)),
+          _buildDetailRow('Prescrito por:', _getPrescribedBy(prescription)),
+          if (prescription['observations'] != null &&
+              (prescription['observations'] as String).isNotEmpty) ...[
             const SizedBox(height: 16),
             const Text(
               'Observações:',
@@ -235,86 +323,83 @@ class _PrescriptionsPageState extends State<PrescriptionsPage> with SingleTicker
     );
   }
 
+  Widget _buildTabContent(
+    BuildContext context,
+    List<Map<String, dynamic>> prescriptions,
+    String emptyMessage,
+  ) {
+    if (_loading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(color: Color(0xFF7048C3)),
+        ),
+      );
+    }
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF7C7C79),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: _loadPrescriptions,
+                child: const Text('Tentar novamente'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (prescriptions.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            emptyMessage,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF7C7C79),
+            ),
+          ),
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _loadPrescriptions,
+      color: const Color(0xFF7048C3),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: prescriptions
+              .map((prescription) =>
+                  _buildPrescriptionCard(context, prescription))
+              .toList(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Dummy data
-    final List<Map<String, dynamic>> activePrescriptions = [
-      {
-        'emissionDate': '30/09/2025',
-        'validityDate': '01/10/2025',
-        'product': 'Óleo Canabidiol 20mg/ml',
-        'prescribedBy': 'Dr. Luiz Carlos Souza',
-        'observations': 'Tomar 1ml, 2 vezes ao dia (manhã e noite).',
-      },
-    ];
-
-    final List<Map<String, dynamic>> pastPrescriptions = [
-      {
-        'emissionDate': '30/08/2025',
-        'validityDate': '25/09/2025',
-        'product': 'Óleo Canabidiol 20mg/ml',
-        'prescribedBy': 'Dr. Luiz Carlos Souza',
-      },
-      {
-        'emissionDate': '30/07/2025',
-        'validityDate': '25/08/2025',
-        'product': 'Óleo Canabidiol 20mg/ml',
-        'prescribedBy': 'Dr. Luiz Carlos Souza',
-      },
-    ];
-
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708, // 90 graus
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6F8EF),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Transform.rotate(
-                angle: -1.5708, // -90 graus para compensar
-                child: const Icon(Icons.arrow_back, color: Colors.black),
-              ),
-            ),
-          ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/patient/consultations');
-            }
-          },
-        ),
-        title: const Text(
-          'Receitas',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF212121),
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: () {
-                context.push('/patient/account');
-              },
-              child: const CircleAvatar(
-                radius: 20,
-                backgroundImage: AssetImage('assets/images/avatar_pictures.png'),
-              ),
-            ),
-          ),
-        ],
+      appBar: PatientAppBar(
+        title: 'Receitas',
+        fallbackRoute: '/patient/consultations',
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: const Color(0xFF7048C3),
@@ -337,34 +422,18 @@ class _PrescriptionsPageState extends State<PrescriptionsPage> with SingleTicker
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Ativas
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ...activePrescriptions.map((prescription) => _buildPrescriptionCard(context, prescription)),
-              ],
-            ),
+          _buildTabContent(
+            context,
+            _activePrescriptions,
+            'Nenhuma receita ativa no momento.',
           ),
-          // Histórico
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ...pastPrescriptions.map((prescription) => _buildPrescriptionCard(context, prescription)),
-              ],
-            ),
+          _buildTabContent(
+            context,
+            _pastPrescriptions,
+            'Nenhuma receita no histórico.',
           ),
         ],
       ),
     );
   }
 }
-
-
-
-
-
-

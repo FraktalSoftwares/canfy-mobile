@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../services/api/api_service.dart';
+import '../../../widgets/patient/patient_app_bar.dart';
 
 class PatientSettingsPage extends StatefulWidget {
   const PatientSettingsPage({super.key});
@@ -12,7 +12,7 @@ class PatientSettingsPage extends StatefulWidget {
 
 class _PatientSettingsPageState extends State<PatientSettingsPage> {
   final ApiService _apiService = ApiService();
-  
+
   bool _emailAlerts = true;
   bool _smsAlerts = false;
   bool _pushAlerts = true;
@@ -20,7 +20,7 @@ class _PatientSettingsPageState extends State<PatientSettingsPage> {
   bool _deliveryAlerts = true;
   bool _anvisaAlerts = true;
   bool _prescriptionAlerts = true;
-  
+
   bool _isLoading = true;
   String? _preferencesId;
 
@@ -56,7 +56,7 @@ class _PatientSettingsPageState extends State<PatientSettingsPage> {
         if (prefs.isNotEmpty && mounted) {
           final pref = prefs[0] as Map<String, dynamic>;
           _preferencesId = pref['id'] as String?;
-          
+
           setState(() {
             _emailAlerts = pref['notif_email'] as bool? ?? true;
             _smsAlerts = pref['notif_sms'] as bool? ?? false;
@@ -112,7 +112,7 @@ class _PatientSettingsPageState extends State<PatientSettingsPage> {
       if (result['success'] == true && result['data'] != null && mounted) {
         final data = result['data'];
         Map<String, dynamic> pref;
-        
+
         // O Supabase pode retornar um objeto único ou uma lista
         if (data is List && data.isNotEmpty) {
           pref = data[0] as Map<String, dynamic>;
@@ -125,8 +125,8 @@ class _PatientSettingsPageState extends State<PatientSettingsPage> {
             filters: {'user_id': userId},
             limit: 1,
           );
-          if (fetchResult['success'] == true && 
-              fetchResult['data'] != null && 
+          if (fetchResult['success'] == true &&
+              fetchResult['data'] != null &&
               (fetchResult['data'] as List).isNotEmpty) {
             pref = (fetchResult['data'] as List)[0] as Map<String, dynamic>;
           } else {
@@ -137,7 +137,7 @@ class _PatientSettingsPageState extends State<PatientSettingsPage> {
             return;
           }
         }
-        
+
         setState(() {
           _preferencesId = pref['id'] as String?;
           _emailAlerts = pref['notif_email'] as bool? ?? true;
@@ -254,35 +254,14 @@ class _PatientSettingsPageState extends State<PatientSettingsPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: Transform.rotate(
-              angle: 1.5708,
-              child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-            ),
-            onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/patient/account');
-              }
-            },
-          ),
-          title: const Text(
-            'Preferências',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          centerTitle: true,
+        appBar: PatientAppBar(
+          title: 'Preferências',
+          fallbackRoute: '/patient/account',
+          avatarTappable: false,
         ),
-        body: const Center(
+        body: Center(
           child: CircularProgressIndicator(),
         ),
       );
@@ -290,41 +269,9 @@ class _PatientSettingsPageState extends State<PatientSettingsPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708,
-            child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-          ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/patient/account');
-            }
-          },
-        ),
-        title: const Text(
-          'Preferências',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.black),
-            ),
-          ),
-        ],
+      appBar: const PatientAppBar(
+        title: 'Preferências',
+        fallbackRoute: '/patient/account',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -459,9 +406,3 @@ class _PatientSettingsPageState extends State<PatientSettingsPage> {
     );
   }
 }
-
-
-
-
-
-

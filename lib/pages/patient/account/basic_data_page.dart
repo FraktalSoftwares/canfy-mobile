@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../widgets/patient/patient_app_bar.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../services/api/api_service.dart';
 import '../../../services/storage/image_storage_service.dart';
@@ -21,7 +22,7 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
   final ApiService _apiService = ApiService();
   final ImageStorageService _imageStorageService = ImageStorageService();
   final ImagePicker _imagePicker = ImagePicker();
-  
+
   // Controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -29,12 +30,12 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
   final TextEditingController _cpfController = TextEditingController();
   final TextEditingController _birthDateController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-  
+
   // Máscaras
   final _cpfMask = InputMasks.cpf;
   final _phoneMask = InputMasks.phone;
   final _dateMask = InputMasks.date;
-  
+
   // Estados
   bool _isLoading = true;
   bool _isSaving = false;
@@ -70,63 +71,68 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
         final data = result['data'] as Map<String, dynamic>?;
         final profile = data?['profile'] as Map<String, dynamic>?;
         final paciente = data?['paciente'] as Map<String, dynamic>?;
-        
+
         if (profile != null) {
           _userId = profile['id'] as String?;
           _nameController.text = profile['nome_completo'] as String? ?? '';
-          
+
           // Formatar telefone se existir
           final phone = profile['telefone'] as String? ?? '';
           if (phone.isNotEmpty) {
             final phoneNumbers = phone.replaceAll(RegExp(r'[^0-9]'), '');
             if (phoneNumbers.length == 10 || phoneNumbers.length == 11) {
               if (phoneNumbers.length == 10) {
-                _phoneController.text = '(${phoneNumbers.substring(0, 2)}) ${phoneNumbers.substring(2, 6)}-${phoneNumbers.substring(6, 10)}';
+                _phoneController.text =
+                    '(${phoneNumbers.substring(0, 2)}) ${phoneNumbers.substring(2, 6)}-${phoneNumbers.substring(6, 10)}';
               } else {
-                _phoneController.text = '(${phoneNumbers.substring(0, 2)}) ${phoneNumbers.substring(2, 7)}-${phoneNumbers.substring(7, 11)}';
+                _phoneController.text =
+                    '(${phoneNumbers.substring(0, 2)}) ${phoneNumbers.substring(2, 7)}-${phoneNumbers.substring(7, 11)}';
               }
             } else {
               _phoneController.text = phone;
             }
           }
-          
+
           _patientAvatar = profile['foto_perfil_url'] as String?;
-          
+
           // Buscar email do auth.users
           final user = Supabase.instance.client.auth.currentUser;
           if (user != null) {
             _emailController.text = user.email ?? '';
           }
         }
-        
+
         if (paciente != null) {
           _patientId = paciente['id'] as String?;
-          
+
           // CPF
           final cpf = paciente['cpf'] as String? ?? '';
           if (cpf.isNotEmpty) {
             // Aplicar máscara manualmente
             final cpfNumbers = cpf.replaceAll(RegExp(r'[^0-9]'), '');
             if (cpfNumbers.length == 11) {
-              _cpfController.text = '${cpfNumbers.substring(0, 3)}.${cpfNumbers.substring(3, 6)}.${cpfNumbers.substring(6, 9)}-${cpfNumbers.substring(9, 11)}';
+              _cpfController.text =
+                  '${cpfNumbers.substring(0, 3)}.${cpfNumbers.substring(3, 6)}.${cpfNumbers.substring(6, 9)}-${cpfNumbers.substring(9, 11)}';
             } else {
               _cpfController.text = cpf;
             }
           }
-          
+
           // Data de nascimento
           final birthDate = paciente['data_nascimento'] as String?;
           if (birthDate != null && birthDate.isNotEmpty) {
             try {
               final date = DateTime.parse(birthDate);
-              _birthDateController.text = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+              _birthDateController.text =
+                  '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
             } catch (e) {
               // Ignorar erro de parsing
             }
           }
-          
+
           // Endereço
-          _addressController.text = paciente['endereco_completo'] as String? ?? '';
+          _addressController.text =
+              paciente['endereco_completo'] as String? ?? '';
         }
       }
     } catch (e) {
@@ -160,7 +166,8 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
       // Atualizar profile
       final profileUpdate = {
         'nome_completo': _nameController.text.trim(),
-        if (_phoneController.text.isNotEmpty) 'telefone': _phoneMask.getUnmaskedText(),
+        if (_phoneController.text.isNotEmpty)
+          'telefone': _phoneMask.getUnmaskedText(),
       };
 
       final profileResult = await _apiService.put(
@@ -194,7 +201,8 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
         final pacienteUpdate = {
           'cpf': cpf,
           'data_nascimento': birthDate.toIso8601String().split('T')[0],
-          if (_addressController.text.trim().isNotEmpty) 'endereco_completo': _addressController.text.trim(),
+          if (_addressController.text.trim().isNotEmpty)
+            'endereco_completo': _addressController.text.trim(),
         };
 
         final pacienteResult = await _apiService.put(
@@ -204,7 +212,8 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
         );
 
         if (!pacienteResult['success']) {
-          throw Exception(pacienteResult['message'] ?? 'Erro ao atualizar dados do paciente');
+          throw Exception(pacienteResult['message'] ??
+              'Erro ao atualizar dados do paciente');
         }
       }
 
@@ -267,35 +276,14 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: Transform.rotate(
-              angle: 1.5708,
-              child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-            ),
-            onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/patient/account');
-              }
-            },
-          ),
-          title: const Text(
-            'Meus dados',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          centerTitle: true,
+        appBar: PatientAppBar(
+          title: 'Meus dados',
+          fallbackRoute: '/patient/account',
+          avatarTappable: false,
         ),
-        body: const Center(
+        body: Center(
           child: CircularProgressIndicator(),
         ),
       );
@@ -303,47 +291,10 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708,
-            child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-          ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/patient/account');
-            }
-          },
-        ),
-        title: const Text(
-          'Meus dados',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: _patientAvatar != null && _patientAvatar!.isNotEmpty
-                ? CircleAvatar(
-                    radius: 20,
-                    backgroundImage: NetworkImage(_patientAvatar!),
-                    onBackgroundImageError: (_, __) {},
-                  )
-                : CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.grey[300],
-                    child: const Icon(Icons.person, color: Colors.black),
-                  ),
-          ),
-        ],
+      appBar: PatientAppBar(
+        title: 'Meus dados',
+        fallbackRoute: '/patient/account',
+        avatarUrl: _patientAvatar,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -414,7 +365,9 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _nameController.text.isNotEmpty ? _nameController.text : 'Usuário',
+                    _nameController.text.isNotEmpty
+                        ? _nameController.text
+                        : 'Usuário',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -717,7 +670,7 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
                         // Se houver erro no logout, ainda continuar com o processo
                         print('Erro ao fazer logout: $e');
                       }
-                      
+
                       // 2. Recarregar o app redirecionando para splash
                       // O sheet vai fechar automaticamente ao mudar de rota
                       if (mounted) {
@@ -845,10 +798,10 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
                         // Aguardar o sheet fechar completamente
                         await Future.delayed(const Duration(milliseconds: 200));
                       }
-                      
+
                       // Verificar se ainda está montado antes de continuar
                       if (!mounted) return;
-                      
+
                       // Executar exclusão
                       await _deleteAccount();
                     },
@@ -893,7 +846,8 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
       // 1. Deletar preferências de notificações (se existir)
       if (_userId != null) {
         try {
-          final prefsResult = await _apiService.delete('preferencias_notificacoes', {'user_id': _userId!});
+          final prefsResult = await _apiService
+              .delete('preferencias_notificacoes', {'user_id': _userId!});
           if (prefsResult['success']) {
             print('Preferências de notificações deletadas com sucesso');
           }
@@ -905,18 +859,22 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
 
       // 2. Deletar dados do paciente primeiro (se existir)
       if (_patientId != null) {
-        final pacienteResult = await _apiService.delete('pacientes', {'id': _patientId!});
+        final pacienteResult =
+            await _apiService.delete('pacientes', {'id': _patientId!});
         if (!pacienteResult['success']) {
-          throw Exception('Erro ao deletar dados do paciente: ${pacienteResult['message']}');
+          throw Exception(
+              'Erro ao deletar dados do paciente: ${pacienteResult['message']}');
         }
         print('Paciente deletado com sucesso');
       }
 
       // 3. Deletar profile
       if (_userId != null) {
-        final profileResult = await _apiService.delete('profiles', {'id': _userId!});
+        final profileResult =
+            await _apiService.delete('profiles', {'id': _userId!});
         if (!profileResult['success']) {
-          throw Exception('Erro ao deletar perfil: ${profileResult['message']}');
+          throw Exception(
+              'Erro ao deletar perfil: ${profileResult['message']}');
         }
         print('Profile deletado com sucesso');
       }
@@ -924,10 +882,11 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
       // 4. Deletar usuário do auth.users usando Edge Function
       final deleteUserResult = await _apiService.deleteUserAccount();
       if (!deleteUserResult['success']) {
-        throw Exception('Erro ao deletar conta do usuário: ${deleteUserResult['message']}');
+        throw Exception(
+            'Erro ao deletar conta do usuário: ${deleteUserResult['message']}');
       }
       print('Usuário deletado do auth.users com sucesso');
-      
+
       // 5. Fazer logout (mesmo que o usuário já tenha sido deletado, é bom limpar a sessão local)
       await _apiService.signOut();
       print('Logout realizado com sucesso');
@@ -953,7 +912,7 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
         } catch (_) {
           // Ignorar se não houver dialog para fechar
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erro ao excluir conta: ${e.toString()}'),
@@ -1000,7 +959,8 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFF212121)),
+              leading:
+                  const Icon(Icons.photo_library, color: Color(0xFF212121)),
               title: const Text('Escolher da galeria'),
               onTap: () {
                 Navigator.pop(context);
@@ -1215,9 +1175,10 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
     try {
       // Fazer upload da imagem
       final uploadResult = await _imageStorageService.uploadImage(imageFile);
-      
+
       if (!uploadResult['success'] || uploadResult['url'] == null) {
-        throw Exception(uploadResult['message'] ?? 'Erro ao fazer upload da imagem');
+        throw Exception(
+            uploadResult['message'] ?? 'Erro ao fazer upload da imagem');
       }
 
       final imageUrl = uploadResult['url'] as String;
@@ -1231,7 +1192,8 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
         );
 
         if (!updateResult['success']) {
-          throw Exception(updateResult['message'] ?? 'Erro ao atualizar foto de perfil');
+          throw Exception(
+              updateResult['message'] ?? 'Erro ao atualizar foto de perfil');
         }
 
         // Atualizar o estado local
@@ -1269,7 +1231,8 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remover foto'),
-        content: const Text('Tem certeza que deseja remover sua foto de perfil?'),
+        content:
+            const Text('Tem certeza que deseja remover sua foto de perfil?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -1277,7 +1240,8 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remover', style: TextStyle(color: Color(0xFFD32F2F))),
+            child: const Text('Remover',
+                style: TextStyle(color: Color(0xFFD32F2F))),
           ),
         ],
       ),
@@ -1306,7 +1270,8 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
         );
 
         if (!updateResult['success']) {
-          throw Exception(updateResult['message'] ?? 'Erro ao remover foto de perfil');
+          throw Exception(
+              updateResult['message'] ?? 'Erro ao remover foto de perfil');
         }
 
         // Atualizar o estado local

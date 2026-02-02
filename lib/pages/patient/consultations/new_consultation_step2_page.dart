@@ -1,516 +1,145 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../constants/app_colors.dart';
+import '../../../services/api/patient_service.dart';
+import '../../../models/consultation/consultation_model.dart';
+import '../../../widgets/consultation/consultation_widgets.dart';
 
 class NewConsultationStep2Page extends StatefulWidget {
-  const NewConsultationStep2Page({super.key});
+  final NewConsultationFormData? formData;
+
+  const NewConsultationStep2Page({super.key, this.formData});
 
   @override
-  State<NewConsultationStep2Page> createState() => _NewConsultationStep2PageState();
+  State<NewConsultationStep2Page> createState() =>
+      _NewConsultationStep2PageState();
 }
 
 class _NewConsultationStep2PageState extends State<NewConsultationStep2Page> {
+  final PatientService _patientService = PatientService();
   DateTime? _selectedDate;
   String? _selectedTime;
+  DateTime _focusedMonth = DateTime.now();
 
+  // Controla se estamos no estágio de calendário ou de horários
+  bool _showTimeSelection = false;
+
+  String? _patientAvatar;
+  bool _isLoadingAvatar = true;
+
+  // Simular dias disponíveis (em produção, viria da API)
+  final Set<int> _availableDays = {
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    10,
+    12,
+    15,
+    16,
+    18,
+    19,
+    20,
+    22,
+    23,
+    24,
+    26,
+    30
+  };
+
+  // Horários disponíveis (10h às 18h com slots de 15 min)
   final List<String> _availableTimes = [
-    '08:00',
-    '08:30',
-    '09:00',
-    '09:30',
-    '10:00',
-    '10:30',
-    '11:00',
-    '11:30',
-    '14:00',
-    '14:30',
-    '15:00',
-    '15:30',
-    '16:00',
-    '16:30',
-    '17:00',
-    '17:30',
+    '10h00',
+    '10h15',
+    '10h30',
+    '10h45',
+    '11h00',
+    '11h15',
+    '11h30',
+    '11h45',
+    '12h00',
+    '12h15',
+    '12h30',
+    '12h45',
+    '13h00',
+    '13h15',
+    '13h30',
+    '13h45',
+    '14h00',
+    '14h15',
+    '14h30',
+    '14h45',
+    '15h00',
+    '15h15',
+    '15h30',
+    '15h45',
+    '16h00',
+    '16h15',
+    '16h30',
+    '16h45',
+    '17h00',
+    '17h15',
+    '17h30',
+    '17h45',
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708, // 90 graus
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6F8EF),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Transform.rotate(
-                angle: -1.5708, // -90 graus para compensar
-                child: const Icon(Icons.arrow_back, color: Colors.black),
-              ),
-            ),
-          ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/patient/consultations');
-            }
-          },
-        ),
-        title: const Text(
-          'Nova consulta',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF212121),
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: () {
-                context.push('/patient/account');
-              },
-              child: const CircleAvatar(
-                radius: 20,
-                backgroundImage: AssetImage('assets/images/avatar_pictures.png'),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Progress indicator
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00BB5A),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00BB5A),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE7E7F1),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE7E7F1),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Etapa 2 - Selecione dia e horário',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF212121),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE6F8EF),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'Valor: R\$ 200,00',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF00BB5A),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            // Calendar
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F5),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE7E7F1)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Selecione o dia',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF212121),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Simple calendar widget - in a real app, use a proper calendar package
-                  TableCalendar(
-                    firstDay: DateTime.now(),
-                    lastDay: DateTime.now().add(const Duration(days: 60)),
-                    focusedDay: _selectedDate ?? DateTime.now(),
-                    selectedDayPredicate: (day) {
-                      return isSameDay(_selectedDate, day);
-                    },
-                    onDaySelected: (selectedDay, focusedDay) {
-                      setState(() {
-                        _selectedDate = selectedDay;
-                        _selectedTime = null; // Reset time when date changes
-                      });
-                    },
-                    calendarFormat: CalendarFormat.month,
-                    startingDayOfWeek: StartingDayOfWeek.monday,
-                    calendarStyle: const CalendarStyle(
-                      todayDecoration: BoxDecoration(
-                        color: Color(0xFFE6F8EF),
-                        shape: BoxShape.circle,
-                      ),
-                      selectedDecoration: BoxDecoration(
-                        color: Color(0xFF00BB5A),
-                        shape: BoxShape.circle,
-                      ),
-                      outsideDaysVisible: false,
-                    ),
-                    headerStyle: const HeaderStyle(
-                      formatButtonVisible: false,
-                      titleCentered: true,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (_selectedDate != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7F7F5),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE7E7F1)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Horários disponíveis para ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF212121),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _availableTimes.map((time) {
-                        final isSelected = _selectedTime == time;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedTime = time;
-                            });
-                          },
-                          child: Container(
-                            width: (MediaQuery.of(context).size.width - 64) / 2 - 4,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isSelected ? const Color(0xFFE6F8EF) : Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected ? const Color(0xFF00BB5A) : const Color(0xFFE7E7F1),
-                              ),
-                            ),
-                            child: Text(
-                              time,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                color: isSelected ? const Color(0xFF00BB5A) : const Color(0xFF212121),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            // Legend
-            Row(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 16,
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE6F8EF),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Dias disponíveis',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF7C7C79),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 24),
-                Row(
-                  children: [
-                    Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFE7E7F1)),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Dias indisponíveis',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF7C7C79),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _selectedDate != null && _selectedTime != null
-                    ? () {
-                        context.push('/patient/consultations/new/step3');
-                      }
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00BB5A),
-                  disabledBackgroundColor: const Color(0xFFE7E7F1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text(
-                  'Próximo',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  void initState() {
+    super.initState();
+    _loadPatientAvatar();
   }
 
-  bool isSameDay(DateTime? a, DateTime b) {
-    if (a == null) return false;
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-}
-
-// Simple TableCalendar widget - in production, use table_calendar package
-class TableCalendar extends StatelessWidget {
-  final DateTime firstDay;
-  final DateTime lastDay;
-  final DateTime focusedDay;
-  final bool Function(DateTime) selectedDayPredicate;
-  final void Function(DateTime, DateTime) onDaySelected;
-  final CalendarFormat calendarFormat;
-  final StartingDayOfWeek startingDayOfWeek;
-  final CalendarStyle calendarStyle;
-  final HeaderStyle headerStyle;
-
-  const TableCalendar({
-    super.key,
-    required this.firstDay,
-    required this.lastDay,
-    required this.focusedDay,
-    required this.selectedDayPredicate,
-    required this.onDaySelected,
-    required this.calendarFormat,
-    required this.startingDayOfWeek,
-    required this.calendarStyle,
-    required this.headerStyle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Simplified calendar - in production, use a proper calendar package
-    return Column(
-      children: [
-        // Month header
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              onPressed: () {},
-            ),
-            Text(
-              '${_getMonthName(focusedDay.month)} ${focusedDay.year}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF212121),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed: () {},
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        // Weekday headers
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-              .map((day) => Expanded(
-                    child: Center(
-                      child: Text(
-                        day,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF7C7C79),
-                        ),
-                      ),
-                    ),
-                  ))
-              .toList(),
-        ),
-        const SizedBox(height: 8),
-        // Calendar days
-        ..._buildCalendarDays(),
-      ],
-    );
-  }
-
-  List<Widget> _buildCalendarDays() {
-    final firstDayOfMonth = DateTime(focusedDay.year, focusedDay.month, 1);
-    final lastDayOfMonth = DateTime(focusedDay.year, focusedDay.month + 1, 0);
-    final firstWeekday = firstDayOfMonth.weekday % 7;
-    
-    List<Widget> rows = [];
-    List<Widget> currentRow = [];
-    
-    // Add empty cells for days before the first day of the month
-    for (int i = 0; i < firstWeekday; i++) {
-      currentRow.add(const Expanded(child: SizedBox()));
-    }
-    
-    // Add days of the month
-    for (int day = 1; day <= lastDayOfMonth.day; day++) {
-      final date = DateTime(focusedDay.year, focusedDay.month, day);
-      final isSelected = selectedDayPredicate(date);
-      final isToday = date.year == DateTime.now().year &&
-          date.month == DateTime.now().month &&
-          date.day == DateTime.now().day;
-      
-      currentRow.add(
-        Expanded(
-          child: GestureDetector(
-            onTap: () => onDaySelected(date, date),
-            child: Container(
-              margin: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? calendarStyle.selectedDecoration?.color
-                    : isToday
-                        ? calendarStyle.todayDecoration?.color
-                        : Colors.transparent,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  '$day',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color: isSelected
-                        ? Colors.white
-                        : const Color(0xFF212121),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-      
-      if (currentRow.length == 7) {
-        rows.add(Row(children: currentRow));
-        currentRow = [];
+  Future<void> _loadPatientAvatar() async {
+    try {
+      final result = await _patientService.getCurrentPatient();
+      if (result['success'] == true && mounted) {
+        final data = result['data'] as Map<String, dynamic>?;
+        final profile = data?['profile'] as Map<String, dynamic>?;
+        if (profile != null) {
+          setState(() {
+            _patientAvatar = profile['foto_perfil_url'] as String?;
+            _isLoadingAvatar = false;
+          });
+        } else {
+          setState(() {
+            _isLoadingAvatar = false;
+          });
+        }
+      } else {
+        setState(() {
+          _isLoadingAvatar = false;
+        });
       }
+    } catch (e) {
+      setState(() {
+        _isLoadingAvatar = false;
+      });
     }
-    
-    // Add remaining empty cells
-    while (currentRow.length < 7) {
-      currentRow.add(const Expanded(child: SizedBox()));
-    }
-    if (currentRow.isNotEmpty) {
-      rows.add(Row(children: currentRow));
-    }
-    
-    return rows;
+  }
+
+  bool _isDayAvailable(int day) {
+    return _availableDays.contains(day);
+  }
+
+  bool _isDayInPast(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return date.isBefore(today);
+  }
+
+  void _previousMonth() {
+    setState(() {
+      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1);
+    });
+  }
+
+  void _nextMonth() {
+    setState(() {
+      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1);
+    });
   }
 
   String _getMonthName(int month) {
@@ -530,42 +159,458 @@ class TableCalendar extends StatelessWidget {
     ];
     return months[month - 1];
   }
+
+  String _formatSelectedDate() {
+    if (_selectedDate == null) return '';
+    final day = _selectedDate!.day.toString().padLeft(2, '0');
+    final month = _getMonthName(_selectedDate!.month).toLowerCase();
+    return '$day de $month';
+  }
+
+  void _onDateSelected(DateTime date) {
+    setState(() {
+      _selectedDate = date;
+      _selectedTime = null;
+      _showTimeSelection = true;
+    });
+  }
+
+  void _goBackToCalendar() {
+    setState(() {
+      _showTimeSelection = false;
+      _selectedTime = null;
+    });
+  }
+
+  void _handleBack() {
+    if (_showTimeSelection) {
+      _goBackToCalendar();
+    } else if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/patient/consultations');
+    }
+  }
+
+  void _goToNextStep() {
+    if (_showTimeSelection) {
+      final updatedFormData =
+          (widget.formData ?? NewConsultationFormData()).copyWith(
+        selectedDate: _selectedDate,
+        selectedTime: _selectedTime,
+      );
+      context.push(
+        '/patient/consultations/new/step3',
+        extra: updatedFormData,
+      );
+    } else {
+      setState(() {
+        _showTimeSelection = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnabled = _showTimeSelection
+        ? _selectedDate != null && _selectedTime != null
+        : _selectedDate != null;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: ConsultationAppBar(
+        onBack: _handleBack,
+        avatarWidget: ConsultationAvatar(
+          avatarUrl: _patientAvatar,
+          isLoading: _isLoadingAvatar,
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Progress indicator
+                  const ConsultationStepIndicator(currentStep: 2),
+                  const SizedBox(height: 20),
+
+                  // Step header
+                  const ConsultationStepHeader(
+                    stepNumber: 2,
+                    stepTitle: 'Selecione dia e horário',
+                    valueText: 'Valor: R\$ 200,00',
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Conteúdo principal (calendário ou horários)
+                  if (_showTimeSelection)
+                    _buildTimeSelection()
+                  else
+                    _buildCalendar(),
+                ],
+              ),
+            ),
+          ),
+
+          // Bottom button
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x0D000000),
+                  blurRadius: 10,
+                  offset: Offset(0, -4),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              top: false,
+              child: ConsultationPrimaryButton(
+                text: 'Próximo',
+                onPressed: isEnabled ? _goToNextStep : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalendar() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Calendário
+        ConsultationSectionCard(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              // Header do mês
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.neutral200,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: _previousMonth,
+                      child: const SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: Icon(
+                          Icons.chevron_left,
+                          color: AppColors.neutral800,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        '${_getMonthName(_focusedMonth.month)} - ${_focusedMonth.year}',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.neutral800,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _nextMonth,
+                      child: const SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: Icon(
+                          Icons.chevron_right,
+                          color: AppColors.neutral800,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Dias da semana
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+                    .map((day) => SizedBox(
+                          width: 40,
+                          child: Center(
+                            child: Text(
+                              day,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.neutral800,
+                              ),
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 8),
+
+              // Dias do mês
+              ..._buildCalendarDays(),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Legenda
+        Row(
+          children: [
+            _buildLegendItem('Disponível', AppColors.neutral800, false),
+            const SizedBox(width: 20),
+            _buildLegendItem('Indisponível', AppColors.neutral300, true),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color, bool hasStrike) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: AppColors.neutral800,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: hasStrike ? Colors.transparent : color,
+            shape: BoxShape.circle,
+            border: hasStrike
+                ? Border.all(color: AppColors.neutral300, width: 2)
+                : null,
+          ),
+          child: hasStrike
+              ? const Center(
+                  child: Icon(
+                    Icons.remove,
+                    size: 10,
+                    color: AppColors.neutral300,
+                  ),
+                )
+              : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeSelection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Horários disponíveis para ${_formatSelectedDate()}',
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: AppColors.neutral900,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Grid de horários
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 2.2,
+          ),
+          itemCount: _availableTimes.length,
+          itemBuilder: (context, index) {
+            return _buildTimeSlot(_availableTimes[index]);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeSlot(String time) {
+    final isSelected = _selectedTime == time;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedTime = time;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.canfyGreen : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? AppColors.canfyGreen : AppColors.neutral300,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            time,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? Colors.white : AppColors.neutral800,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildCalendarDays() {
+    final firstDayOfMonth =
+        DateTime(_focusedMonth.year, _focusedMonth.month, 1);
+    final lastDayOfMonth =
+        DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0);
+    final firstWeekday = firstDayOfMonth.weekday % 7;
+
+    final previousMonth =
+        DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1);
+    final lastDayOfPreviousMonth =
+        DateTime(_focusedMonth.year, _focusedMonth.month, 0);
+
+    List<Widget> rows = [];
+    List<Widget> currentRow = [];
+
+    // Adicionar dias do mês anterior
+    for (int i = firstWeekday - 1; i >= 0; i--) {
+      final day = lastDayOfPreviousMonth.day - i;
+      currentRow.add(_buildDayCell(
+        day: day,
+        isCurrentMonth: false,
+        isAvailable: false,
+        date: DateTime(previousMonth.year, previousMonth.month, day),
+      ));
+    }
+
+    // Adicionar dias do mês atual
+    for (int day = 1; day <= lastDayOfMonth.day; day++) {
+      final date = DateTime(_focusedMonth.year, _focusedMonth.month, day);
+      final isAvailable = _isDayAvailable(day) && !_isDayInPast(date);
+      final isSelected = _selectedDate != null &&
+          _selectedDate!.year == date.year &&
+          _selectedDate!.month == date.month &&
+          _selectedDate!.day == date.day;
+
+      currentRow.add(_buildDayCell(
+        day: day,
+        isCurrentMonth: true,
+        isAvailable: isAvailable,
+        isSelected: isSelected,
+        date: date,
+      ));
+
+      if (currentRow.length == 7) {
+        rows.add(Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: currentRow,
+          ),
+        ));
+        currentRow = [];
+      }
+    }
+
+    // Adicionar dias do próximo mês para completar a última semana
+    if (currentRow.isNotEmpty) {
+      int nextMonthDay = 1;
+      while (currentRow.length < 7) {
+        currentRow.add(_buildDayCell(
+          day: nextMonthDay,
+          isCurrentMonth: false,
+          isAvailable: false,
+          date: DateTime(
+              _focusedMonth.year, _focusedMonth.month + 1, nextMonthDay),
+        ));
+        nextMonthDay++;
+      }
+      rows.add(Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: currentRow,
+      ));
+    }
+
+    return rows;
+  }
+
+  Widget _buildDayCell({
+    required int day,
+    required bool isCurrentMonth,
+    required bool isAvailable,
+    required DateTime date,
+    bool isSelected = false,
+  }) {
+    final isPast = _isDayInPast(date);
+    final showStrikethrough = isCurrentMonth && (!isAvailable || isPast);
+
+    return GestureDetector(
+      onTap: isCurrentMonth && isAvailable && !isPast
+          ? () => _onDateSelected(date)
+          : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.canfyPurple : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: isSelected
+              ? const [
+                  BoxShadow(
+                    color: Color(0x4D9067F1),
+                    offset: Offset(0, 4),
+                    blurRadius: 8,
+                  ),
+                ]
+              : null,
+        ),
+        child: Center(
+          child: Text(
+            '$day',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight:
+                  isSelected || (isCurrentMonth && isAvailable && !isPast)
+                      ? FontWeight.w700
+                      : FontWeight.w400,
+              color: isSelected
+                  ? Colors.white
+                  : !isCurrentMonth
+                      ? AppColors.neutral300
+                      : AppColors.neutral800,
+              decoration: showStrikethrough ? TextDecoration.lineThrough : null,
+              decorationColor: AppColors.neutral600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
-
-class CalendarFormat {
-  static const month = CalendarFormat._();
-  const CalendarFormat._();
-}
-
-class StartingDayOfWeek {
-  static const monday = StartingDayOfWeek._();
-  const StartingDayOfWeek._();
-}
-
-class CalendarStyle {
-  final BoxDecoration? todayDecoration;
-  final BoxDecoration? selectedDecoration;
-  final bool outsideDaysVisible;
-
-  const CalendarStyle({
-    this.todayDecoration,
-    this.selectedDecoration,
-    this.outsideDaysVisible = false,
-  });
-}
-
-class HeaderStyle {
-  final bool formatButtonVisible;
-  final bool titleCentered;
-
-  const HeaderStyle({
-    this.formatButtonVisible = true,
-    this.titleCentered = false,
-  });
-}
-
-
-
-
-
-

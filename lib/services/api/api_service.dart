@@ -1,10 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Serviço base para chamadas de API usando Supabase
-/// 
+///
 /// IMPORTANTE: Este projeto usa o MCP do Supabase (supabase-canfy)
 /// para operações de backend. Sempre prefira usar o MCP quando possível.
-/// 
+///
 /// Este serviço usa o cliente Supabase Flutter para operações que precisam
 /// ser feitas diretamente no app (como queries em tempo real, subscriptions, etc).
 class ApiService {
@@ -12,20 +12,17 @@ class ApiService {
   static SupabaseClient get client => Supabase.instance.client;
 
   /// Métodos HTTP usando Supabase REST API
-  
+
   /// GET request
-  /// 
+  ///
   /// Exemplo:
   /// ```dart
   /// final data = await ApiService.get('users');
   /// ```
   Future<Map<String, dynamic>> get(String table) async {
     try {
-      final response = await client
-          .from(table)
-          .select()
-          .limit(1000);
-      
+      final response = await client.from(table).select().limit(1000);
+
       return {
         'success': true,
         'data': response,
@@ -42,7 +39,7 @@ class ApiService {
   }
 
   /// GET request com filtros
-  /// 
+  ///
   /// Exemplo:
   /// ```dart
   /// final data = await ApiService.getFiltered(
@@ -59,23 +56,23 @@ class ApiService {
   }) async {
     try {
       dynamic query = client.from(table).select();
-      
+
       if (filters != null) {
         filters.forEach((key, value) {
           query = (query as dynamic).eq(key, value);
         });
       }
-      
+
       if (orderBy != null) {
         query = (query as dynamic).order(orderBy, ascending: ascending);
       }
-      
+
       if (limit != null) {
         query = (query as dynamic).limit(limit);
       }
-      
+
       final response = await query;
-      
+
       return {
         'success': true,
         'data': response,
@@ -92,7 +89,7 @@ class ApiService {
   }
 
   /// POST request - Inserir dados
-  /// 
+  ///
   /// Exemplo:
   /// ```dart
   /// final result = await ApiService.post(
@@ -105,10 +102,8 @@ class ApiService {
     Map<String, dynamic> data,
   ) async {
     try {
-      final response = await client
-          .from(table)
-          .insert(data);
-      
+      final response = await client.from(table).insert(data);
+
       return {
         'success': true,
         'data': response,
@@ -124,8 +119,31 @@ class ApiService {
     }
   }
 
+  /// Insere dados e retorna o(s) registro(s) criado(s) (ex.: para obter o id).
+  Future<Map<String, dynamic>> insertWithReturn(
+    String table,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await client.from(table).insert(data).select();
+      final list = response is List ? response : <dynamic>[];
+      return {
+        'success': true,
+        'data': list.isNotEmpty ? list[0] : null,
+        'message': 'Dados inseridos com sucesso',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'data': null,
+        'message': 'Erro ao inserir dados: ${e.toString()}',
+        'error': e.toString(),
+      };
+    }
+  }
+
   /// PUT request - Atualizar dados
-  /// 
+  ///
   /// Exemplo:
   /// ```dart
   /// final result = await ApiService.put(
@@ -141,13 +159,13 @@ class ApiService {
   ) async {
     try {
       var query = client.from(table).update(data);
-      
+
       filters.forEach((key, value) {
         query = query.eq(key, value);
       });
-      
+
       final response = await query;
-      
+
       return {
         'success': true,
         'data': response,
@@ -164,7 +182,7 @@ class ApiService {
   }
 
   /// DELETE request
-  /// 
+  ///
   /// Exemplo:
   /// ```dart
   /// await ApiService.delete('users', {'id': '123'});
@@ -175,13 +193,13 @@ class ApiService {
   ) async {
     try {
       var query = client.from(table).delete();
-      
+
       filters.forEach((key, value) {
         query = query.eq(key, value);
       });
-      
+
       final response = await query;
-      
+
       return {
         'success': true,
         'data': response,
@@ -209,7 +227,7 @@ class ApiService {
         password: password,
         data: metadata,
       );
-      
+
       return {
         'success': true,
         'data': {
@@ -238,7 +256,7 @@ class ApiService {
         email: email,
         password: password,
       );
-      
+
       return {
         'success': true,
         'data': {
@@ -261,7 +279,7 @@ class ApiService {
   Future<Map<String, dynamic>> signOut() async {
     try {
       await client.auth.signOut();
-      
+
       return {
         'success': true,
         'data': null,
@@ -284,7 +302,7 @@ class ApiService {
   bool get isAuthenticated => currentUser != null;
 
   /// Reset de senha - Enviar email de recuperação
-  /// 
+  ///
   /// Exemplo:
   /// ```dart
   /// final result = await ApiService.resetPasswordForEmail('user@example.com');
@@ -295,7 +313,7 @@ class ApiService {
         email,
         redirectTo: 'canfy://reset-password', // Deep link para o app
       );
-      
+
       return {
         'success': true,
         'data': null,
@@ -312,7 +330,7 @@ class ApiService {
   }
 
   /// Atualizar senha do usuário autenticado
-  /// 
+  ///
   /// Exemplo:
   /// ```dart
   /// final result = await ApiService.updatePassword('novaSenha123');
@@ -322,7 +340,7 @@ class ApiService {
       await client.auth.updateUser(
         UserAttributes(password: newPassword),
       );
-      
+
       return {
         'success': true,
         'data': null,
@@ -339,7 +357,7 @@ class ApiService {
   }
 
   /// Verificar e processar token de reset de senha da URL
-  /// 
+  ///
   /// Exemplo:
   /// ```dart
   /// final result = await ApiService.verifyResetToken(url);
@@ -351,7 +369,7 @@ class ApiService {
       final uri = Uri.parse(url);
       final accessToken = uri.queryParameters['access_token'];
       final type = uri.queryParameters['type'];
-      
+
       if (accessToken != null && type == 'recovery') {
         // Token de recuperação encontrado na URL
         return {
@@ -360,7 +378,7 @@ class ApiService {
           'message': 'Token de recuperação válido',
         };
       }
-      
+
       return {
         'success': false,
         'data': null,
@@ -377,7 +395,7 @@ class ApiService {
   }
 
   /// Deletar conta do usuário do auth.users usando Edge Function
-  /// 
+  ///
   /// Exemplo:
   /// ```dart
   /// final result = await ApiService.deleteUserAccount();
@@ -393,7 +411,7 @@ class ApiService {
           'message': 'Usuário não autenticado',
         };
       }
-      
+
       // Chamar a Edge Function
       final response = await client.functions.invoke(
         'delete-user-account',

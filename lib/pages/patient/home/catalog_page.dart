@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'catalog_filters_modal.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
+import '../../../widgets/patient/patient_app_bar.dart';
 
 class PatientCatalogPage extends StatefulWidget {
   const PatientCatalogPage({super.key});
@@ -55,24 +56,9 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF212121)),
-          onPressed: () {
-            context.pop();
-          },
-        ),
-        title: const Text(
-          'Catálogo',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF212121),
-            fontFamily: 'Truculenta',
-          ),
-        ),
+      appBar: PatientAppBar(
+        title: 'Catálogo',
+        fallbackRoute: '/patient/home',
         actions: [
           IconButton(
             icon: Container(
@@ -92,15 +78,6 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
                 builder: (context) => const CatalogFiltersModal(),
               );
             },
-          ),
-          const SizedBox(width: 8),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.grey),
-            ),
           ),
         ],
       ),
@@ -126,7 +103,7 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
 
   Widget _buildProductCard(Map<String, dynamic> product) {
     final isSelected = product['isSelected'] as bool;
-    
+
     return GestureDetector(
       onTap: () {
         context.push('/patient/catalog/product-details/${product['id']}');
@@ -134,9 +111,7 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? const Color(0xFFC3A6F9) 
-              : const Color(0xFFF1EDFC),
+          color: isSelected ? const Color(0xFFC3A6F9) : const Color(0xFFF1EDFC),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -149,7 +124,8 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
                 color: const Color(0xFFD7FA80),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: const Icon(Icons.local_pharmacy, size: 48, color: Colors.black54),
+              child: const Icon(Icons.local_pharmacy,
+                  size: 48, color: Colors.black54),
             ),
             const SizedBox(height: 12),
             // Product name
@@ -178,10 +154,11 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
             ...(product['indications'] as List<String>).map((indication) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isSelected 
-                      ? const Color(0xFFD7FA80) 
+                  color: isSelected
+                      ? const Color(0xFFD7FA80)
                       : const Color(0xFFD7FA80),
                   borderRadius: BorderRadius.circular(999),
                 ),
@@ -201,8 +178,8 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: isSelected 
-                    ? const Color(0xFF7048C3) 
+                color: isSelected
+                    ? const Color(0xFF7048C3)
                     : const Color(0xFF7048C3),
               ),
             ),
@@ -212,9 +189,3 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
     );
   }
 }
-
-
-
-
-
-

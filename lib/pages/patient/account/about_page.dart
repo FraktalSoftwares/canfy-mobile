@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import '../../../widgets/patient/patient_app_bar.dart';
 
 class PatientAboutPage extends StatefulWidget {
   const PatientAboutPage({super.key});
@@ -28,41 +28,9 @@ class _PatientAboutPageState extends State<PatientAboutPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708,
-            child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-          ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/patient/account');
-            }
-          },
-        ),
-        title: const Text(
-          'Sobre',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.black),
-            ),
-          ),
-        ],
+      appBar: PatientAppBar(
+        title: 'Sobre',
+        fallbackRoute: '/patient/account',
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

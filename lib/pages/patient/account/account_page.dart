@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
+import '../../../widgets/patient/patient_app_bar.dart';
 
 class PatientAccountPage extends StatefulWidget {
   const PatientAccountPage({super.key});
@@ -12,7 +13,7 @@ class PatientAccountPage extends StatefulWidget {
 
 class _PatientAccountPageState extends State<PatientAccountPage> {
   final PatientService _patientService = PatientService();
-  
+
   String _patientName = 'Usuário';
   String? _patientAvatar;
   bool _isLoading = true;
@@ -46,7 +47,8 @@ class _PatientAccountPageState extends State<PatientAccountPage> {
     }
   }
 
-  Widget _buildMenuItem(BuildContext context, {
+  Widget _buildMenuItem(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String route,
@@ -109,41 +111,12 @@ class _PatientAccountPageState extends State<PatientAccountPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Conta',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: _isLoading
-                ? const SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : _patientAvatar != null && _patientAvatar!.isNotEmpty
-                    ? CircleAvatar(
-                        radius: 20,
-                        backgroundImage: NetworkImage(_patientAvatar!),
-                        onBackgroundImageError: (_, __) {},
-                      )
-                    : CircleAvatar(
-                        radius: 20,
-                        backgroundColor: Colors.grey[300],
-                        child: const Icon(Icons.person, color: Colors.black),
-                      ),
-          ),
-        ],
+      appBar: PatientAppBar(
+        title: 'Conta',
+        showLeading: false,
+        avatarUrl: _patientAvatar,
+        avatarTappable: false,
+        avatarLoading: _isLoading,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -209,9 +182,3 @@ class _PatientAccountPageState extends State<PatientAccountPage> {
     );
   }
 }
-
-
-
-
-
-

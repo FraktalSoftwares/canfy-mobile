@@ -28,12 +28,21 @@ class AppColors {
   static const Color neutral800 = Color(0xFF3F3F3D);
   static const Color neutral900 = Color(0xFF212121);
 
-  // Cores de status
+  // Cores de status (tags de agendamento – Figma)
   static const Color statusYellow = Color(0xFFF9E68C);
   static const Color statusYellowDark = Color(0xFF654C01);
   static const Color statusBlue = Color(0xFFA6BBF9);
   static const Color statusBlueDark = Color(0xFF102D57);
   static const Color statusGrey = Color(0xFFD6D6D3);
   static const Color statusGreyDark = Color(0xFF2C333A);
-}
+  static const Color statusCancelBg = Color(0xFFFFE5E5);
+  static const Color statusCancelText = Color(0xFFB71C1C);
 
+  // Tags de status de pedidos (Figma – node 2770-18996)
+  static const Color orderTagEmAnaliseBg = Color(0xFFF9E68C);
+  static const Color orderTagAprovadoBg = Color(0xFFC8E6C9);
+  static const Color orderTagCanceladoBg = Color(0xFFFFCDD2);
+  static const Color orderTagEnviadoBg = Color(0xFFB3E5FC);
+  static const Color orderTagEntregueBg = Color(0xFFD6D6D3);
+  static const Color orderTagText = Color(0xFF2C333A);
+}
