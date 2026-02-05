@@ -14,9 +14,14 @@ class ValidationStatusPage extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708, // 90 graus em radianos
-            child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: const BoxDecoration(
+              color: Color(0xFF33CC80),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.arrow_back_ios_new,
+                size: 18, color: Colors.white),
           ),
           onPressed: () {
             if (context.canPop()) {
@@ -84,7 +89,8 @@ class ValidationStatusPage extends StatelessWidget {
               const SizedBox(height: 16),
               // Tag "Em análise"
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF9E68C), // yellow-300
                   borderRadius: BorderRadius.circular(999),
@@ -109,16 +115,19 @@ class ValidationStatusPage extends StatelessWidget {
                   ),
                   children: [
                     const TextSpan(
-                      text: 'Agora vamos validar suas informações e documentos.\n\n',
+                      text:
+                          'Agora vamos validar suas informações e documentos.\n\n',
                     ),
                     const TextSpan(
                       text: 'Estamos analisando seus documentos. \n',
                     ),
                     const TextSpan(
-                      text: 'Normalmente é rápido, mas pode levar mais tempo dependendo da fila de validações.\n\n',
+                      text:
+                          'Normalmente é rápido, mas pode levar mais tempo dependendo da fila de validações.\n\n',
                     ),
                     TextSpan(
-                      text: 'Você receberá uma notificação assim que sua conta\nfor aprovada.',
+                      text:
+                          'Você receberá uma notificação assim que sua conta\nfor aprovada.',
                       style: AppTextStyles.arimo(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -133,13 +142,13 @@ class ValidationStatusPage extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 height: 45,
-                child: OutlinedButton.icon(
+                child: TextButton.icon(
                   onPressed: () {
                     // Abrir WhatsApp ou canal de suporte
                   },
                   icon: const Icon(
-                    Icons.headset_mic,
-                    size: 16,
+                    Icons.headphones,
+                    size: 18,
                     color: AppTheme.canfyGreen,
                   ),
                   label: Text(
@@ -149,9 +158,8 @@ class ValidationStatusPage extends StatelessWidget {
                       color: AppTheme.canfyGreen,
                     ),
                   ),
-                  style: OutlinedButton.styleFrom(
+                  style: TextButton.styleFrom(
                     foregroundColor: AppTheme.canfyGreen,
-                    side: BorderSide.none,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -165,9 +173,3 @@ class ValidationStatusPage extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-

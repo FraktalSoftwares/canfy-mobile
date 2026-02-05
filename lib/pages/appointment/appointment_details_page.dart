@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/common/safe_image_asset.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
+import '../../widgets/common/doctor_app_bar_avatar.dart';
 
 class AppointmentDetailsPage extends StatelessWidget {
   const AppointmentDetailsPage({super.key});
@@ -35,15 +36,8 @@ class AppointmentDetailsPage extends StatelessWidget {
           ),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.grey),
-            ),
-          ),
+        actions: const [
+          DoctorAppBarAvatar(),
         ],
       ),
       body: SingleChildScrollView(
@@ -287,7 +281,6 @@ class AppointmentDetailsPage extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _InfoRow extends StatelessWidget {

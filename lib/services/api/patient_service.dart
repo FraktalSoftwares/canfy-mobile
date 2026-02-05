@@ -354,7 +354,9 @@ class PatientService {
     if (c.contains('marca')) return 'marca';
     if (c.contains('associacao') ||
         c.contains('associação') ||
-        c.contains('abc')) return 'associacao';
+        c.contains('abc')) {
+      return 'associacao';
+    }
     return 'outro';
   }
 
@@ -1209,6 +1211,76 @@ class PatientService {
           'comprovante_residencia': comprovanteResidencia,
         },
       };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Erro ao buscar documentos: ${e.toString()}',
+        'data': null,
+      };
+    }
+  }
+
+  /// Lista apenas dois documentos na tela Meus dados: o mais recente RG/CNH (identidade)
+  /// e o mais recente Comprovante de endereço (comprovante_residencia).
+  Future<Map<String, dynamic>> getPatientDocuments() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) {
+        return {
+          'success': false,
+          'message': 'Usuário não autenticado',
+          'data': null,
+        };
+      }
+      final pacienteResult = await _apiService.getFiltered(
+        'pacientes',
+        filters: {'user_id': user.id},
+        limit: 1,
+      );
+      if (!pacienteResult['success'] ||
+          pacienteResult['data'] == null ||
+          (pacienteResult['data'] as List).isEmpty) {
+        return {'success': true, 'data': <Map<String, dynamic>>[]};
+      }
+      final pacienteId = (pacienteResult['data'] as List)[0]['id'] as String;
+      final docsResult = await _apiService.getFiltered(
+        'documentos',
+        filters: {'paciente_id': pacienteId},
+        orderBy: 'created_at',
+        ascending: false,
+        limit: 20,
+      );
+      if (!docsResult['success'] || docsResult['data'] == null) {
+        return {'success': true, 'data': <Map<String, dynamic>>[]};
+      }
+      final list = docsResult['data'] as List;
+      final allDocs = list.map<Map<String, dynamic>>((d) {
+        final doc = d as Map<String, dynamic>;
+        return {
+          'id': doc['id'],
+          'tipo': doc['tipo'] ?? 'outro',
+          'nome_arquivo': doc['nome_arquivo'] ?? 'Documento',
+          'arquivo_url': doc['arquivo_url'],
+        };
+      }).toList();
+
+      // Apenas RG/CNH (identidade) e Comprovante (comprovante_residencia); um de cada, o mais recente
+      Map<String, dynamic>? identidade;
+      Map<String, dynamic>? comprovante;
+      for (final d in allDocs) {
+        final tipo = d['tipo'] as String?;
+        if (tipo == 'identidade' && identidade == null) {
+          identidade = d;
+        } else if (tipo == 'comprovante_residencia' && comprovante == null) {
+          comprovante = d;
+        }
+        if (identidade != null && comprovante != null) break;
+      }
+      final docs = <Map<String, dynamic>>[];
+      if (identidade != null) docs.add(identidade);
+      if (comprovante != null) docs.add(comprovante);
+
+      return {'success': true, 'data': docs};
     } catch (e) {
       return {
         'success': false,

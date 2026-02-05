@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
+import '../../../widgets/patient/new_order_step_progress.dart';
+import '../../../widgets/patient/new_order_step_header.dart';
 import '../../../models/order/new_order_form_data.dart';
 import '../../../utils/currency_formatter.dart';
 
@@ -10,47 +12,39 @@ class NewOrderStep4Page extends StatelessWidget {
 
   const NewOrderStep4Page({super.key, this.formData});
 
-  Widget _buildProgressIndicator() {
-    return Row(
-      children: List.generate(
-        5,
-        (i) => Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Container(
-            width: 53,
-            height: 6,
-            decoration: BoxDecoration(
-              color: i < 4 ? const Color(0xFF00BB5A) : const Color(0xFFD6D6D3),
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-        ),
-      ),
-    );
+  /// Formata texto de entrega no estilo Figma: "Chega entre 10 e 12 de julho".
+  static String _formatDeliveryText(String? deadline) {
+    if (deadline == null || deadline.isEmpty) {
+      return 'Prazo a confirmar após confirmação do pedido';
+    }
+    // Se já estiver no formato "até X dias úteis", manter; senão tentar exibir como intervalo.
+    if (deadline.toLowerCase().contains('entre')) return deadline;
+    if (deadline.toLowerCase().contains('chega')) return deadline;
+    return deadline;
   }
 
-  Widget _buildDocumentCard(String fileName) {
+  Widget _buildDocumentCard(String fileName, String? url) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFFF7F7F5),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFF33CC80)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE6F8EF),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: const Icon(Icons.insert_drive_file,
-                color: Color(0xFF00994B), size: 20),
+          IconButton(
+            icon: const Icon(Icons.visibility_outlined,
+                color: Color(0xFF00994B), size: 22),
+            onPressed: url != null
+                ? () {
+                    // Abrir URL no navegador ou in-app
+                  }
+                : null,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
           ),
-          const SizedBox(width: 12),
           Expanded(
             child: Text(
               fileName,
@@ -59,7 +53,19 @@ class NewOrderStep4Page extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF00994B),
               ),
+              overflow: TextOverflow.ellipsis,
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.download_outlined,
+                color: Color(0xFF00994B), size: 22),
+            onPressed: url != null
+                ? () {
+                    // Download do documento
+                  }
+                : null,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
           ),
         ],
       ),
@@ -83,18 +89,15 @@ class NewOrderStep4Page extends StatelessWidget {
     final shipping = f.shippingCost;
     final total = f.totalWithShipping;
 
-    final documentNames = <String>[];
+    final documentItems = <MapEntry<String, String?>>[];
     if (f.rgFileName != null && f.rgFileName!.isNotEmpty) {
-      documentNames.add(f.rgFileName!);
+      documentItems.add(MapEntry(f.rgFileName!, f.rgDocumentUrl));
     }
     if (f.addressProofFileName != null && f.addressProofFileName!.isNotEmpty) {
-      documentNames.add(f.addressProofFileName!);
+      documentItems.add(MapEntry(f.addressProofFileName!, f.addressProofUrl));
     }
     if (f.anvisaFileName != null && f.anvisaFileName!.isNotEmpty) {
-      documentNames.add(f.anvisaFileName!);
-    }
-    if (documentNames.isEmpty) {
-      documentNames.add('Nenhum documento anexado');
+      documentItems.add(MapEntry(f.anvisaFileName!, f.anvisaDocumentUrl));
     }
 
     return Scaffold(
@@ -109,60 +112,25 @@ class NewOrderStep4Page extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
-            _buildProgressIndicator(),
+            const NewOrderStepProgress(currentStep: 4),
             const SizedBox(height: 40),
-            const Text(
-              'Novo pedido',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF212121),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F0EE),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'Etapa 4 - Revisão do pedido',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF3F3F3D),
-                    ),
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE6F8EF),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'Valor: ${CurrencyFormatter.formatBRL(total)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF007A3B),
-                    ),
-                  ),
-                ),
-              ],
+            NewOrderStepHeader(
+              stepLabel: 'Etapa 4 - Revisão do pedido',
+              valueText: 'Valor: ${CurrencyFormatter.formatBRL(total)}',
             ),
             const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F5),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,6 +147,7 @@ class NewOrderStep4Page extends StatelessWidget {
                   const Divider(color: Color(0xFFE6E6E3)),
                   const SizedBox(height: 16),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         width: 64,
@@ -207,6 +176,30 @@ class NewOrderStep4Page extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
+                            const Text(
+                              'Tipo de produto: Óleo',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF3F3F3D),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Dosagem: 20mg/ml',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF3F3F3D),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Concentração: 20mg/ml de THC',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF3F3F3D),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
                             Text(
                               'Quantidade: ${f.quantity} unidade(s)',
                               style: const TextStyle(
@@ -226,8 +219,15 @@ class NewOrderStep4Page extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F5),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,8 +289,15 @@ class NewOrderStep4Page extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F5),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,8 +312,7 @@ class NewOrderStep4Page extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    f.deliveryDeadline ??
-                        'Prazo a confirmar após confirmação do pedido',
+                    _formatDeliveryText(f.deliveryDeadline),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -320,8 +326,15 @@ class NewOrderStep4Page extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F5),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,22 +424,49 @@ class NewOrderStep4Page extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F5),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Documentos enviados',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF3F3F3D),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Documentos enviados',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF3F3F3D),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.keyboard_arrow_up),
+                        onPressed: () {},
+                        padding: EdgeInsets.zero,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
-                  ...documentNames.map(_buildDocumentCard),
+                  if (documentItems.isEmpty)
+                    const Text(
+                      'Nenhum documento anexado',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF7C7C79),
+                      ),
+                    )
+                  else
+                    ...documentItems
+                        .map((e) => _buildDocumentCard(e.key, e.value)),
                 ],
               ),
             ),

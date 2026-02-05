@@ -1,48 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../constants/app_colors.dart';
+import '../../widgets/common/bottom_navigation_bar_doctor.dart';
+import '../../widgets/common/doctor_app_bar_avatar.dart';
+
+/// Página de perfil do médico conforme design Figma (node 2531-11892).
+/// Header cinza claro, título "Perfil", avatar à direita; lista de itens com ícone verde em círculo verde claro.
+/// Tipografia: Inter Tight (títulos), Inter (corpo), conforme tema do app.
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.neutral000,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.neutral050,
         elevation: 0,
+        scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           'Perfil',
-          style: TextStyle(
-            color: Colors.black,
+          style: GoogleFonts.interTight(
+            color: AppColors.neutral800,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.grey),
-            ),
-          ),
+        actions: const [
+          DoctorAppBarAvatar(),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Perfil',
-              style: TextStyle(
+              style: GoogleFonts.truculenta(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
-                color: Colors.black,
+                color: AppColors.neutral800,
               ),
             ),
             const SizedBox(height: 24),
@@ -55,14 +57,14 @@ class ProfilePage extends StatelessWidget {
             const SizedBox(height: 16),
             _buildMenuItem(
               context,
-              icon: Icons.event_note,
+              icon: Icons.calendar_today_outlined,
               title: 'Agenda',
               onTap: () => context.go('/profile/schedule'),
             ),
             const SizedBox(height: 16),
             _buildMenuItem(
               context,
-              icon: Icons.settings,
+              icon: Icons.settings_outlined,
               title: 'Configurações',
               onTap: () => context.go('/profile/settings'),
             ),
@@ -76,6 +78,7 @@ class ProfilePage extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: const DoctorBottomNavigationBar(currentIndex: -1),
     );
   }
 
@@ -85,46 +88,48 @@ class ProfilePage extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F7F5),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6F8EF),
-                borderRadius: BorderRadius.circular(999),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.neutral050,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.neutral100,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Icon(icon, color: AppColors.canfyGreen, size: 22),
               ),
-              child: Icon(icon, color: const Color(0xFF00994B), size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.normal,
-                  color: Color(0xFF3F3F3D),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.neutral800,
+                  ),
                 ),
               ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              color: Color(0xFF7C7C79),
-              size: 22,
-            ),
-          ],
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.neutral600,
+                size: 24,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-

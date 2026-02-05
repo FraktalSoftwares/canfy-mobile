@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
+import '../../../widgets/patient/new_order_step_progress.dart';
 import '../../../models/order/new_order_form_data.dart';
 import '../../../services/storage/image_storage_service.dart';
 import '../../../services/api/patient_service.dart';
@@ -259,32 +260,12 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
     }
   }
 
-  Widget _buildProgressIndicator() {
-    return Row(
-      children: List.generate(
-        5,
-        (i) => Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Container(
-            width: i < 3 ? 53 : (i == 3 ? 52 : 53),
-            height: 6,
-            decoration: BoxDecoration(
-              color: i < 3 ? const Color(0xFF00BB5A) : const Color(0xFFD6D6D3),
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDocumentUploadCard({
     required String title,
-    String? subtitle,
     required String? fileName,
     required bool hasValue,
     required VoidCallback onAddOrReplace,
-    required VoidCallback? onReplace,
+    VoidCallback? onReplace,
   }) {
     return Container(
       width: double.infinity,
@@ -303,115 +284,144 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Color(0xFF3F3F3D),
+              height: 1.5,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle ?? 'Formatos aceitos: PDF, PNG, JPG',
-            style: const TextStyle(
+          const Text(
+            'Formatos aceitos: PDF, PNG, JPG',
+            style: TextStyle(
               fontSize: 14,
               color: Color(0xFF7C7C79),
+              height: 1.5,
             ),
           ),
           const SizedBox(height: 16),
-          GestureDetector(
-            onTap: onAddOrReplace,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 44),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: const Color(0xFF33CC80),
-                  width: 1.5,
-                ),
-              ),
-              child: hasValue
-                  ? Column(
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
+          // Área de upload (estado preenchido ou vazio)
+          hasValue
+              ? Column(
+                  children: [
+                    // Card com arquivo anexado (borda sólida)
+                    Center(
+                      child: GestureDetector(
+                        onTap: onAddOrReplace,
+                        child: Container(
+                          width: 310,
+                          padding: const EdgeInsets.symmetric(vertical: 44),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE6F8EF),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Icon(
-                            Icons.insert_drive_file,
-                            size: 32,
-                            color: Color(0xFF00994B),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          fileName ?? 'Documento anexado',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF00994B),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        if (onReplace != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            'Toque para trocar',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: const Color(0xFF33CC80),
+                              width: 1.5,
                             ),
                           ),
-                        ],
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE6F8EF),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Icon(
-                            Icons.add_a_photo,
-                            size: 32,
-                            color: Color(0xFF00994B),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE6F8EF),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: const Icon(
+                                  Icons.insert_drive_file,
+                                  size: 32,
+                                  color: Color(0xFF00994B),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                fileName ?? 'documento.pdf',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF00994B),
+                                  height: 1.5,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'Câmera ou galeria',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF00994B),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-            ),
-          ),
-          if (hasValue && onReplace != null) ...[
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: onReplace,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF00994B)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(999),
+                    const SizedBox(height: 8),
+                    // Botão "Trocar documento" (verde preenchido)
+                    if (onReplace != null)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: onReplace,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00BB5A),
+                            foregroundColor: const Color(0xFFE6F8EF),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Trocar documento',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                )
+              : Center(
+                  child: GestureDetector(
+                    onTap: onAddOrReplace,
+                    child: CustomPaint(
+                      painter: _DashedBorderPainter(
+                        color: const Color(0xFF33CC80),
+                        strokeWidth: 1.5,
+                        borderRadius: 18,
+                      ),
+                      child: Container(
+                        width: 310,
+                        padding: const EdgeInsets.symmetric(vertical: 44),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 64,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE6F8EF),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Icon(
+                                Icons.cloud_upload,
+                                size: 32,
+                                color: Color(0xFF00994B),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            const Text(
+                              'Clique para adicionar o arquivo',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF00994B),
+                                height: 1.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                child: const Text(
-                  'Trocar documento',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF00994B)),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -433,25 +443,27 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
         fallbackRoute: '/patient/orders/new/step2',
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
-            _buildProgressIndicator(),
+            // Indicador de progresso: 6 segmentos, 3 verdes
+            const NewOrderStepProgress(currentStep: 3),
             const SizedBox(height: 40),
-            const Text(
-              'Novo pedido',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF212121),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Header: "Novo pedido" + badge etapa (SEM badge de valor conforme Figma)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Text(
+                  'Novo pedido',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF212121),
+                  ),
+                ),
+                const SizedBox(height: 4),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -465,19 +477,23 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF3F3F3D),
+                      height: 1.5,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
+            // Card roxo de aviso (receita já anexada)
             Container(
-              padding: const EdgeInsets.all(16),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
                 color: const Color(0xFFF1EDFC),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     width: 24,
@@ -487,13 +503,17 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child:
-                        const Icon(Icons.check, size: 16, color: Colors.white),
+                        const Icon(Icons.check, size: 12, color: Colors.white),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
-                      'Sua receita médica já foi anexada automaticamente a este pedido. Não é necessário enviar novamente.',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF4E3390)),
+                      'Sua receita médica já foi anexada automaticamente\na este pedido. Não é necessário enviar novamente.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF4E3390),
+                        height: 1.5,
+                      ),
                     ),
                   ),
                 ],
@@ -508,23 +528,24 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
                 ),
               )
             else ...[
+              // Card: RG ou CNH
               _buildDocumentUploadCard(
                 title: 'RG ou CNH',
-                subtitle:
-                    'Último anexo pode ser reutilizado. Toque para trocar ou anexar.',
                 fileName: _displayFileName(_rgFile, _rgExistingFileName),
                 hasValue: _hasRg,
                 onAddOrReplace: () {
                   _showPickSourceSheet(
                     onCamera: () async {
                       final file = await _pickFromCamera();
-                      if (mounted && file != null)
+                      if (mounted && file != null) {
                         setState(() => _rgFile = file);
+                      }
                     },
                     onGallery: () async {
                       final file = await _pickFromGallery();
-                      if (mounted && file != null)
+                      if (mounted && file != null) {
                         setState(() => _rgFile = file);
+                      }
                     },
                   );
                 },
@@ -533,22 +554,23 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
                         _showPickSourceSheet(
                           onCamera: () async {
                             final file = await _pickFromCamera();
-                            if (mounted && file != null)
+                            if (mounted && file != null) {
                               setState(() => _rgFile = file);
+                            }
                           },
                           onGallery: () async {
                             final file = await _pickFromGallery();
-                            if (mounted && file != null)
+                            if (mounted && file != null) {
                               setState(() => _rgFile = file);
+                            }
                           },
                         );
                       }
                     : null,
               ),
+              // Card: Comprovante de residência
               _buildDocumentUploadCard(
                 title: 'Comprovante de residência',
-                subtitle:
-                    'Último anexo pode ser reutilizado. Toque para trocar ou anexar.',
                 fileName: _displayFileName(
                     _addressProofFile, _addressProofExistingFileName),
                 hasValue: _hasAddressProof,
@@ -556,13 +578,15 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
                   _showPickSourceSheet(
                     onCamera: () async {
                       final file = await _pickFromCamera();
-                      if (mounted && file != null)
+                      if (mounted && file != null) {
                         setState(() => _addressProofFile = file);
+                      }
                     },
                     onGallery: () async {
                       final file = await _pickFromGallery();
-                      if (mounted && file != null)
+                      if (mounted && file != null) {
                         setState(() => _addressProofFile = file);
+                      }
                     },
                   );
                 },
@@ -571,44 +595,61 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
                         _showPickSourceSheet(
                           onCamera: () async {
                             final file = await _pickFromCamera();
-                            if (mounted && file != null)
+                            if (mounted && file != null) {
                               setState(() => _addressProofFile = file);
+                            }
                           },
                           onGallery: () async {
                             final file = await _pickFromGallery();
-                            if (mounted && file != null)
+                            if (mounted && file != null) {
                               setState(() => _addressProofFile = file);
+                            }
                           },
                         );
                       }
                     : null,
               ),
+              // Card: Autorização da Anvisa
               _buildDocumentUploadCard(
                 title: 'Autorização da Anvisa',
-                subtitle:
-                    'Sempre é necessário enviar uma nova autorização para cada pedido.',
                 fileName: _displayFileName(_anvisaFile, null),
                 hasValue: _hasAnvisa,
                 onAddOrReplace: () {
                   _showPickSourceSheet(
                     onCamera: () async {
                       final file = await _pickFromCamera();
-                      if (mounted && file != null)
+                      if (mounted && file != null) {
                         setState(() => _anvisaFile = file);
+                      }
                     },
                     onGallery: () async {
                       final file = await _pickFromGallery();
-                      if (mounted && file != null)
+                      if (mounted && file != null) {
                         setState(() => _anvisaFile = file);
+                      }
                     },
                   );
                 },
                 onReplace: _hasAnvisa
                     ? () {
-                        setState(() => _anvisaFile = null);
+                        _showPickSourceSheet(
+                          onCamera: () async {
+                            final file = await _pickFromCamera();
+                            if (mounted && file != null) {
+                              setState(() => _anvisaFile = file);
+                            }
+                          },
+                          onGallery: () async {
+                            final file = await _pickFromGallery();
+                            if (mounted && file != null) {
+                              setState(() => _anvisaFile = file);
+                            }
+                          },
+                        );
                       }
                     : null,
               ),
+              // Erro de upload, se houver
               if (_uploadError != null) ...[
                 const SizedBox(height: 16),
                 Container(
@@ -633,18 +674,21 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
                   ),
                 ),
               ],
-              const SizedBox(height: 32),
+              // Botão "Próximo"
               SizedBox(
                 width: double.infinity,
-                height: 48,
                 child: ElevatedButton(
                   onPressed: _canProceed && !_uploadingOnNext ? _onNext : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00994B),
+                    backgroundColor: const Color(0xFF00BB5A),
+                    foregroundColor: const Color(0xFFE6F8EF),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     disabledBackgroundColor: Colors.grey[300],
+                    elevation: 0,
                   ),
                   child: _uploadingOnNext
                       ? const SizedBox(
@@ -657,10 +701,14 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
                         )
                       : const Text(
                           'Próximo',
-                          style: TextStyle(fontSize: 14, color: Colors.white),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                 ),
               ),
+              const SizedBox(height: 24),
             ],
           ],
         ),
@@ -668,4 +716,47 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
       bottomNavigationBar: const PatientBottomNavigationBar(currentIndex: 1),
     );
   }
+}
+
+/// Desenha borda tracejada (Figma: estado vazio do upload).
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double borderRadius;
+
+  _DashedBorderPainter({
+    required this.color,
+    this.strokeWidth = 1.5,
+    this.borderRadius = 18,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+    const dashWidth = 8.0;
+    const dashSpace = 5.0;
+    final inset = strokeWidth / 2;
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+          inset, inset, size.width - inset * 2, size.height - inset * 2),
+      Radius.circular(borderRadius - inset),
+    );
+    final path = Path()..addRRect(rrect);
+    final pathMetrics = path.computeMetrics();
+    for (final metric in pathMetrics) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final end = (distance + dashWidth).clamp(0.0, metric.length);
+        final extractPath = metric.extractPath(distance, end);
+        canvas.drawPath(extractPath, paint);
+        distance = end + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -171,8 +171,15 @@ class AppRouter {
       GoRoute(
         path: '/professional-validation',
         name: 'professional-validation',
-        redirect: (context, state) =>
-            '/professional-validation/step1-professional-data',
+        redirect: (context, state) {
+          // Só redirecionar para step1 quando a URL for exatamente /professional-validation (sem step)
+          final path = state.uri.path;
+          if (path == '/professional-validation' ||
+              path == '/professional-validation/') {
+            return '/professional-validation/step1-professional-data';
+          }
+          return null; // mantém a rota atual (step2, step3, status)
+        },
         routes: [
           GoRoute(
             path: 'step1-professional-data',

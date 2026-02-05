@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
+import '../../../widgets/patient/new_order_step_progress.dart';
+import '../../../widgets/patient/new_order_step_header.dart';
 import '../../../models/order/new_order_form_data.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../utils/currency_formatter.dart';
@@ -75,66 +77,6 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
     return unitPrice * _quantity;
   }
 
-  Widget _buildProgressIndicator() {
-    return Row(
-      children: [
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFF00BB5A),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFF00BB5A),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6D6D3),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 52,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6D6D3),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6D6D3),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6D6D3),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (widget.formData == null) {
@@ -156,58 +98,11 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
-            _buildProgressIndicator(),
+            const NewOrderStepProgress(currentStep: 2),
             const SizedBox(height: 40),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Novo pedido',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF212121),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F0EE),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'Etapa 2 - Escolha o canal de aquisição',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF3F3F3D),
-                    ),
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE6F8EF),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'Valor: ${CurrencyFormatter.formatBRL(_productValue)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF007A3B),
-                    ),
-                  ),
-                ),
-              ],
+            NewOrderStepHeader(
+              stepLabel: 'Etapa 2 - Escolha o canal de aquisição',
+              valueText: 'Valor: ${CurrencyFormatter.formatBRL(_productValue)}',
             ),
             const SizedBox(height: 24),
             if (_loadingDetails)
@@ -218,6 +113,7 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                 ),
               )
             else ...[
+              // Card Produto (Figma: imagem + detalhes à esquerda, quantidade à direita)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -227,18 +123,93 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(
+                      'Produto',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF212121),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Produto',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF212121),
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE6F8EF),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: const Icon(
+                            Icons.medication_liquid,
+                            size: 32,
+                            color: Color(0xFF007A3B),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                formData.productName,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF007A3B),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Tipo de produto: Óleo',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF3F3F3D),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text.rich(
+                                TextSpan(
+                                  text: 'Dosagem: ',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF3F3F3D),
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: '20mg/ml',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text.rich(
+                                TextSpan(
+                                  text: 'Concentração: ',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF3F3F3D),
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: '20mg/ml de THC',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
                               icon: const Icon(Icons.remove,
@@ -277,9 +248,7 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                             IconButton(
                               icon: const Icon(Icons.add,
                                   color: Color(0xFF007A3B)),
-                              onPressed: () {
-                                setState(() => _quantity++);
-                              },
+                              onPressed: () => setState(() => _quantity++),
                               style: IconButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 side:
@@ -288,48 +257,6 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                               ),
                             ),
                           ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE6F8EF),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Icon(
-                            Icons.medication_liquid,
-                            size: 32,
-                            color: Color(0xFF007A3B),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                formData.productName,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF007A3B),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Prescrito pelo ${formData.doctorName}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF7C7C79),
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
                       ],
                     ),
@@ -487,6 +414,14 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                     Text(
                       formData.prescriberComments ?? _prescriberComments,
                       style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF3F3F3D),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Não interromper sem avisar o prescritor.',
+                      style: TextStyle(
                         fontSize: 14,
                         color: Color(0xFF3F3F3D),
                       ),

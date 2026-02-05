@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/common/doctor_app_bar_avatar.dart';
 import '../../widgets/common/safe_image_asset.dart';
 
 class PrescriptionProductsPage extends StatefulWidget {
   const PrescriptionProductsPage({super.key});
 
   @override
-  State<PrescriptionProductsPage> createState() => _PrescriptionProductsPageState();
+  State<PrescriptionProductsPage> createState() =>
+      _PrescriptionProductsPageState();
 }
 
 class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
@@ -74,15 +76,8 @@ class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.grey),
-            ),
-          ),
+        actions: const [
+          DoctorAppBarAvatar(),
         ],
       ),
       body: Column(
@@ -128,7 +123,8 @@ class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.chevron_right, color: Colors.transparent),
+                          icon: Icon(Icons.chevron_right,
+                              color: Colors.transparent),
                           onPressed: null,
                         ),
                       ],
@@ -148,7 +144,8 @@ class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
@@ -221,7 +218,8 @@ class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
     );
   }
 
-  Widget _buildProductCard(Map<String, dynamic> product, int index, bool isSelected) {
+  Widget _buildProductCard(
+      Map<String, dynamic> product, int index, bool isSelected) {
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -319,9 +317,3 @@ class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
     );
   }
 }
-
-
-
-
-
-

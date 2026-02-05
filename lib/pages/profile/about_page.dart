@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/common/bottom_navigation_bar_doctor.dart';
+import '../../widgets/common/doctor_app_bar_avatar.dart';
 
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
@@ -53,15 +55,8 @@ class _AboutPageState extends State<AboutPage>
           ),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.grey),
-            ),
-          ),
+        actions: const [
+          DoctorAppBarAvatar(),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -78,6 +73,7 @@ class _AboutPageState extends State<AboutPage>
         controller: _tabController,
         children: [_buildTermsTab(), _buildPrivacyTab()],
       ),
+      bottomNavigationBar: const DoctorBottomNavigationBar(currentIndex: 0),
     );
   }
 

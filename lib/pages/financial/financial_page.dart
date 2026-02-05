@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/common/bottom_navigation_bar_doctor.dart';
+import '../../widgets/common/doctor_app_bar_avatar.dart';
 
 class FinancialPage extends StatefulWidget {
   const FinancialPage({super.key});
@@ -172,15 +174,8 @@ class _FinancialPageState extends State<FinancialPage> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.black),
-            ),
-          ),
+        actions: const [
+          DoctorAppBarAvatar(),
         ],
       ),
       body: SingleChildScrollView(
@@ -405,6 +400,7 @@ class _FinancialPageState extends State<FinancialPage> {
           ],
         ),
       ),
+      bottomNavigationBar: const DoctorBottomNavigationBar(currentIndex: 2),
     );
   }
 }

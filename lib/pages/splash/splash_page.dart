@@ -49,6 +49,24 @@ class _SplashPageState extends State<SplashPage> {
               context.go('/patient/home');
               return;
             } else if (tipoUsuario == 'medico' || tipoUsuario == 'prescritor') {
+              // Médico: se status pendente_aprovacao, vai para fluxo de validação
+              final medicoResult = await ApiService().getFiltered(
+                'medicos',
+                filters: {'user_id': userId},
+                limit: 1,
+              );
+              if (medicoResult['success'] == true &&
+                  medicoResult['data'] != null &&
+                  (medicoResult['data'] as List).isNotEmpty) {
+                final medico =
+                    (medicoResult['data'] as List)[0] as Map<String, dynamic>;
+                final status = medico['status'] as String?;
+                if (status == 'pendente_aprovacao') {
+                  context
+                      .go('/professional-validation/step1-professional-data');
+                  return;
+                }
+              }
               context.go('/home');
               return;
             }

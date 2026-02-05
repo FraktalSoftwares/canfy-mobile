@@ -164,7 +164,8 @@ class ApiService {
         query = query.eq(key, value);
       });
 
-      final response = await query;
+      // Usar .select() para retornar os dados atualizados e confirmar sucesso
+      final response = await query.select();
 
       return {
         'success': true,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
+import '../../../widgets/patient/new_order_step_progress.dart';
+import '../../../widgets/patient/new_order_step_header.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../models/order/new_order_form_data.dart';
 
@@ -75,66 +77,6 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
 
   String _formatCurrency(double value) {
     return 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
-  }
-
-  Widget _buildProgressIndicator() {
-    return Row(
-      children: [
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFF00BB5A),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6D6D3),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6D6D3),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 52,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6D6D3),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6D6D3),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 53,
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD6D6D3),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildPrescriptionCard(Map<String, dynamic> prescription) {
@@ -260,58 +202,11 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
-            _buildProgressIndicator(),
+            const NewOrderStepProgress(currentStep: 1),
             const SizedBox(height: 40),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Novo pedido',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF212121),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F0EE),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'Etapa 1 - Selecione a receita',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF3F3F3D),
-                    ),
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE6F8EF),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    _getValorText(),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF007A3B),
-                    ),
-                  ),
-                ),
-              ],
+            NewOrderStepHeader(
+              stepLabel: 'Etapa 1 - Selecione a receita',
+              valueText: _getValorText(),
             ),
             const SizedBox(height: 24),
             if (isLoading)

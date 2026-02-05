@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
+import '../../../widgets/patient/new_order_step_progress.dart';
+import '../../../widgets/patient/new_order_step_header.dart';
 import '../../../models/order/new_order_form_data.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../services/api/asaas_service.dart';
@@ -33,6 +35,15 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
 
   // Método: credit_card | debit_card | pix
   String _paymentMethod = 'credit_card';
+
+  // Endereço de cobrança (Figma Etapa 5)
+  final _logradouroController = TextEditingController();
+  final _numeroController = TextEditingController();
+  final _cepController = TextEditingController();
+  final _estadoController = TextEditingController();
+  final _cidadeController = TextEditingController();
+  final _bairroController = TextEditingController();
+  final _complementoController = TextEditingController();
 
   // Cupom (opcional)
   final _couponController = TextEditingController();
@@ -71,6 +82,13 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
 
   @override
   void dispose() {
+    _logradouroController.dispose();
+    _numeroController.dispose();
+    _cepController.dispose();
+    _estadoController.dispose();
+    _cidadeController.dispose();
+    _bairroController.dispose();
+    _complementoController.dispose();
     _couponController.dispose();
     _cardNameController.dispose();
     _cardNumberController.dispose();
@@ -275,22 +293,79 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
     }
   }
 
-  Widget _buildProgressIndicator() {
-    return Row(
-      children: List.generate(
-        6,
-        (i) => Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Container(
-            width: 53,
-            height: 6,
-            decoration: BoxDecoration(
-              color: i < 5 ? const Color(0xFF00BB5A) : const Color(0xFFD6D6D3),
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-        ),
+  Widget _buildBillingAddressForm() {
+    const inputDecoration = InputDecoration(
+      filled: true,
+      fillColor: Color(0xFFF7F7F5),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12))),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: Color(0xFFE6E6E3)),
       ),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      hintStyle: TextStyle(color: Color(0xFF7C7C79), fontSize: 14),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: TextField(
+                controller: _logradouroController,
+                decoration:
+                    inputDecoration.copyWith(hintText: 'Ex: Rua rego freitas'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: _numeroController,
+                decoration: inputDecoration.copyWith(hintText: 'Ex: 452'),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: TextField(
+                controller: _cepController,
+                decoration: inputDecoration.copyWith(hintText: 'Ex: 01240-001'),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: _estadoController,
+                decoration: inputDecoration.copyWith(hintText: 'Ex: SP'),
+                textCapitalization: TextCapitalization.characters,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _cidadeController,
+          decoration: inputDecoration.copyWith(hintText: 'Ex: São Paulo'),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _bairroController,
+          decoration: inputDecoration.copyWith(hintText: 'Ex: Vila Madalena'),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _complementoController,
+          decoration: inputDecoration.copyWith(hintText: 'Ex: Apto 2006'),
+        ),
+      ],
     );
   }
 
@@ -366,7 +441,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const PatientAppBar(
-        title: 'Pagamento',
+        title: 'Endereço',
         fallbackRoute: '/patient/orders/new/step4',
       ),
       body: SingleChildScrollView(
@@ -375,35 +450,104 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
-            _buildProgressIndicator(),
-            const SizedBox(height: 24),
-            const Text(
-              'Novo pedido',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF212121),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F0EE),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'Etapa 5 - Endereço e pagamento',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF3F3F3D),
-                ),
-              ),
+            const NewOrderStepProgress(currentStep: 5),
+            const SizedBox(height: 40),
+            NewOrderStepHeader(
+              stepLabel: 'Etapa 5 - Preencha seu endereço',
+              valueText:
+                  'Valor: ${CurrencyFormatter.formatBRL(f.totalWithShipping)}',
             ),
             const SizedBox(height: 24),
 
-            // Endereço
+            // Card Valor total (Figma: primeiro card)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F7F5),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Valor total',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF212121),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _valueRow('Valor do produto',
+                      CurrencyFormatter.formatBRL(f.productValue)),
+                  const SizedBox(height: 4),
+                  _valueRow('Valor do frete',
+                      CurrencyFormatter.formatBRL(f.shippingCost)),
+                  const SizedBox(height: 8),
+                  const Divider(color: Color(0xFFE6E6E3)),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF212121),
+                        ),
+                      ),
+                      Text(
+                        CurrencyFormatter.formatBRL(f.totalWithShipping),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF3F3F3D),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Card Endereço de cobrança (Figma)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F7F5),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Endereço de cobrança',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF212121),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Endereço de cobrança',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF7C7C79),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildBillingAddressForm(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Endereço de entrega (leitura) + link editar
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -453,60 +597,6 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
                         color: Color(0xFF00994B),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Valor total
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F5),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Valor total',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF212121),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _valueRow('Valor do produto',
-                      CurrencyFormatter.formatBRL(f.productValue)),
-                  const SizedBox(height: 4),
-                  _valueRow('Valor do frete',
-                      CurrencyFormatter.formatBRL(f.shippingCost)),
-                  const SizedBox(height: 8),
-                  const Divider(color: Color(0xFFE6E6E3)),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Total',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF212121),
-                        ),
-                      ),
-                      Text(
-                        CurrencyFormatter.formatBRL(f.totalWithShipping),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF3F3F3D),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

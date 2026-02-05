@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/api/api_service.dart';
 import '../../services/api/auth_service.dart';
 import '../../services/api/asaas_service.dart';
 import '../../services/api/cep_service.dart';
@@ -314,9 +315,37 @@ class _RegisterPageState extends State<RegisterPage>
               print(
                   'Login - Usuário é paciente, redirecionando para /patient/home');
             } else if (tipoUsuario == 'medico' || tipoUsuario == 'prescritor') {
-              targetRoute = '/home';
-              print(
-                  'Login - Usuário é médico/prescritor, redirecionando para /home');
+              // Médico: se status pendente_aprovacao, vai para fluxo de validação
+              final user = data?['user'] as Map<String, dynamic>?;
+              final userId = user?['id'] as String?;
+              if (userId != null) {
+                final medicoResult = await ApiService().getFiltered(
+                  'medicos',
+                  filters: {'user_id': userId},
+                  limit: 1,
+                );
+                if (medicoResult['success'] == true &&
+                    medicoResult['data'] != null &&
+                    (medicoResult['data'] as List).isNotEmpty) {
+                  final medico =
+                      (medicoResult['data'] as List)[0] as Map<String, dynamic>;
+                  final status = medico['status'] as String?;
+                  if (status == 'pendente_aprovacao') {
+                    targetRoute =
+                        '/professional-validation/step1-professional-data';
+                    print(
+                        'Login - Médico pendente de aprovação, redirecionando para validação');
+                  } else {
+                    targetRoute = '/home';
+                    print(
+                        'Login - Usuário é médico/prescritor, redirecionando para /home');
+                  }
+                } else {
+                  targetRoute = '/home';
+                }
+              } else {
+                targetRoute = '/home';
+              }
             }
           }
 
@@ -680,8 +709,8 @@ class _RegisterPageState extends State<RegisterPage>
                   const SizedBox(height: 16),
                   _buildTextField(
                     controller: _crmController,
-                    label: 'CRM',
-                    hint: 'Digite seu CRM',
+                    label: 'CRM + UF',
+                    hint: 'Ex: 123456/SP',
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -883,7 +912,7 @@ class _RegisterPageState extends State<RegisterPage>
   }
 
   bool _isFormValid() {
-    return _nameError == null &&
+    final baseValid = _nameError == null &&
         _emailError == null &&
         _passwordError == null &&
         _confirmPasswordError == null &&
@@ -897,6 +926,9 @@ class _RegisterPageState extends State<RegisterPage>
         _cpfMask.getUnmaskedText().isNotEmpty &&
         _phoneMask.getUnmaskedText().isNotEmpty &&
         _birthDateController.text.trim().isNotEmpty;
+    if (!baseValid) return false;
+    if (_isDoctor && _crmController.text.trim().isEmpty) return false;
+    return true;
   }
 
   Widget _buildTextField({
@@ -1327,38 +1359,70 @@ class _RegisterPageState extends State<RegisterPage>
         throw Exception('CPF é obrigatório');
       }
 
-      // Chamar serviço de cadastro
-      final result = await _authService.registerPatient(
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        phone: phone.isNotEmpty ? phone : null,
-        cpf: cpf,
-        birthDate: birthDate,
-        gender: _selectedGender,
-        cep: _cepMask.getUnmaskedText().isEmpty
-            ? null
-            : _cepMask.getUnmaskedText(),
-        address: _addressController.text.trim().isEmpty
-            ? null
-            : _addressController.text.trim(),
-        addressNumber: _numberController.text.trim().isEmpty
-            ? null
-            : _numberController.text.trim(),
-        complement: _complementController.text.trim().isEmpty
-            ? null
-            : _complementController.text.trim(),
-        neighborhood: _neighborhoodController.text.trim().isEmpty
-            ? null
-            : _neighborhoodController.text.trim(),
-        city: _cityController.text.trim().isEmpty
-            ? null
-            : _cityController.text.trim(),
-        state: _stateController.text.trim().isEmpty
-            ? null
-            : _stateController.text.trim(),
-        authorizeDataSharing: _authorizeDataSharing,
-      );
+      final result = _isDoctor
+          ? await _authService.registerDoctor(
+              name: _nameController.text.trim(),
+              email: _emailController.text.trim(),
+              password: _passwordController.text,
+              phone: phone.isNotEmpty ? phone : null,
+              cpf: cpf.isNotEmpty ? cpf : null,
+              crm: _crmController.text.trim(),
+              cro: _croController.text.trim().isEmpty
+                  ? null
+                  : _croController.text.trim(),
+              cep: _cepMask.getUnmaskedText().isEmpty
+                  ? null
+                  : _cepMask.getUnmaskedText(),
+              address: _addressController.text.trim().isEmpty
+                  ? null
+                  : _addressController.text.trim(),
+              addressNumber: _numberController.text.trim().isEmpty
+                  ? null
+                  : _numberController.text.trim(),
+              complement: _complementController.text.trim().isEmpty
+                  ? null
+                  : _complementController.text.trim(),
+              neighborhood: _neighborhoodController.text.trim().isEmpty
+                  ? null
+                  : _neighborhoodController.text.trim(),
+              city: _cityController.text.trim().isEmpty
+                  ? null
+                  : _cityController.text.trim(),
+              state: _stateController.text.trim().isEmpty
+                  ? null
+                  : _stateController.text.trim(),
+            )
+          : await _authService.registerPatient(
+              name: _nameController.text.trim(),
+              email: _emailController.text.trim(),
+              password: _passwordController.text,
+              phone: phone.isNotEmpty ? phone : null,
+              cpf: cpf,
+              birthDate: birthDate,
+              gender: _selectedGender,
+              cep: _cepMask.getUnmaskedText().isEmpty
+                  ? null
+                  : _cepMask.getUnmaskedText(),
+              address: _addressController.text.trim().isEmpty
+                  ? null
+                  : _addressController.text.trim(),
+              addressNumber: _numberController.text.trim().isEmpty
+                  ? null
+                  : _numberController.text.trim(),
+              complement: _complementController.text.trim().isEmpty
+                  ? null
+                  : _complementController.text.trim(),
+              neighborhood: _neighborhoodController.text.trim().isEmpty
+                  ? null
+                  : _neighborhoodController.text.trim(),
+              city: _cityController.text.trim().isEmpty
+                  ? null
+                  : _cityController.text.trim(),
+              state: _stateController.text.trim().isEmpty
+                  ? null
+                  : _stateController.text.trim(),
+              authorizeDataSharing: _authorizeDataSharing,
+            );
 
       if (mounted) {
         setState(() {
@@ -1366,17 +1430,20 @@ class _RegisterPageState extends State<RegisterPage>
         });
 
         if (result['success'] == true) {
-          // Criar cliente no Asaas e salvar asaas_customer_id no profile (para pagamentos)
-          final cpf = _cpfMask.getUnmaskedText();
-          final phone = _phoneMask.getUnmaskedText();
-          await _asaasService.syncCustomer(
-            name: _nameController.text.trim(),
-            email: _emailController.text.trim(),
-            mobilePhone: phone.isNotEmpty ? phone : null,
-            cpfCnpj: cpf.isNotEmpty ? cpf : null,
-          );
-          // Navegar para home do paciente (usuário já está logado após cadastro)
-          context.go('/patient/home');
+          if (_isDoctor) {
+            context.go('/professional-validation/step1-professional-data');
+          } else {
+            // Criar cliente no Asaas e salvar asaas_customer_id no profile (para pagamentos)
+            final cpfFinal = _cpfMask.getUnmaskedText();
+            final phoneFinal = _phoneMask.getUnmaskedText();
+            await _asaasService.syncCustomer(
+              name: _nameController.text.trim(),
+              email: _emailController.text.trim(),
+              mobilePhone: phoneFinal.isNotEmpty ? phoneFinal : null,
+              cpfCnpj: cpfFinal.isNotEmpty ? cpfFinal : null,
+            );
+            context.go('/patient/home');
+          }
         } else {
           final errorMessage = ErrorMessages.extractErrorMessage(result);
           ScaffoldMessenger.of(context).showSnackBar(

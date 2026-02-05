@@ -2,10 +2,10 @@ import '../api/api_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Serviço de autenticação e gerenciamento de usuários
-/// 
+///
 /// IMPORTANTE: Este serviço usa o ApiService que por sua vez usa Supabase.
 /// Para operações de schema (criação de tabelas), sempre use o MCP do Supabase.
-/// 
+///
 /// Estrutura do banco:
 /// - profiles: dados gerais do usuário (nome_completo, telefone, tipo_usuario)
 /// - pacientes: dados específicos do paciente (cpf, data_nascimento, endereco_completo)
@@ -23,39 +23,39 @@ class AuthService {
     String? state,
   }) {
     final parts = <String>[];
-    
+
     if (address != null && address.isNotEmpty) {
       parts.add(address);
       if (addressNumber != null && addressNumber.isNotEmpty) {
         parts.add('nº $addressNumber');
       }
     }
-    
+
     if (neighborhood != null && neighborhood.isNotEmpty) {
       parts.add(neighborhood);
     }
-    
+
     if (city != null && city.isNotEmpty) {
       parts.add(city);
     }
-    
+
     if (state != null && state.isNotEmpty) {
       parts.add(state);
     }
-    
+
     if (cep != null && cep.isNotEmpty) {
       parts.add('CEP: $cep');
     }
-    
+
     if (complement != null && complement.isNotEmpty) {
       parts.add('($complement)');
     }
-    
+
     return parts.join(', ');
   }
 
   /// Cadastrar novo paciente
-  /// 
+  ///
   /// Cria o usuário no Supabase Auth, depois cria o profile e o registro em pacientes
   Future<Map<String, dynamic>> registerPatient({
     required String name,
@@ -83,8 +83,10 @@ class AuthService {
         password: password,
         metadata: {
           'nome_completo': name, // O trigger handle_new_user usa este campo
-          if (phone != null && phone.isNotEmpty) 'telefone': phone, // O trigger usa este campo
-          'tipo_usuario': 'paciente', // O trigger usa este campo para determinar o tipo
+          if (phone != null && phone.isNotEmpty)
+            'telefone': phone, // O trigger usa este campo
+          'tipo_usuario':
+              'paciente', // O trigger usa este campo para determinar o tipo
         },
       );
 
@@ -115,8 +117,9 @@ class AuthService {
       );
 
       Map<String, dynamic> profileResult;
-      
-      if (existingProfile['success'] == true && existingProfile['data'] != null) {
+
+      if (existingProfile['success'] == true &&
+          existingProfile['data'] != null) {
         // Profile existe, atualizar com dados completos
         final profileUpdateData = {
           'nome_completo': name,
@@ -179,9 +182,9 @@ class AuthService {
         if (enderecoCompleto.isNotEmpty) 'endereco_completo': enderecoCompleto,
       };
 
-      final pacienteResult = existingPaciente['success'] == true && 
-                            existingPaciente['data'] != null &&
-                            (existingPaciente['data'] as List).isNotEmpty
+      final pacienteResult = existingPaciente['success'] == true &&
+              existingPaciente['data'] != null &&
+              (existingPaciente['data'] as List).isNotEmpty
           ? await _apiService.put(
               'pacientes',
               {'user_id': userId},
@@ -198,7 +201,8 @@ class AuthService {
       if (!pacienteResult['success']) {
         return {
           'success': false,
-          'message': 'Erro ao salvar dados do paciente: ${pacienteResult['message']}',
+          'message':
+              'Erro ao salvar dados do paciente: ${pacienteResult['message']}',
           'data': null,
           'error': pacienteResult['error'],
         };
@@ -258,12 +262,14 @@ class AuthService {
           limit: 1,
         );
 
-        final profiles = profileResult['success'] && profileResult['data'] != null
-            ? profileResult['data'] as List
-            : [];
-        final pacientes = pacienteResult['success'] && pacienteResult['data'] != null
-            ? pacienteResult['data'] as List
-            : [];
+        final profiles =
+            profileResult['success'] && profileResult['data'] != null
+                ? profileResult['data'] as List
+                : [];
+        final pacientes =
+            pacienteResult['success'] && pacienteResult['data'] != null
+                ? pacienteResult['data'] as List
+                : [];
 
         print('AuthService - Profile result: ${profileResult['success']}');
         print('AuthService - Profiles encontrados: ${profiles.length}');
@@ -274,7 +280,8 @@ class AuthService {
         if (profiles.isNotEmpty) {
           final profileData = profiles[0] as Map<String, dynamic>;
           print('AuthService - Profile encontrado: $profileData');
-          print('AuthService - Tipo usuário no profile: ${profileData['tipo_usuario']}');
+          print(
+              'AuthService - Tipo usuário no profile: ${profileData['tipo_usuario']}');
           return {
             'success': true,
             'message': 'Login realizado com sucesso',
@@ -286,7 +293,8 @@ class AuthService {
             },
           };
         } else {
-          print('AuthService - Nenhum profile encontrado para o usuário $userId');
+          print(
+              'AuthService - Nenhum profile encontrado para o usuário $userId');
           // Mesmo sem profile, retornar sucesso para permitir login
           // O app pode buscar o profile depois
           return {
@@ -307,6 +315,174 @@ class AuthService {
       return {
         'success': false,
         'message': 'Erro ao fazer login: ${e.toString()}',
+        'data': null,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  /// Cadastrar novo médico/prescritor
+  ///
+  /// Cria o usuário no Supabase Auth com tipo_usuario = medico, atualiza o profile
+  /// e insere o registro em medicos (CRM/UF, CPF, endereço). Não cria registro em pacientes.
+  Future<Map<String, dynamic>> registerDoctor({
+    required String name,
+    required String email,
+    required String password,
+    String? phone,
+    String? cpf,
+    required String crm,
+    String? cro,
+    String? cep,
+    String? address,
+    String? addressNumber,
+    String? complement,
+    String? neighborhood,
+    String? city,
+    String? state,
+  }) async {
+    try {
+      // Parse CRM: aceita "123456/SP" -> crm="123456", uf_crm="SP"; senão crm=texto, uf_crm="A confirmar"
+      String crmNum = crm.trim();
+      String ufCrm = 'A confirmar';
+      if (crmNum.contains('/')) {
+        final parts = crmNum.split('/');
+        crmNum = parts[0].trim();
+        if (parts.length > 1 && parts[1].trim().isNotEmpty) {
+          ufCrm = parts[1].trim();
+        }
+      }
+      if (crmNum.isEmpty) {
+        return {
+          'success': false,
+          'message': 'CRM é obrigatório',
+          'data': null,
+        };
+      }
+
+      // 1. Criar usuário no Supabase Auth com tipo médico
+      final authResult = await _apiService.signUp(
+        email: email,
+        password: password,
+        metadata: {
+          'nome_completo': name,
+          if (phone != null && phone.isNotEmpty) 'telefone': phone,
+          'tipo_usuario': 'medico',
+        },
+      );
+
+      if (!authResult['success']) {
+        return authResult;
+      }
+
+      final userData = authResult['data'] as Map<String, dynamic>;
+      final user = userData['user'] as Map<String, dynamic>?;
+      final userId = user?['id'] as String?;
+
+      if (userId == null) {
+        return {
+          'success': false,
+          'message': 'Erro ao obter ID do usuário criado',
+          'data': null,
+        };
+      }
+
+      await Future.delayed(const Duration(milliseconds: 1000));
+
+      // 2. Garantir profile com tipo medico
+      final existingProfile = await _apiService.getFiltered(
+        'profiles',
+        filters: {'id': userId},
+        limit: 1,
+      );
+
+      final profileUpdateData = {
+        'nome_completo': name,
+        if (phone != null && phone.isNotEmpty) 'telefone': phone,
+        'tipo_usuario': 'medico',
+        'ativo': true,
+      };
+
+      if (existingProfile['success'] == true &&
+          existingProfile['data'] != null &&
+          (existingProfile['data'] as List).isNotEmpty) {
+        await _apiService.put('profiles', {'id': userId}, profileUpdateData);
+      } else {
+        await _apiService.post(
+          'profiles',
+          {
+            'id': userId,
+            ...profileUpdateData,
+          },
+        );
+      }
+
+      // 2.1 Remover registro em pacientes se existir (trigger pode ter criado por default)
+      await _apiService.delete('pacientes', {'user_id': userId});
+
+      // Montar endereço completo no mesmo formato da página de dados profissionais
+      final enderecoParts = <String>[];
+      if (address != null && address.trim().isNotEmpty) {
+        enderecoParts.add(address.trim());
+        if (addressNumber != null && addressNumber.trim().isNotEmpty) {
+          enderecoParts.add('nº ${addressNumber.trim()}');
+        }
+      }
+      if (neighborhood != null && neighborhood.trim().isNotEmpty) {
+        enderecoParts.add(neighborhood.trim());
+      }
+      if (city != null && city.trim().isNotEmpty) {
+        enderecoParts.add(city.trim());
+      }
+      if (state != null && state.trim().isNotEmpty) {
+        enderecoParts.add(state.trim());
+      }
+      if (cep != null && cep.trim().isNotEmpty) {
+        enderecoParts.add('CEP: ${cep.trim()}');
+      }
+      if (complement != null && complement.trim().isNotEmpty) {
+        enderecoParts.add('(${complement.trim()})');
+      }
+      final enderecoCompleto =
+          enderecoParts.isEmpty ? null : enderecoParts.join(', ');
+
+      // 3. Inserir em medicos (nome, email, crm, uf_crm, cpf, endereco_completo; user_id referencia profiles.id)
+      final medicoData = {
+        'user_id': userId,
+        'nome': name,
+        'email': email,
+        if (phone != null && phone.isNotEmpty) 'telefone': phone,
+        if (cpf != null && cpf.trim().isNotEmpty) 'cpf': cpf.trim(),
+        'crm': crmNum,
+        'uf_crm': ufCrm,
+        if (enderecoCompleto != null && enderecoCompleto.isNotEmpty)
+          'endereco_completo': enderecoCompleto,
+      };
+
+      final medicoResult = await _apiService.post('medicos', medicoData);
+
+      if (!medicoResult['success']) {
+        return {
+          'success': false,
+          'message':
+              'Erro ao salvar dados do médico: ${medicoResult['message']}',
+          'data': null,
+          'error': medicoResult['error'],
+        };
+      }
+
+      return {
+        'success': true,
+        'message': 'Cadastro realizado. Complete a validação profissional.',
+        'data': {
+          'user': user,
+          'medico': medicoResult['data'],
+        },
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Erro ao cadastrar médico: ${e.toString()}',
         'data': null,
         'error': e.toString(),
       };
@@ -347,9 +523,10 @@ class AuthService {
       final profiles = profileResult['success'] && profileResult['data'] != null
           ? profileResult['data'] as List
           : [];
-      final pacientes = pacienteResult['success'] && pacienteResult['data'] != null
-          ? pacienteResult['data'] as List
-          : [];
+      final pacientes =
+          pacienteResult['success'] && pacienteResult['data'] != null
+              ? pacienteResult['data'] as List
+              : [];
 
       if (profiles.isNotEmpty) {
         return {

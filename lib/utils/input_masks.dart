@@ -26,6 +26,21 @@ class InputMasks {
     filter: {"#": RegExp(r'[0-9]')},
   );
 
+  /// Máscara para CRM + UF: 123456/SP (6 dígitos + / + 2 letras)
+  static MaskTextInputFormatter crmUf = MaskTextInputFormatter(
+    mask: '######/??',
+    filter: {
+      "#": RegExp(r'[0-9]'),
+      "?": RegExp(r'[A-Za-z]'),
+    },
+  );
+
+  /// Máscara para UF (Estado): 2 letras (ex: SP)
+  static MaskTextInputFormatter uf = MaskTextInputFormatter(
+    mask: '??',
+    filter: {"?": RegExp(r'[A-Za-z]')},
+  );
+
   /// Máscara para número de cartão: 0000 0000 0000 0000
   static MaskTextInputFormatter cardNumber = MaskTextInputFormatter(
     mask: '#### #### #### ####',
@@ -47,6 +62,30 @@ class InputMasks {
   /// Remove caracteres não numéricos
   static String removeNonNumeric(String value) {
     return value.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  /// Formata CPF para exibição (11 dígitos -> ###.###.###-##)
+  static String formatCpfForDisplay(String? value) {
+    if (value == null || value.isEmpty) return '';
+    final d = removeNonNumeric(value);
+    if (d.length > 11) {
+      return '${d.substring(0, 3)}.${d.substring(3, 6)}.${d.substring(6, 9)}-${d.substring(9, 11)}';
+    }
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return '${d.substring(0, 3)}.${d.substring(3)}';
+    if (d.length <= 9) {
+      return '${d.substring(0, 3)}.${d.substring(3, 6)}.${d.substring(6)}';
+    }
+    return '${d.substring(0, 3)}.${d.substring(3, 6)}.${d.substring(6, 9)}-${d.substring(9)}';
+  }
+
+  /// Formata CEP para exibição (8 dígitos -> #####-###)
+  static String formatCepForDisplay(String? value) {
+    if (value == null || value.isEmpty) return '';
+    final d = removeNonNumeric(value);
+    if (d.length > 8) return '${d.substring(0, 5)}-${d.substring(5, 8)}';
+    if (d.length <= 5) return d;
+    return '${d.substring(0, 5)}-${d.substring(5)}';
   }
 
   /// Valida CPF

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../services/api/api_service.dart';
@@ -30,6 +31,9 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
   final TextEditingController _cpfController = TextEditingController();
   final TextEditingController _birthDateController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _sexoController = TextEditingController();
+  final TextEditingController _nomeMaeController = TextEditingController();
+  final TextEditingController _cartaoSusController = TextEditingController();
 
   // Máscaras
   final _cpfMask = InputMasks.cpf;
@@ -42,6 +46,7 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
   String? _patientAvatar;
   String? _patientId;
   String? _userId;
+  List<Map<String, dynamic>> _patientDocuments = [];
 
   @override
   void initState() {
@@ -57,6 +62,9 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
     _cpfController.dispose();
     _birthDateController.dispose();
     _addressController.dispose();
+    _sexoController.dispose();
+    _nomeMaeController.dispose();
+    _cartaoSusController.dispose();
     super.dispose();
   }
 
@@ -130,10 +138,26 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
             }
           }
 
-          // Endereço
+          // Endereço (Região)
           _addressController.text =
               paciente['endereco_completo'] as String? ?? '';
+
+          // Sexo, Nome da mãe, Cartão do SUS (editáveis)
+          _sexoController.text = paciente['sexo'] as String? ?? '';
+          _nomeMaeController.text = paciente['nome_mae'] as String? ?? '';
+          _cartaoSusController.text = paciente['cartao_sus'] as String? ?? '';
         }
+      }
+
+      // Carregar documentos do paciente para a seção Documentos
+      final docsResult = await _patientService.getPatientDocuments();
+      if (docsResult['success'] == true &&
+          docsResult['data'] != null &&
+          mounted) {
+        setState(() {
+          _patientDocuments =
+              List<Map<String, dynamic>>.from(docsResult['data'] as List);
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -167,7 +191,7 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
       final profileUpdate = {
         'nome_completo': _nameController.text.trim(),
         if (_phoneController.text.isNotEmpty)
-          'telefone': _phoneMask.getUnmaskedText(),
+          'telefone': InputMasks.removeNonNumeric(_phoneController.text),
       };
 
       final profileResult = await _apiService.put(
@@ -180,15 +204,16 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
         throw Exception(profileResult['message'] ?? 'Erro ao atualizar perfil');
       }
 
-      // Atualizar dados do paciente
+      // Atualizar dados do paciente (usar texto do controller; máscara não reflete valor carregado)
       if (_patientId != null) {
-        final cpf = _cpfMask.getUnmaskedText();
-        if (cpf.isEmpty) {
+        final cpf = InputMasks.removeNonNumeric(_cpfController.text);
+        if (cpf.isEmpty || cpf.length != 11) {
           throw Exception('CPF é obrigatório');
         }
 
         // Parse da data de nascimento
-        final birthDateStr = _dateMask.getUnmaskedText();
+        final birthDateStr =
+            InputMasks.removeNonNumeric(_birthDateController.text);
         if (birthDateStr.length != 8) {
           throw Exception('Data de nascimento inválida');
         }
@@ -203,6 +228,12 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
           'data_nascimento': birthDate.toIso8601String().split('T')[0],
           if (_addressController.text.trim().isNotEmpty)
             'endereco_completo': _addressController.text.trim(),
+          if (_sexoController.text.trim().isNotEmpty)
+            'sexo': _sexoController.text.trim(),
+          if (_nomeMaeController.text.trim().isNotEmpty)
+            'nome_mae': _nomeMaeController.text.trim(),
+          if (_cartaoSusController.text.trim().isNotEmpty)
+            'cartao_sus': _cartaoSusController.text.trim(),
         };
 
         final pacienteResult = await _apiService.put(
@@ -273,6 +304,156 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
     );
   }
 
+  /// Nome amigável do tipo de documento (RG, comprovante de endereço, etc.).
+  static String _documentDisplayName(Map<String, dynamic> doc) {
+    final tipo = doc['tipo']?.toString().toLowerCase();
+    final nomeArquivo = doc['nome_arquivo']?.toString() ?? '';
+    switch (tipo) {
+      case 'identidade':
+        return 'RG/CNH';
+      case 'comprovante_residencia':
+        return 'Comprovante de endereço';
+      case 'autorizacao_anvisa':
+        return 'Autorização Anvisa';
+      case 'laudo_medico':
+        return 'Laudo médico';
+      case 'exame':
+        return 'Exame';
+      case 'outro':
+        return nomeArquivo.isNotEmpty ? nomeArquivo : 'Documento';
+      default:
+        return nomeArquivo.isNotEmpty ? nomeArquivo : 'Documento';
+    }
+  }
+
+  /// Item de documento no estilo Figma: borda verde, fundo verde claro, ícone editar, nome em verde, ícone excluir.
+  Widget _buildDocumentItem(Map<String, dynamic> doc) {
+    final displayName = _documentDisplayName(doc);
+    final docId = doc['id'] as String?;
+    final url = doc['arquivo_url'] as String?;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE6F8EF),
+        border: Border.all(color: const Color(0xFF33CC80)),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE6F8EF),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.edit, color: Color(0xFF00994B), size: 20),
+              onPressed: url != null && url.isNotEmpty
+                  ? () => _openDocumentUrl(url)
+                  : null,
+              padding: EdgeInsets.zero,
+              style: IconButton.styleFrom(
+                minimumSize: const Size(40, 40),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              displayName,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF00994B),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Color(0xFF00994B)),
+            onPressed: docId != null
+                ? () => _confirmRemoveDocument(docId, displayName)
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openDocumentUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível abrir o documento.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmRemoveDocument(String docId, String nomeArquivo) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir documento'),
+        content: Text(
+          'Remover "$nomeArquivo"? Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir',
+                style: TextStyle(color: Color(0xFFD32F2F))),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    try {
+      final result = await _apiService.delete('documentos', {'id': docId});
+      if (result['success'] == true && mounted) {
+        setState(() {
+          _patientDocuments.removeWhere((d) => d['id'] == docId);
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Documento removido.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Erro ao remover documento'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -310,17 +491,24 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
               ),
             ),
             const SizedBox(height: 24),
-            // Card de dados básicos
+            // Card de dados básicos (fundo branco com sombra - Figma)
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F5),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Foto de perfil
+                  // Foto de perfil com ícone de lápis (editar)
                   GestureDetector(
                     onTap: () {
                       _showImagePickerSheet();
@@ -354,8 +542,8 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
                               ),
                             ),
                             child: const Icon(
-                              Icons.camera_alt,
-                              size: 10,
+                              Icons.edit,
+                              size: 12,
                               color: Colors.white,
                             ),
                           ),
@@ -375,7 +563,7 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // Campos editáveis
+                  // Campos na ordem do Figma: Nome, E-mail, Senha, CPF, Sexo, Data nasc., Nome mãe, Cartão SUS, Telefone, Região
                   _buildFieldRow(
                     'Nome',
                     TextField(
@@ -397,7 +585,7 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
                     'E-mail',
                     TextField(
                       controller: _emailController,
-                      readOnly: true, // Email não pode ser alterado aqui
+                      readOnly: true,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -413,20 +601,16 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
                   ),
                   const SizedBox(height: 8),
                   _buildFieldRow(
-                    'Telefone',
-                    TextField(
-                      controller: _phoneController,
-                      inputFormatters: [_phoneMask],
-                      keyboardType: TextInputType.phone,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF212121),
-                      ),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.only(bottom: 8),
+                    'Senha',
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        '********',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF7C7C79),
+                        ),
                       ),
                     ),
                   ),
@@ -446,6 +630,24 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.only(bottom: 8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildFieldRow(
+                    'Sexo',
+                    TextField(
+                      controller: _sexoController,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF212121),
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.only(bottom: 8),
+                        hintText: 'Ex.: Masculino, Feminino',
                       ),
                     ),
                   ),
@@ -471,7 +673,62 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
                   ),
                   const SizedBox(height: 8),
                   _buildFieldRow(
-                    'Endereço',
+                    'Nome da mãe',
+                    TextField(
+                      controller: _nomeMaeController,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF212121),
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.only(bottom: 8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildFieldRow(
+                    'Cartão do SUS',
+                    TextField(
+                      controller: _cartaoSusController,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF212121),
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.only(bottom: 8),
+                        hintText: 'Número do cartão',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildFieldRow(
+                    'Telefone',
+                    TextField(
+                      controller: _phoneController,
+                      inputFormatters: [_phoneMask],
+                      keyboardType: TextInputType.phone,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF212121),
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.only(bottom: 8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildFieldRow(
+                    'Região',
                     TextField(
                       controller: _addressController,
                       maxLines: 2,
@@ -543,19 +800,72 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
               ),
             ),
             const SizedBox(height: 24),
-            // Botão Sair da conta
+            // Seção Documentos (Figma)
+            const Text(
+              'Documentos',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF212121),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_patientDocuments.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Text(
+                        'Nenhum documento anexado.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF7C7C79),
+                        ),
+                      ),
+                    )
+                  else
+                    ..._patientDocuments.map(
+                      (doc) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _buildDocumentItem(doc),
+                      ),
+                    ),
+                  if (_patientDocuments.isNotEmpty) const SizedBox(height: 8),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Botão Sair da conta (sem borda)
             OutlinedButton.icon(
               onPressed: () {
                 _showLogoutSheet();
               },
-              icon: const Icon(Icons.exit_to_app, size: 16),
-              label: const Text('Sair da conta'),
+              icon: const Icon(Icons.exit_to_app,
+                  size: 16, color: Color(0xFF7C7C79)),
+              label: const Text(
+                'Sair da conta',
+                style: TextStyle(color: Color(0xFF7C7C79), fontSize: 14),
+              ),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 49),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(999),
                 ),
-                side: const BorderSide(color: Color(0xFF7C7C79)),
+                side: BorderSide.none,
               ),
             ),
             const SizedBox(height: 8),

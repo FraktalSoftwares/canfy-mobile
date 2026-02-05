@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/common/doctor_app_bar_avatar.dart';
 import '../../widgets/common/safe_image_asset.dart';
 
 class PrescriptionDetailsPage extends StatefulWidget {
@@ -65,15 +66,8 @@ class _PrescriptionDetailsPageState extends State<PrescriptionDetailsPage> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.grey),
-            ),
-          ),
+        actions: const [
+          DoctorAppBarAvatar(),
         ],
       ),
       body: Column(

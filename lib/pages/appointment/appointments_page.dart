@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
+import '../../widgets/common/doctor_app_bar_avatar.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
@@ -42,15 +43,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
           ),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.grey),
-            ),
-          ),
+        actions: const [
+          DoctorAppBarAvatar(),
         ],
       ),
       body: Column(
@@ -135,7 +129,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        ...appointments.map((appointment) => _buildAppointmentCard(appointment)),
+        ...appointments
+            .map((appointment) => _buildAppointmentCard(appointment)),
         const SizedBox(height: 100),
       ],
     );
@@ -172,7 +167,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        ...appointments.map((appointment) => _buildAppointmentCard(appointment)),
+        ...appointments
+            .map((appointment) => _buildAppointmentCard(appointment)),
       ],
     );
   }
@@ -201,7 +197,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFF66DDA2),
                   borderRadius: BorderRadius.circular(999),
@@ -281,11 +278,4 @@ class _AppointmentsPageState extends State<AppointmentsPage>
       ),
     );
   }
-
 }
-
-
-
-
-
-

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
+import '../../widgets/common/doctor_app_bar_avatar.dart';
 
 class FinishAppointmentPage extends StatefulWidget {
   const FinishAppointmentPage({super.key});
@@ -48,15 +49,8 @@ class _FinishAppointmentPageState extends State<FinishAppointmentPage> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.grey),
-            ),
-          ),
+        actions: const [
+          DoctorAppBarAvatar(),
         ],
       ),
       body: SingleChildScrollView(
@@ -118,7 +112,8 @@ class _FinishAppointmentPageState extends State<FinishAppointmentPage> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.chevron_right, color: Color(0xFF00994B)),
+                        icon: const Icon(Icons.chevron_right,
+                            color: Color(0xFF00994B)),
                         onPressed: () {},
                       ),
                     ],
@@ -159,7 +154,9 @@ class _FinishAppointmentPageState extends State<FinishAppointmentPage> {
                     children: List.generate(5, (index) {
                       return IconButton(
                         icon: Icon(
-                          index < _selectedRating ? Icons.star : Icons.star_border,
+                          index < _selectedRating
+                              ? Icons.star
+                              : Icons.star_border,
                           color: const Color(0xFF00994B),
                           size: 48,
                         ),
@@ -224,11 +221,4 @@ class _FinishAppointmentPageState extends State<FinishAppointmentPage> {
       ),
     );
   }
-
 }
-
-
-
-
-
-

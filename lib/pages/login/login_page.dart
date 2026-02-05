@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
+import '../../services/api/api_service.dart';
 import '../../services/api/auth_service.dart';
 import '../../utils/input_masks.dart';
 
@@ -12,9 +13,10 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
+class _LoginPageState extends State<LoginPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
@@ -29,7 +31,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this, initialIndex: 1); // Login tab selecionada por padrão
+    _tabController = TabController(
+        length: 2,
+        vsync: this,
+        initialIndex: 1); // Login tab selecionada por padrão
     _tabController.addListener(() {
       setState(() {
         _isLoginTab = _tabController.index == 1;
@@ -84,9 +89,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
   bool _isFormValid() {
     return _emailError == null &&
-           _passwordError == null &&
-           _emailController.text.trim().isNotEmpty &&
-           _passwordController.text.isNotEmpty;
+        _passwordError == null &&
+        _emailController.text.trim().isNotEmpty &&
+        _passwordController.text.isNotEmpty;
   }
 
   Future<void> _handleLogin() async {
@@ -96,7 +101,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     print('Login - _isFormValid(): ${_isFormValid()}');
     print('Login - _emailError: $_emailError');
     print('Login - _passwordError: $_passwordError');
-    
+
     // Validar formulário novamente antes de prosseguir
     _validateEmail();
     _validatePassword();
@@ -104,7 +109,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     // Verificar se o formulário está válido ANTES de fazer qualquer coisa
     final isValid = _isFormValid();
     print('Login - Formulário válido após validação: $isValid');
-    
+
     if (!isValid) {
       print('Login - Formulário inválido, abortando login');
       setState(() {
@@ -148,12 +153,12 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
           // Verificar tipo de usuário e redirecionar
           final data = result['data'] as Map<String, dynamic>?;
           final profile = data?['profile'];
-          
+
           // Debug: imprimir dados recebidos
           print('Login - Dados recebidos: $data');
           print('Login - Profile: $profile');
           print('Login - Tipo do profile: ${profile.runtimeType}');
-          
+
           // O profile pode ser um Map ou uma lista com um Map
           Map<String, dynamic>? profileMap;
           if (profile is Map<String, dynamic>) {
@@ -165,35 +170,67 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               profileMap = profile[0] as Map<String, dynamic>?;
             }
           } else if (profile != null) {
-            print('Login - Profile é de tipo desconhecido: ${profile.runtimeType}');
+            print(
+                'Login - Profile é de tipo desconhecido: ${profile.runtimeType}');
           }
-          
+
           // O tipo_usuario vem como string do Supabase
           final tipoUsuario = profileMap?['tipo_usuario'] as String?;
           print('Login - Tipo usuário: $tipoUsuario');
           print('Login - Profile completo: $profileMap');
 
           // Redirecionar baseado no tipo de usuário
-          // Por padrão, assumir paciente se não conseguir determinar
           String targetRoute = '/patient/home';
-          
+
           if (tipoUsuario != null) {
             if (tipoUsuario == 'paciente') {
               targetRoute = '/patient/home';
-              print('Login - Usuário é paciente, redirecionando para /patient/home');
+              print(
+                  'Login - Usuário é paciente, redirecionando para /patient/home');
             } else if (tipoUsuario == 'medico' || tipoUsuario == 'prescritor') {
-              targetRoute = '/home';
-              print('Login - Usuário é médico/prescritor, redirecionando para /home');
+              // Médico: se status pendente_aprovacao, vai para fluxo de validação
+              final user = data?['user'] as Map<String, dynamic>?;
+              final userId = user?['id'] as String?;
+              if (userId != null) {
+                final medicoResult = await ApiService().getFiltered(
+                  'medicos',
+                  filters: {'user_id': userId},
+                  limit: 1,
+                );
+                if (medicoResult['success'] == true &&
+                    medicoResult['data'] != null &&
+                    (medicoResult['data'] as List).isNotEmpty) {
+                  final medico =
+                      (medicoResult['data'] as List)[0] as Map<String, dynamic>;
+                  final status = medico['status'] as String?;
+                  if (status == 'pendente_aprovacao') {
+                    targetRoute =
+                        '/professional-validation/step1-professional-data';
+                    print(
+                        'Login - Médico pendente de aprovação, redirecionando para validação');
+                  } else {
+                    targetRoute = '/home';
+                    print(
+                        'Login - Usuário é médico/prescritor, redirecionando para /home');
+                  }
+                } else {
+                  targetRoute = '/home';
+                }
+              } else {
+                targetRoute = '/home';
+              }
             } else {
-              print('Login - Tipo desconhecido ($tipoUsuario), usando fallback para /patient/home');
+              print(
+                  'Login - Tipo desconhecido ($tipoUsuario), usando fallback para /patient/home');
             }
           } else {
-            print('Login - Tipo usuário não encontrado, usando fallback para /patient/home');
+            print(
+                'Login - Tipo usuário não encontrado, usando fallback para /patient/home');
           }
 
           // Redirecionar imediatamente após o frame atual
           print('Login - Preparando redirecionamento para: $targetRoute');
-          
+
           // Usar SchedulerBinding para garantir que o redirecionamento aconteça após o build
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -201,14 +238,16 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               try {
                 // Usar go() que substitui a rota atual
                 context.go(targetRoute);
-                print('Login - Redirecionamento para $targetRoute executado com sucesso');
+                print(
+                    'Login - Redirecionamento para $targetRoute executado com sucesso');
               } catch (e, stackTrace) {
                 print('Login - Erro ao redirecionar: $e');
                 print('Login - Stack trace: $stackTrace');
                 // Se falhar, tentar novamente após um delay
                 Future.delayed(const Duration(milliseconds: 300), () {
                   if (mounted) {
-                    print('Login - Tentando redirecionamento novamente para: $targetRoute');
+                    print(
+                        'Login - Tentando redirecionamento novamente para: $targetRoute');
                     try {
                       context.go(targetRoute);
                     } catch (e2) {
@@ -225,7 +264,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
           setState(() {
             _hasError = true;
             _emailError = null;
-            _passwordError = result['message'] as String? ?? 'Erro ao fazer login';
+            _passwordError =
+                result['message'] as String? ?? 'Erro ao fazer login';
           });
 
           ScaffoldMessenger.of(context).showSnackBar(
@@ -332,29 +372,29 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               if (_isLoginTab) ...[
                 // Campo Email
                 _buildTextField(
-                controller: _emailController,
-                label: 'Email',
-                hint: 'Insira seu e-mail ou telefone',
-                keyboardType: TextInputType.emailAddress,
-                errorText: _emailError,
-                hasError: _hasError && _emailError != null,
-              ),
-              const SizedBox(height: 16),
-              // Campo Senha
-              _buildPasswordField(
-                controller: _passwordController,
-                label: 'Senha',
-                hint: 'Insira sua senha',
-                obscureText: _obscurePassword,
-                errorText: _passwordError,
-                hasError: _hasError && _passwordError != null,
-                onToggleVisibility: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
+                  controller: _emailController,
+                  label: 'Email',
+                  hint: 'Insira seu e-mail ou telefone',
+                  keyboardType: TextInputType.emailAddress,
+                  errorText: _emailError,
+                  hasError: _hasError && _emailError != null,
+                ),
+                const SizedBox(height: 16),
+                // Campo Senha
+                _buildPasswordField(
+                  controller: _passwordController,
+                  label: 'Senha',
+                  hint: 'Insira sua senha',
+                  obscureText: _obscurePassword,
+                  errorText: _passwordError,
+                  hasError: _hasError && _passwordError != null,
+                  onToggleVisibility: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
                 // Link Esqueceu a senha
                 TextButton(
                   onPressed: () {
@@ -380,7 +420,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                       if (_isFormValid() && !_isLoading) {
                         _handleLogin();
                       } else {
-                        print('Login - Botão clicado mas formulário inválido ou carregando');
+                        print(
+                            'Login - Botão clicado mas formulário inválido ou carregando');
                         // Forçar validação e mostrar erros
                         _validateEmail();
                         _validatePassword();
@@ -410,7 +451,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Text(
@@ -504,7 +546,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               color: const Color(0xFF9E9E9E),
             ),
             filled: true,
-            fillColor: hasError ? const Color(0xFFFFEBEE) : const Color(0xFFF5F5F5),
+            fillColor:
+                hasError ? const Color(0xFFFFEBEE) : const Color(0xFFF5F5F5),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: hasError
@@ -574,7 +617,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               color: const Color(0xFF9E9E9E),
             ),
             filled: true,
-            fillColor: hasError ? const Color(0xFFFFEBEE) : const Color(0xFFF5F5F5),
+            fillColor:
+                hasError ? const Color(0xFFFFEBEE) : const Color(0xFFF5F5F5),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: hasError
@@ -616,4 +660,3 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     );
   }
 }
-

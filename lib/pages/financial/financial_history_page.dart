@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'financial_filters_modal.dart';
+import '../../widgets/common/bottom_navigation_bar_doctor.dart';
+import '../../widgets/common/doctor_app_bar_avatar.dart';
 
 class FinancialHistoryPage extends StatelessWidget {
   const FinancialHistoryPage({super.key});
@@ -76,7 +78,9 @@ class FinancialHistoryPage extends StatelessWidget {
                           color: Color(0xFF7C7C79),
                         ),
                         children: [
-                          TextSpan(text: transfer['consultation'].split(' • ')[0] + ' • '),
+                          TextSpan(
+                              text: transfer['consultation'].split(' • ')[0] +
+                                  ' • '),
                           TextSpan(
                             text: transfer['consultation'].split(' • ')[1],
                             style: const TextStyle(color: Color(0xFF212121)),
@@ -187,15 +191,8 @@ class FinancialHistoryPage extends StatelessWidget {
           ),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.black),
-            ),
-          ),
+        actions: const [
+          DoctorAppBarAvatar(),
         ],
       ),
       body: SingleChildScrollView(
@@ -255,7 +252,8 @@ class FinancialHistoryPage extends StatelessWidget {
                   ),
                 ),
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999),
                   ),
@@ -266,7 +264,7 @@ class FinancialHistoryPage extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: const DoctorBottomNavigationBar(currentIndex: 2),
     );
   }
 }
-
