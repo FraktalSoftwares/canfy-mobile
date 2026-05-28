@@ -9,6 +9,7 @@ import '../../../widgets/patient/new_order_step_header.dart';
 import '../../../models/order/new_order_form_data.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../services/api/asaas_service.dart';
+import '../../../services/api/melhor_envio_service.dart';
 import '../../../utils/currency_formatter.dart';
 import '../../../utils/input_masks.dart';
 
@@ -26,6 +27,15 @@ class NewOrderStep5Page extends StatefulWidget {
 class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
   final PatientService _patientService = PatientService();
   final AsaasService _asaasService = AsaasService();
+  final MelhorEnvioService _meService = MelhorEnvioService();
+
+  List<Map<String, dynamic>> _servicos = [];
+  int? _selectedServicoId;
+  double _shippingCost = 0.0;
+  int? _selectedPrazoDias;
+  bool _cotandoFrete = false;
+  String? _cotacaoError;
+  String _lastCotadoCep = '';
 
   bool _loadingPatient = true;
   String? _deliveryAddress;
@@ -78,10 +88,72 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
       return;
     }
     _loadPatient();
+    _cepController.addListener(_onCepChanged);
   }
+
+  void _onCepChanged() {
+    final digits = _cepController.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 8 && digits != _lastCotadoCep && !_cotandoFrete) {
+      _lastCotadoCep = digits;
+      _cotarFrete(digits);
+    }
+  }
+
+  Future<void> _cotarFrete(String cep) async {
+    final f = widget.formData!;
+    if (f.produtoId == null || f.produtoId!.isEmpty) {
+      setState(() {
+        _cotacaoError = 'Produto não identificado para cotação.';
+      });
+      return;
+    }
+    setState(() {
+      _cotandoFrete = true;
+      _cotacaoError = null;
+      _servicos = [];
+      _selectedServicoId = null;
+      _shippingCost = 0.0;
+      _selectedPrazoDias = null;
+    });
+    final result = await _meService.cotar(
+      cepDestino: cep,
+      itens: [
+        {'produto_id': f.produtoId, 'quantidade': f.quantity},
+      ],
+    );
+    if (!mounted) return;
+    if (result['success'] == true) {
+      final servicos = (result['data'] as List).cast<Map<String, dynamic>>();
+      setState(() {
+        _servicos = servicos;
+        _cotandoFrete = false;
+        if (servicos.isNotEmpty) {
+          final cheapest = servicos.reduce(
+              (a, b) => (a['price'] as num) <= (b['price'] as num) ? a : b);
+          _selectServico(cheapest);
+        }
+      });
+    } else {
+      setState(() {
+        _cotandoFrete = false;
+        _cotacaoError = result['message']?.toString() ?? 'Erro ao cotar';
+      });
+    }
+  }
+
+  void _selectServico(Map<String, dynamic> s) {
+    setState(() {
+      _selectedServicoId = (s['id'] as num).toInt();
+      _shippingCost = (s['price'] as num).toDouble();
+      _selectedPrazoDias = (s['delivery_time'] as num?)?.toInt();
+    });
+  }
+
+  double get _totalComFrete => widget.formData!.productValue + _shippingCost;
 
   @override
   void dispose() {
+    _cepController.removeListener(_onCepChanged);
     _logradouroController.dispose();
     _numeroController.dispose();
     _cepController.dispose();
@@ -184,7 +256,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
         receitaId: f.prescriptionId,
         pacienteId: _pacienteId!,
         quantity: f.quantity,
-        valorTotal: f.totalWithShipping,
+        valorTotal: _totalComFrete,
         canalAquisicao: f.canalAquisicao,
         formaPagamento: _paymentMethod,
         produtoId: f.produtoId,
@@ -192,6 +264,9 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
         rgDocumentUrl: f.rgDocumentUrl,
         addressProofUrl: f.addressProofUrl,
         anvisaDocumentUrl: f.anvisaDocumentUrl,
+        shippingServiceId: _selectedServicoId,
+        freteValor: _shippingCost > 0 ? _shippingCost : null,
+        prazoEntregaDias: _selectedPrazoDias,
       );
 
       if (!mounted) return;
@@ -215,9 +290,10 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
       }
 
       _productNameForSuccess = f.productName;
-      _totalFormattedForSuccess =
-          CurrencyFormatter.formatBRL(f.totalWithShipping);
-      _deliveryEstimateForSuccess = f.deliveryDeadline ?? 'A confirmar';
+      _totalFormattedForSuccess = CurrencyFormatter.formatBRL(_totalComFrete);
+      _deliveryEstimateForSuccess = _selectedPrazoDias != null
+          ? 'Até $_selectedPrazoDias dias úteis'
+          : f.deliveryDeadline ?? 'A confirmar';
 
       // 2) Criar cobrança Asaas (PIX, crédito ou débito)
       final billingType = _paymentMethod == 'pix'
@@ -228,7 +304,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
 
       final paymentResult = await _asaasService.createPayment(
         asaasCustomerId: _asaasCustomerId,
-        value: f.totalWithShipping,
+        value: _totalComFrete,
         billingType: billingType,
         description: 'Pedido $orderId',
         referenceType: 'order',
@@ -454,8 +530,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
             const SizedBox(height: 40),
             NewOrderStepHeader(
               stepLabel: 'Etapa 5 - Preencha seu endereço',
-              valueText:
-                  'Valor: ${CurrencyFormatter.formatBRL(f.totalWithShipping)}',
+              valueText: 'Valor: ${CurrencyFormatter.formatBRL(_totalComFrete)}',
             ),
             const SizedBox(height: 24),
 
@@ -483,7 +558,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
                       CurrencyFormatter.formatBRL(f.productValue)),
                   const SizedBox(height: 4),
                   _valueRow('Valor do frete',
-                      CurrencyFormatter.formatBRL(f.shippingCost)),
+                      CurrencyFormatter.formatBRL(_shippingCost)),
                   const SizedBox(height: 8),
                   const Divider(color: Color(0xFFE6E6E3)),
                   const SizedBox(height: 8),
@@ -499,7 +574,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
                         ),
                       ),
                       Text(
-                        CurrencyFormatter.formatBRL(f.totalWithShipping),
+                        CurrencyFormatter.formatBRL(_totalComFrete),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -545,6 +620,9 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
                 ],
               ),
             ),
+            const SizedBox(height: 20),
+
+            _buildFreteCard(),
             const SizedBox(height: 20),
 
             // Endereço de entrega (leitura) + link editar
@@ -742,6 +820,136 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
     );
   }
 
+  Widget _buildFreteCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F7F5),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Frete',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF212121),
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Preencha o CEP acima para calcular',
+            style: TextStyle(fontSize: 12, color: Color(0xFF7C7C79)),
+          ),
+          const SizedBox(height: 12),
+          if (_cotandoFrete)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        color: Color(0xFF00994B), strokeWidth: 2),
+                  ),
+                  SizedBox(width: 12),
+                  Text('Calculando frete...',
+                      style:
+                          TextStyle(fontSize: 14, color: Color(0xFF3F3F3D))),
+                ],
+              ),
+            )
+          else if (_cotacaoError != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFEBEE),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(_cotacaoError!,
+                  style: const TextStyle(
+                      fontSize: 13, color: Color(0xFFC62828))),
+            )
+          else if (_servicos.isEmpty)
+            const Text(
+              'Nenhum serviço disponível ainda.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF7C7C79)),
+            )
+          else
+            ..._servicos.map(_buildServicoOption),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServicoOption(Map<String, dynamic> s) {
+    final id = (s['id'] as num).toInt();
+    final selected = _selectedServicoId == id;
+    final company = s['company'] as String?;
+    final name = s['name'] as String? ?? 'Serviço $id';
+    final price = (s['price'] as num).toDouble();
+    final prazo = (s['delivery_time'] as num?)?.toInt();
+    return GestureDetector(
+      onTap: () => _selectServico(s),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? const Color(0xFF00994B) : const Color(0xFFE7E7F1),
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Radio<int>(
+              value: id,
+              groupValue: _selectedServicoId,
+              onChanged: (_) => _selectServico(s),
+              activeColor: const Color(0xFF00994B),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    company != null ? '$company - $name' : name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF212121),
+                    ),
+                  ),
+                  if (prazo != null)
+                    Text(
+                      'Entrega em até $prazo dia(s) úteis',
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF7C7C79)),
+                    ),
+                ],
+              ),
+            ),
+            Text(
+              CurrencyFormatter.formatBRL(price),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF00994B),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _valueRow(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -895,8 +1103,8 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
                         value: i,
                         child: Text(
                           i == 1
-                              ? '1x de ${CurrencyFormatter.formatBRL(widget.formData!.totalWithShipping)} (parcela única)'
-                              : '${i}x de ${CurrencyFormatter.formatBRL(widget.formData!.totalWithShipping / i)}',
+                              ? '1x de ${CurrencyFormatter.formatBRL(_totalComFrete)} (parcela única)'
+                              : '${i}x de ${CurrencyFormatter.formatBRL(_totalComFrete / i)}',
                         ),
                       ))
                   .toList(),

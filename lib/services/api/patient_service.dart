@@ -1452,6 +1452,9 @@ class PatientService {
     String? rgDocumentUrl,
     String? addressProofUrl,
     String? anvisaDocumentUrl,
+    int? shippingServiceId,
+    double? freteValor,
+    int? prazoEntregaDias,
   }) async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -1469,7 +1472,7 @@ class PatientService {
       final numeroPedido = 'CAN-${DateTime.now().millisecondsSinceEpoch}';
       final dataPedido = DateTime.now().toIso8601String();
 
-      final pedidoData = {
+      final pedidoData = <String, dynamic>{
         'paciente_id': pacienteId,
         'receita_id': receitaId,
         'status': 'pendente',
@@ -1478,6 +1481,10 @@ class PatientService {
         'canal_aquisicao': canalNormalizado,
         'forma_pagamento': formaPagamento,
         'numero_pedido': numeroPedido,
+        if (shippingServiceId != null)
+          'melhor_envio_servico_id': shippingServiceId,
+        if (freteValor != null) 'frete_valor': freteValor,
+        if (prazoEntregaDias != null) 'prazo_entrega_dias': prazoEntregaDias,
       };
 
       final insertResult = await _apiService.insertWithReturn(

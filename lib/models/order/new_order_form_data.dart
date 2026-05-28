@@ -63,6 +63,12 @@ class NewOrderFormData {
   /// ID do produto (para createOrder - preenchido por getPrescriptionDetails)
   final String? produtoId;
 
+  /// ID do serviço Melhor Envio escolhido (1=PAC, 2=SEDEX, etc.)
+  final int? shippingServiceId;
+
+  /// Nome legível do serviço ME (ex: "PAC", "SEDEX")
+  final String? shippingServiceName;
+
   NewOrderFormData({
     required this.prescriptionId,
     required this.productName,
@@ -85,6 +91,8 @@ class NewOrderFormData {
     this.prescriberComments,
     this.deliveryDeadline,
     this.produtoId,
+    this.shippingServiceId,
+    this.shippingServiceName,
   });
 
   /// Valor do produto (quantidade * preço unitário)
@@ -116,6 +124,8 @@ class NewOrderFormData {
     String? prescriberComments,
     String? deliveryDeadline,
     String? produtoId,
+    int? shippingServiceId,
+    String? shippingServiceName,
   }) {
     return NewOrderFormData(
       prescriptionId: prescriptionId ?? this.prescriptionId,
@@ -139,6 +149,8 @@ class NewOrderFormData {
       prescriberComments: prescriberComments ?? this.prescriberComments,
       deliveryDeadline: deliveryDeadline ?? this.deliveryDeadline,
       produtoId: produtoId ?? this.produtoId,
+      shippingServiceId: shippingServiceId ?? this.shippingServiceId,
+      shippingServiceName: shippingServiceName ?? this.shippingServiceName,
     );
   }
 }
