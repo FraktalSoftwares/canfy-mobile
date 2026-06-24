@@ -1353,6 +1353,11 @@ class PatientService {
       String produtoNome = 'Produto não especificado';
       String? primeiroProdutoId;
       double precoUnitario = 0.0;
+      String? formaFarmaceutica;
+      String? concentracaoCbd;
+      String? concentracaoThc;
+      String? canalNome;
+      String? canalTipo;
 
       if (itensResult['success'] && itensResult['data'] != null) {
         final itensList = itensResult['data'] as List;
@@ -1371,6 +1376,25 @@ class PatientService {
                 (produtoResult['data'] as List).isNotEmpty) {
               final produto = (produtoResult['data'] as List)[0];
               produtoNome = produto['nome_comercial'] as String? ?? produtoNome;
+              formaFarmaceutica = produto['forma_farmaceutica'] as String?;
+              concentracaoCbd = produto['concentracao_cbd'] as String?;
+              concentracaoThc = produto['concentracao_thc'] as String?;
+              // Canal de aquisição real: fornecedor (associação/marca) do produto
+              final associacaoMarcaId = produto['associacao_marca_id'] as String?;
+              if (associacaoMarcaId != null) {
+                final fornecedorResult = await _apiService.getFiltered(
+                  'associacoes_marcas',
+                  filters: {'id': associacaoMarcaId},
+                  limit: 1,
+                );
+                if (fornecedorResult['success'] &&
+                    fornecedorResult['data'] != null &&
+                    (fornecedorResult['data'] as List).isNotEmpty) {
+                  final fornecedor = (fornecedorResult['data'] as List)[0];
+                  canalNome = fornecedor['nome'] as String?;
+                  canalTipo = fornecedor['tipo'] as String?;
+                }
+              }
               // Usar preço do produto (campo preco na tabela produtos)
               final precoProduto = produto['preco'];
               if (precoProduto != null) {
@@ -1427,6 +1451,11 @@ class PatientService {
           'produto_nome': produtoNome,
           'produto_id': primeiroProdutoId,
           'preco_unitario': precoUnitario,
+          'forma_farmaceutica': formaFarmaceutica,
+          'concentracao_cbd': concentracaoCbd,
+          'concentracao_thc': concentracaoThc,
+          'canal_nome': canalNome,
+          'canal_tipo': canalTipo,
         },
       };
     } catch (e) {
@@ -1739,6 +1768,8 @@ class PatientService {
           'data_pedido_raw': dataPedidoRaw,
           'status': statusText,
           'status_raw': statusRaw,
+          'codigo_rastreio': pedido['codigo_rastreio']?.toString(),
+          'rastreio_atualizado_em': pedido['rastreio_atualizado_em'],
           'canal_aquisicao': channelText,
           'valor_total': valueText,
           'valor_total_raw': pedido['valor_total'],

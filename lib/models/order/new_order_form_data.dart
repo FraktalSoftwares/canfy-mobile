@@ -21,8 +21,20 @@ class NewOrderFormData {
   /// Quantidade escolhida pelo usuário (step 2)
   final int quantity;
 
-  /// Canal de aquisição (ex.: "Associação ABC")
+  /// Canal de aquisição — valor enum para persistência ('associacao' | 'marca' | 'outro')
   final String canalAquisicao;
+
+  /// Nome do fornecedor (associação/marca) para exibição (ex.: "Santa Cannabis")
+  final String? canalNome;
+
+  /// Forma farmacêutica do produto (enum: oleo, capsula, ...)
+  final String? formaFarmaceutica;
+
+  /// Concentração de CBD do produto (ex.: "20mg/ml")
+  final String? concentracaoCbd;
+
+  /// Concentração de THC do produto (ex.: "20mg/ml")
+  final String? concentracaoThc;
 
   /// Valor unitário usado no pedido (para cálculo)
   final double precoUnitario;
@@ -78,6 +90,10 @@ class NewOrderFormData {
     this.validity,
     this.quantity = 1,
     this.canalAquisicao = 'Associação',
+    this.canalNome,
+    this.formaFarmaceutica,
+    this.concentracaoCbd,
+    this.concentracaoThc,
     this.precoUnitario = 0.0,
     this.rgDocumentUrl,
     this.rgFileName,
@@ -95,6 +111,25 @@ class NewOrderFormData {
     this.shippingServiceName,
   });
 
+  /// Rótulo amigável da forma farmacêutica (mesmo mapeamento do web FORMA_LABEL).
+  String get formaLabel {
+    const labels = {
+      'oleo': 'Óleo',
+      'capsula': 'Cápsula',
+      'spray': 'Spray',
+      'gel': 'Gel',
+      'creme': 'Creme',
+      'outro': 'Outro',
+    };
+    final f = formaFarmaceutica;
+    if (f == null || f.isEmpty) return '—';
+    return labels[f.toLowerCase()] ?? f;
+  }
+
+  /// Texto do canal de aquisição para exibição (nome do fornecedor, com fallback).
+  String get canalDisplay =>
+      (canalNome != null && canalNome!.isNotEmpty) ? canalNome! : canalAquisicao;
+
   /// Valor do produto (quantidade * preço unitário)
   double get productValue =>
       (precoUnitario > 0 ? precoUnitario : valorTotal) * quantity;
@@ -111,6 +146,10 @@ class NewOrderFormData {
     String? validity,
     int? quantity,
     String? canalAquisicao,
+    String? canalNome,
+    String? formaFarmaceutica,
+    String? concentracaoCbd,
+    String? concentracaoThc,
     double? precoUnitario,
     String? rgDocumentUrl,
     String? rgFileName,
@@ -136,6 +175,10 @@ class NewOrderFormData {
       validity: validity ?? this.validity,
       quantity: quantity ?? this.quantity,
       canalAquisicao: canalAquisicao ?? this.canalAquisicao,
+      canalNome: canalNome ?? this.canalNome,
+      formaFarmaceutica: formaFarmaceutica ?? this.formaFarmaceutica,
+      concentracaoCbd: concentracaoCbd ?? this.concentracaoCbd,
+      concentracaoThc: concentracaoThc ?? this.concentracaoThc,
       precoUnitario: precoUnitario ?? this.precoUnitario,
       rgDocumentUrl: rgDocumentUrl ?? this.rgDocumentUrl,
       rgFileName: rgFileName ?? this.rgFileName,

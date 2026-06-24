@@ -176,25 +176,25 @@ class NewOrderStep4Page extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
-                              'Tipo de produto: Óleo',
-                              style: TextStyle(
+                            Text(
+                              'Tipo de produto: ${f.formaLabel}',
+                              style: const TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF3F3F3D),
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
-                              'Dosagem: 20mg/ml',
-                              style: TextStyle(
+                            Text(
+                              'Dosagem: ${(f.concentracaoCbd?.isNotEmpty ?? false) ? f.concentracaoCbd : '—'}',
+                              style: const TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF3F3F3D),
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
-                              'Concentração: 20mg/ml de THC',
-                              style: TextStyle(
+                            Text(
+                              'Concentração: ${(f.concentracaoThc?.isNotEmpty ?? false) ? '${f.concentracaoThc} de THC' : '—'}',
+                              style: const TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF3F3F3D),
                               ),
@@ -253,7 +253,7 @@ class NewOrderStep4Page extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        f.canalAquisicao,
+                        f.canalDisplay,
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 import '../../../widgets/patient/order_status_tag.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
@@ -130,6 +131,65 @@ class OrderDetailsPage extends StatelessWidget {
                   onPressed: onDownload,
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Card "Código de rastreio" (Figma 4.1) — exibido apenas quando o pedido
+  /// tem um código definido pelo admin (campo pedidos.codigo_rastreio).
+  Widget _buildRastreioCard(BuildContext context, String codigo) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F7F5),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Código de rastreio',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF3F3F3D),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE6F8EF),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: const Color(0xFF33CC80)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    codigo,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF00994B),
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: codigo));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Código copiado')),
+                    );
+                  },
+                  child: const Icon(Icons.copy, color: Color(0xFF00994B)),
+                ),
+              ],
             ),
           ),
         ],
@@ -458,7 +518,12 @@ class OrderDetailsPage extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Tracking code removido - não há campo no banco de dados ainda
+                if ((orderData['codigo_rastreio'] as String?)?.isNotEmpty ??
+                    false) ...[
+                  const SizedBox(height: 16),
+                  _buildRastreioCard(
+                      context, orderData['codigo_rastreio'] as String),
+                ],
                 if (receita != null) ...[
                   const SizedBox(height: 16),
                   // Prescription card

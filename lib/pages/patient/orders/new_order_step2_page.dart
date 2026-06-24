@@ -22,6 +22,11 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
   bool _loadingDetails = true;
   double? _precoUnitario;
   String? _produtoId;
+  String? _formaFarmaceutica;
+  String? _concentracaoCbd;
+  String? _concentracaoThc;
+  String? _canalNome;
+  String? _canalTipo;
   final String _prescriberComments =
       'Uso contínuo, conforme orientação médica.';
   final String _deliveryDeadline = 'até 15 dias úteis e 30 dias úteis';
@@ -53,6 +58,11 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
           _precoUnitario = (data['preco_unitario'] as num?)?.toDouble() ??
               formData.valorTotal;
           _produtoId = data['produto_id'] as String?;
+          _formaFarmaceutica = data['forma_farmaceutica'] as String?;
+          _concentracaoCbd = data['concentracao_cbd'] as String?;
+          _concentracaoThc = data['concentracao_thc'] as String?;
+          _canalNome = data['canal_nome'] as String?;
+          _canalTipo = data['canal_tipo'] as String?;
           _loadingDetails = false;
         });
       } else {
@@ -71,6 +81,21 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
 
   int get quantity => _quantity;
   int _quantity = 1;
+
+  /// Rótulo amigável da forma farmacêutica (mesmo mapeamento do web FORMA_LABEL).
+  String get _formaLabel {
+    const labels = {
+      'oleo': 'Óleo',
+      'capsula': 'Cápsula',
+      'spray': 'Spray',
+      'gel': 'Gel',
+      'creme': 'Creme',
+      'outro': 'Outro',
+    };
+    final f = _formaFarmaceutica;
+    if (f == null || f.isEmpty) return '—';
+    return labels[f.toLowerCase()] ?? f;
+  }
 
   double get _productValue {
     final unitPrice = _precoUnitario ?? formData.valorTotal;
@@ -162,25 +187,28 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              const Text(
-                                'Tipo de produto: Óleo',
-                                style: TextStyle(
+                              Text(
+                                'Tipo de produto: $_formaLabel',
+                                style: const TextStyle(
                                   fontSize: 14,
                                   color: Color(0xFF3F3F3D),
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              const Text.rich(
+                              Text.rich(
                                 TextSpan(
                                   text: 'Dosagem: ',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     color: Color(0xFF3F3F3D),
                                   ),
                                   children: [
                                     TextSpan(
-                                      text: '20mg/ml',
-                                      style: TextStyle(
+                                      text: (_concentracaoCbd?.isNotEmpty ??
+                                              false)
+                                          ? _concentracaoCbd
+                                          : '—',
+                                      style: const TextStyle(
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -188,17 +216,20 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              const Text.rich(
+                              Text.rich(
                                 TextSpan(
                                   text: 'Concentração: ',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     color: Color(0xFF3F3F3D),
                                   ),
                                   children: [
                                     TextSpan(
-                                      text: '20mg/ml de THC',
-                                      style: TextStyle(
+                                      text: (_concentracaoThc?.isNotEmpty ??
+                                              false)
+                                          ? '$_concentracaoThc de THC'
+                                          : '—',
+                                      style: const TextStyle(
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -441,7 +472,11 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                       produtoId: _produtoId,
                       prescriberComments: _prescriberComments,
                       deliveryDeadline: _deliveryDeadline,
-                      canalAquisicao: 'Associação ABC',
+                      canalAquisicao: _canalTipo ?? formData.canalAquisicao,
+                      canalNome: _canalNome,
+                      formaFarmaceutica: _formaFarmaceutica,
+                      concentracaoCbd: _concentracaoCbd,
+                      concentracaoThc: _concentracaoThc,
                     );
                     context.push('/patient/orders/new/step3', extra: updated);
                   },
