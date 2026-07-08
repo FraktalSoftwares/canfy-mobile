@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/api/api_service.dart';
+import '../../widgets/common/app_button.dart';
 import '../../services/api/auth_service.dart';
 import '../../services/api/asaas_service.dart';
 import '../../services/api/cep_service.dart';
@@ -749,41 +751,12 @@ class _RegisterPageState extends State<RegisterPage>
                 ),
                 const SizedBox(height: 32),
                 // Botão Criar conta
-                SizedBox(
-                  width: double.infinity,
-                  height: 49,
-                  child: ElevatedButton(
-                    onPressed: (_agreeTerms && !_isLoading && _isFormValid())
-                        ? _handleRegister
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.canfyGreen,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFFE0E0E0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            'Criar conta',
-                            style: AppTextStyles.arimo(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
+                AppButton(
+                  text: 'Criar conta',
+                  isLoading: _isLoading,
+                  onPressed: (_agreeTerms && _isFormValid())
+                      ? _handleRegister
+                      : null,
                 ),
               ] else ...[
                 // Tela de Login dentro do RegisterPage
@@ -822,60 +795,25 @@ class _RegisterPageState extends State<RegisterPage>
                   ),
                 ),
                 const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 49,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Verificar novamente antes de chamar
-                      if (_isLoginFormValid() && !_isLoading) {
-                        _handleLogin();
-                      } else {
-                        print(
-                            'Login - Botão clicado mas formulário inválido ou carregando');
-                        // Forçar validação e mostrar erros
-                        _validateEmail();
-                        _validatePassword();
-                        setState(() {
-                          if (_emailController.text.trim().isEmpty) {
-                            _emailError = 'Email é obrigatório';
-                          }
-                          if (_passwordController.text.isEmpty) {
-                            _passwordError = 'Senha é obrigatória';
-                          }
-                        });
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: (_isLoginFormValid() && !_isLoading)
-                          ? AppTheme.canfyGreen
-                          : const Color(0xFFE0E0E0),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFFE0E0E0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            'Entrar',
-                            style: AppTextStyles.arimo(
-                              fontSize: 14,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
+                AppButton(
+                  text: 'Entrar',
+                  isLoading: _isLoading,
+                  onPressed: () {
+                    if (_isLoginFormValid() && !_isLoading) {
+                      _handleLogin();
+                    } else {
+                      _validateEmail();
+                      _validatePassword();
+                      setState(() {
+                        if (_emailController.text.trim().isEmpty) {
+                          _emailError = 'Email é obrigatório';
+                        }
+                        if (_passwordController.text.isEmpty) {
+                          _passwordError = 'Senha é obrigatória';
+                        }
+                      });
+                    }
+                  },
                 ),
                 const SizedBox(height: 8),
                 TextButton(
@@ -965,11 +903,18 @@ class _RegisterPageState extends State<RegisterPage>
               fontSize: 16,
               color: const Color(0xFF9E9E9E),
             ),
-            filled: true,
-            fillColor: const Color(0xFFF5F5F5),
+            filled: false,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+              borderSide: const BorderSide(color: AppTokens.neutral300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+              borderSide: const BorderSide(color: AppTokens.neutral300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+              borderSide: const BorderSide(color: AppTokens.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1032,11 +977,18 @@ class _RegisterPageState extends State<RegisterPage>
               fontSize: 16,
               color: const Color(0xFF9E9E9E),
             ),
-            filled: true,
-            fillColor: const Color(0xFFF5F5F5),
+            filled: false,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+              borderSide: const BorderSide(color: AppTokens.neutral300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+              borderSide: const BorderSide(color: AppTokens.neutral300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+              borderSide: const BorderSide(color: AppTokens.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1111,11 +1063,18 @@ class _RegisterPageState extends State<RegisterPage>
               fontSize: 16,
               color: const Color(0xFF9E9E9E),
             ),
-            filled: true,
-            fillColor: const Color(0xFFF5F5F5),
+            filled: false,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+              borderSide: const BorderSide(color: AppTokens.neutral300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+              borderSide: const BorderSide(color: AppTokens.neutral300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+              borderSide: const BorderSide(color: AppTokens.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

@@ -1,6 +1,10 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,6 +13,7 @@ import '../../core/theme/text_styles.dart';
 import '../../services/api/api_service.dart';
 import '../../services/api/auth_service.dart';
 import '../../services/api/medico_service.dart';
+import '../../services/storage/image_storage_service.dart';
 import '../../utils/input_masks.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
@@ -87,6 +92,95 @@ class _BasicDataPageState extends State<BasicDataPage> {
   void initState() {
     super.initState();
     _loadUserData();
+  }
+
+  /// Diálogo de alteração de senha (usuário autenticado).
+  Future<void> _showChangePasswordDialog() async {
+    final novaCtrl = TextEditingController();
+    final confirmaCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool saving = false;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setLocal) {
+            InputDecoration dec(String label) => InputDecoration(
+                  labelText: label,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                );
+            return AlertDialog(
+              title: const Text('Alterar senha'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: novaCtrl,
+                      obscureText: true,
+                      decoration: dec('Nova senha'),
+                      validator: (v) => (v == null || v.length < 6)
+                          ? 'Mínimo de 6 caracteres'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: confirmaCtrl,
+                      obscureText: true,
+                      decoration: dec('Confirmar nova senha'),
+                      validator: (v) =>
+                          v != novaCtrl.text ? 'As senhas não coincidem' : null,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: saving ? null : () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          if (!(formKey.currentState?.validate() ?? false)) {
+                            return;
+                          }
+                          setLocal(() => saving = true);
+                          final res =
+                              await _api.updatePassword(novaCtrl.text);
+                          if (!ctx.mounted) return;
+                          Navigator.of(ctx).pop();
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(res['success'] == true
+                                  ? 'Senha alterada com sucesso.'
+                                  : 'Não foi possível alterar a senha.'),
+                            ),
+                          );
+                        },
+                  child: saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Salvar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    novaCtrl.dispose();
+    confirmaCtrl.dispose();
   }
 
   @override
@@ -204,6 +298,84 @@ class _BasicDataPageState extends State<BasicDataPage> {
       final docsMap = result['data'] as Map<String, Map<String, dynamic>>;
       _documentos = docsMap.values.toList();
     }
+  }
+
+  /// Seleciona uma imagem da galeria, envia ao Storage e grava em profiles.
+  Future<void> _editarFoto() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1024,
+    );
+    if (picked == null) return;
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enviando foto...')),
+      );
+    }
+    final up = await ImageStorageService()
+        .uploadImage(File(picked.path), bucket: 'avatars');
+    if (!mounted) return;
+    if (up['success'] != true || up['url'] == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível enviar a foto.')),
+      );
+      return;
+    }
+    final url = up['url'] as String;
+    final userId = _api.currentUser?.id;
+    if (userId != null) {
+      await _api.put('profiles', {'id': userId}, {'avatar_url': url});
+    }
+    setState(() => _avatarUrl = url);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Foto atualizada.')),
+    );
+  }
+
+  /// Seleciona um novo arquivo e substitui o documento (mesmo tipo).
+  Future<void> _editarDocumento(Map<String, dynamic> doc) async {
+    final tipo = doc['tipo'] as String?;
+    if (tipo == null || _medicoId == null) return;
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      withData: false,
+    );
+    final path = result?.files.single.path;
+    if (path == null) return;
+    final ext = path.split('.').last.toLowerCase();
+    final contentType = ext == 'pdf'
+        ? 'application/pdf'
+        : (ext == 'png' ? 'image/png' : 'image/jpeg');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enviando documento...')),
+      );
+    }
+    final up = await ImageStorageService().uploadDocument(
+      File(path),
+      contentType: contentType,
+    );
+    if (!mounted) return;
+    if (up['success'] != true || up['url'] == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível enviar o documento.')),
+      );
+      return;
+    }
+    await _medicoService.saveMedicoDocumento(
+      _medicoId!,
+      tipo: tipo,
+      arquivoUrl: up['url'] as String,
+      nomeArquivo: up['fileName'] as String? ?? tipo,
+    );
+    await _loadDocumentos(_medicoId!);
+    if (!mounted) return;
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Documento atualizado.')),
+    );
   }
 
   /// Converte data ISO (YYYY-MM-DD) para formato brasileiro (DD/MM/YYYY).
@@ -578,9 +750,7 @@ class _BasicDataPageState extends State<BasicDataPage> {
                           children: [
                             // Foto de perfil com ícone de edição
                             GestureDetector(
-                              onTap: () {
-                                // TODO: Implementar edição de foto
-                              },
+                              onTap: _editarFoto,
                               child: Stack(
                                 children: [
                                   CircleAvatar(
@@ -683,15 +853,7 @@ class _BasicDataPageState extends State<BasicDataPage> {
                                 ),
                               ),
                               child: GestureDetector(
-                                onTap: () {
-                                  // TODO: Implementar alteração de senha
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Funcionalidade em desenvolvimento'),
-                                    ),
-                                  );
-                                },
+                                onTap: _showChangePasswordDialog,
                                 child: const Text(
                                   'Alterar senha',
                                   style: TextStyle(
@@ -870,13 +1032,7 @@ class _BasicDataPageState extends State<BasicDataPage> {
         children: [
           _buildDocIconButton(
             icon: Icons.edit_outlined,
-            onTap: () {
-              // TODO: Implementar edição de documento
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Funcionalidade em desenvolvimento')),
-              );
-            },
+            onTap: () => _editarDocumento(doc),
           ),
           Expanded(
             child: Padding(

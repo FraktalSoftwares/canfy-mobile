@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/text_styles.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../services/api/api_service.dart';
 import '../../services/api/auth_service.dart';
 import '../../utils/input_masks.dart';
+import '../../widgets/common/app_button.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -95,23 +96,14 @@ class _LoginPageState extends State<LoginPage>
   }
 
   Future<void> _handleLogin() async {
-    print('=== INÍCIO DO LOGIN ===');
-    print('Login - Email: ${_emailController.text.trim()}');
-    print('Login - Senha preenchida: ${_passwordController.text.isNotEmpty}');
-    print('Login - _isFormValid(): ${_isFormValid()}');
-    print('Login - _emailError: $_emailError');
-    print('Login - _passwordError: $_passwordError');
-
     // Validar formulário novamente antes de prosseguir
     _validateEmail();
     _validatePassword();
 
     // Verificar se o formulário está válido ANTES de fazer qualquer coisa
     final isValid = _isFormValid();
-    print('Login - Formulário válido após validação: $isValid');
 
     if (!isValid) {
-      print('Login - Formulário inválido, abortando login');
       setState(() {
         _hasError = true;
         // Forçar exibição dos erros
@@ -125,7 +117,6 @@ class _LoginPageState extends State<LoginPage>
       return;
     }
 
-    print('Login - Formulário válido, iniciando autenticação...');
     setState(() {
       _isLoading = true;
       _hasError = false;
@@ -137,12 +128,10 @@ class _LoginPageState extends State<LoginPage>
       final email = _emailController.text.trim();
       final password = _passwordController.text;
 
-      print('Login - Chamando AuthService.login...');
       final result = await _authService.login(
         email: email,
         password: password,
       );
-      print('Login - Resultado recebido: success=${result['success']}');
 
       if (mounted) {
         setState(() {
@@ -154,110 +143,48 @@ class _LoginPageState extends State<LoginPage>
           final data = result['data'] as Map<String, dynamic>?;
           final profile = data?['profile'];
 
-          // Debug: imprimir dados recebidos
-          print('Login - Dados recebidos: $data');
-          print('Login - Profile: $profile');
-          print('Login - Tipo do profile: ${profile.runtimeType}');
-
           // O profile pode ser um Map ou uma lista com um Map
           Map<String, dynamic>? profileMap;
           if (profile is Map<String, dynamic>) {
             profileMap = profile;
-            print('Login - Profile é Map');
-          } else if (profile is List) {
-            print('Login - Profile é List com ${profile.length} itens');
-            if (profile.isNotEmpty) {
-              profileMap = profile[0] as Map<String, dynamic>?;
-            }
-          } else if (profile != null) {
-            print(
-                'Login - Profile é de tipo desconhecido: ${profile.runtimeType}');
+          } else if (profile is List && profile.isNotEmpty) {
+            profileMap = profile[0] as Map<String, dynamic>?;
           }
 
           // O tipo_usuario vem como string do Supabase
           final tipoUsuario = profileMap?['tipo_usuario'] as String?;
-          print('Login - Tipo usuário: $tipoUsuario');
-          print('Login - Profile completo: $profileMap');
 
           // Redirecionar baseado no tipo de usuário
           String targetRoute = '/patient/home';
 
-          if (tipoUsuario != null) {
-            if (tipoUsuario == 'paciente') {
-              targetRoute = '/patient/home';
-              print(
-                  'Login - Usuário é paciente, redirecionando para /patient/home');
-            } else if (tipoUsuario == 'medico' || tipoUsuario == 'prescritor') {
-              // Médico: se status pendente_aprovacao, vai para fluxo de validação
-              final user = data?['user'] as Map<String, dynamic>?;
-              final userId = user?['id'] as String?;
-              if (userId != null) {
-                final medicoResult = await ApiService().getFiltered(
-                  'medicos',
-                  filters: {'user_id': userId},
-                  limit: 1,
-                );
-                if (medicoResult['success'] == true &&
-                    medicoResult['data'] != null &&
-                    (medicoResult['data'] as List).isNotEmpty) {
-                  final medico =
-                      (medicoResult['data'] as List)[0] as Map<String, dynamic>;
-                  final status = medico['status'] as String?;
-                  if (status == 'pendente_aprovacao') {
-                    targetRoute =
-                        '/professional-validation/step1-professional-data';
-                    print(
-                        'Login - Médico pendente de aprovação, redirecionando para validação');
-                  } else {
-                    targetRoute = '/home';
-                    print(
-                        'Login - Usuário é médico/prescritor, redirecionando para /home');
-                  }
-                } else {
-                  targetRoute = '/home';
+          if (tipoUsuario == 'medico' || tipoUsuario == 'prescritor') {
+            // Médico: se status pendente_aprovacao, vai para fluxo de validação
+            final user = data?['user'] as Map<String, dynamic>?;
+            final userId = user?['id'] as String?;
+            targetRoute = '/home';
+            if (userId != null) {
+              final medicoResult = await ApiService().getFiltered(
+                'medicos',
+                filters: {'user_id': userId},
+                limit: 1,
+              );
+              if (medicoResult['success'] == true &&
+                  medicoResult['data'] != null &&
+                  (medicoResult['data'] as List).isNotEmpty) {
+                final medico =
+                    (medicoResult['data'] as List)[0] as Map<String, dynamic>;
+                if (medico['status'] == 'pendente_aprovacao') {
+                  targetRoute =
+                      '/professional-validation/step1-professional-data';
                 }
-              } else {
-                targetRoute = '/home';
               }
-            } else {
-              print(
-                  'Login - Tipo desconhecido ($tipoUsuario), usando fallback para /patient/home');
             }
-          } else {
-            print(
-                'Login - Tipo usuário não encontrado, usando fallback para /patient/home');
           }
 
-          // Redirecionar imediatamente após o frame atual
-          print('Login - Preparando redirecionamento para: $targetRoute');
-
-          // Usar SchedulerBinding para garantir que o redirecionamento aconteça após o build
+          // Usar addPostFrameCallback para redirecionar após o build atual
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              print('Login - Executando redirecionamento para: $targetRoute');
-              try {
-                // Usar go() que substitui a rota atual
-                context.go(targetRoute);
-                print(
-                    'Login - Redirecionamento para $targetRoute executado com sucesso');
-              } catch (e, stackTrace) {
-                print('Login - Erro ao redirecionar: $e');
-                print('Login - Stack trace: $stackTrace');
-                // Se falhar, tentar novamente após um delay
-                Future.delayed(const Duration(milliseconds: 300), () {
-                  if (mounted) {
-                    print(
-                        'Login - Tentando redirecionamento novamente para: $targetRoute');
-                    try {
-                      context.go(targetRoute);
-                    } catch (e2) {
-                      print('Login - Erro na segunda tentativa: $e2');
-                    }
-                  }
-                });
-              }
-            } else {
-              print('Login - Widget não está mais montado no callback');
+              context.go(targetRoute);
             }
           });
         } else {
@@ -296,15 +223,33 @@ class _LoginPageState extends State<LoginPage>
     }
   }
 
+  void _submit() {
+    if (_isFormValid() && !_isLoading) {
+      _handleLogin();
+    } else {
+      _validateEmail();
+      _validatePassword();
+      setState(() {
+        _hasError = true;
+        if (_emailController.text.trim().isEmpty) {
+          _emailError = 'Email é obrigatório';
+        }
+        if (_passwordController.text.isEmpty) {
+          _passwordError = 'Senha é obrigatória';
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTokens.neutral000,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTokens.neutral000,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: AppTokens.neutral900),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -315,344 +260,221 @@ class _LoginPageState extends State<LoginPage>
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 32),
-              // Título
-              Text(
-                'Bem-vindo de volta!',
-                style: AppTextStyles.truculenta(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTokens.spacingM,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Entre para continuar sua jornada.',
-                style: AppTextStyles.arimo(
-                  fontSize: 14,
-                  color: const Color(0xFF5E5E5B),
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Tabs Cadastro/Login
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE6F8EF), // green-100
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    color: AppTheme.canfyGreen,
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.black,
-                  labelStyle: AppTextStyles.arimo(
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal,
-                  ),
-                  unselectedLabelStyle: AppTextStyles.arimo(
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal,
-                  ),
-                  tabs: const [
-                    Tab(text: 'Cadastro'),
-                    Tab(text: 'Login'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: AppTokens.spacingXl),
+                    Text(
+                      'Bem-vindo de volta!',
+                      style: AppTextStyles.truculenta(
+                        fontSize: 40,
+                        fontWeight: AppTokens.weightSemibold,
+                        color: AppTokens.neutral900,
+                      ),
+                    ),
+                    const SizedBox(height: AppTokens.spacingXs),
+                    Text(
+                      'Entre para continuar sua jornada.',
+                      style: AppTextStyles.bodySm(color: AppTokens.neutral700),
+                    ),
+                    const SizedBox(height: AppTokens.spacingL),
+                    _buildSegmentedTabs(),
+                    const SizedBox(height: AppTokens.spacingL),
+                    if (_isLoginTab) ...[
+                      _inputField(
+                        controller: _emailController,
+                        label: 'E-mail ou telefone',
+                        hint: 'Insira seu e-mail ou telefone',
+                        icon: Icons.mail_outline,
+                        keyboardType: TextInputType.emailAddress,
+                        errorText:
+                            _hasError && _emailError != null ? _emailError : null,
+                      ),
+                      const SizedBox(height: AppTokens.spacingM),
+                      _inputField(
+                        controller: _passwordController,
+                        label: 'Senha',
+                        hint: 'Insira sua senha',
+                        icon: Icons.lock_outline,
+                        obscure: _obscurePassword,
+                        errorText: _hasError && _passwordError != null
+                            ? _passwordError
+                            : null,
+                        trailing: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: AppTokens.neutral500,
+                            size: 20,
+                          ),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: () => context.go('/forgot-password'),
+                          child: Text(
+                            'Esqueceu sua senha?',
+                            style: AppTextStyles.bodyXs(
+                              color: AppTokens.orange900,
+                              weight: AppTokens.weightMedium,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: AppTokens.spacingL),
+                          child: Text(
+                            'Redirecionando...',
+                            style:
+                                AppTextStyles.bodySm(color: AppTokens.neutral700),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              // Conteúdo baseado na tab selecionada
-              if (_isLoginTab) ...[
-                // Campo Email
-                _buildTextField(
-                  controller: _emailController,
-                  label: 'Email',
-                  hint: 'Insira seu e-mail ou telefone',
-                  keyboardType: TextInputType.emailAddress,
-                  errorText: _emailError,
-                  hasError: _hasError && _emailError != null,
-                ),
-                const SizedBox(height: 16),
-                // Campo Senha
-                _buildPasswordField(
-                  controller: _passwordController,
-                  label: 'Senha',
-                  hint: 'Insira sua senha',
-                  obscureText: _obscurePassword,
-                  errorText: _passwordError,
-                  hasError: _hasError && _passwordError != null,
-                  onToggleVisibility: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Link Esqueceu a senha
-                TextButton(
-                  onPressed: () {
-                    context.go('/forgot-password');
-                  },
-                  child: Text(
-                    'Esqueceu sua senha?',
-                    style: AppTextStyles.arimo(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFFA64740), // orange-900
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Botão Entrar
-                SizedBox(
-                  width: double.infinity,
-                  height: 49,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Verificar novamente antes de chamar
-                      if (_isFormValid() && !_isLoading) {
-                        _handleLogin();
-                      } else {
-                        print(
-                            'Login - Botão clicado mas formulário inválido ou carregando');
-                        // Forçar validação e mostrar erros
-                        _validateEmail();
-                        _validatePassword();
-                        setState(() {
-                          _hasError = true;
-                          if (_emailController.text.trim().isEmpty) {
-                            _emailError = 'Email é obrigatório';
-                          }
-                          if (_passwordController.text.isEmpty) {
-                            _passwordError = 'Senha é obrigatória';
-                          }
-                        });
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.canfyGreen,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFFE0E0E0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            'Entrar',
-                            style: AppTextStyles.arimo(
-                              fontSize: 14,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Botão Criar conta
-                TextButton(
-                  onPressed: () {
-                    context.go('/register');
-                  },
-                  child: RichText(
-                    text: TextSpan(
-                      style: AppTextStyles.arimo(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                      children: [
-                        const TextSpan(text: 'Não tem uma conta? '),
-                        TextSpan(
-                          text: 'Crie agora',
-                          style: AppTextStyles.arimo(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.canfyGreen,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ] else ...[
-                // Quando tab Cadastro está selecionada, navegar para register
-                const SizedBox(height: 24),
-                Center(
-                  child: Text(
-                    'Redirecionando...',
-                    style: AppTextStyles.arimo(
-                      fontSize: 14,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
+            ),
+            if (_isLoginTab) _buildFooter(),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    TextInputType? keyboardType,
-    String? errorText,
-    bool hasError = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.arimo(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+  Widget _buildSegmentedTabs() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppTokens.green100,
+        borderRadius: BorderRadius.circular(AppTokens.radius32),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        indicator: BoxDecoration(
+          color: AppTokens.primary,
+          borderRadius: BorderRadius.circular(AppTokens.radius32),
         ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          style: AppTextStyles.arimo(
-            fontSize: 16,
-            color: Colors.black,
-          ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: AppTextStyles.arimo(
-              fontSize: 16,
-              color: const Color(0xFF9E9E9E),
-            ),
-            filled: true,
-            fillColor:
-                hasError ? const Color(0xFFFFEBEE) : const Color(0xFFF5F5F5),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: hasError
-                  ? const BorderSide(color: Colors.red, width: 1)
-                  : BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: hasError
-                  ? const BorderSide(color: Colors.red, width: 1)
-                  : BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: hasError ? Colors.red : AppTheme.canfyGreen,
-                width: 2,
-              ),
-            ),
-            errorText: errorText,
-            errorStyle: AppTextStyles.arimo(
-              fontSize: 12,
-              color: Colors.red,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-          ),
-        ),
-      ],
+        labelColor: AppTokens.neutral000,
+        unselectedLabelColor: AppTokens.neutral900,
+        labelStyle: AppTextStyles.bodyMd(weight: AppTokens.weightSemibold),
+        unselectedLabelStyle: AppTextStyles.bodyMd(),
+        tabs: const [
+          Tab(text: 'Cadastro'),
+          Tab(text: 'Login'),
+        ],
+      ),
     );
   }
 
-  Widget _buildPasswordField({
+  Widget _buildFooter() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTokens.spacingM,
+        AppTokens.spacingXs,
+        AppTokens.spacingM,
+        AppTokens.spacingM,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppButton(
+            text: 'Entrar',
+            isLoading: _isLoading,
+            onPressed: _submit,
+          ),
+          const SizedBox(height: AppTokens.spacingXs),
+          TextButton(
+            onPressed: () => context.go('/register'),
+            child: RichText(
+              text: TextSpan(
+                style: AppTextStyles.bodySm(
+                  color: AppTokens.neutral900,
+                  weight: AppTokens.weightSemibold,
+                ),
+                children: [
+                  const TextSpan(text: 'Não tem uma conta? '),
+                  TextSpan(
+                    text: 'Crie agora',
+                    style: AppTextStyles.bodySm(
+                      color: AppTokens.primaryDark,
+                      weight: AppTokens.weightSemibold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Campo de texto no estilo do protótipo: contorno "pill", ícone à esquerda.
+  Widget _inputField({
     required TextEditingController controller,
     required String label,
     required String hint,
-    required bool obscureText,
-    required VoidCallback onToggleVisibility,
+    required IconData icon,
+    TextInputType? keyboardType,
+    bool obscure = false,
     String? errorText,
-    bool hasError = false,
+    Widget? trailing,
   }) {
+    final bool hasError = errorText != null;
+    OutlineInputBorder border(Color color, [double width = 1]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+          borderSide: BorderSide(color: color, width: width),
+        );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: AppTextStyles.arimo(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
+          style: AppTextStyles.bodySm(
+            color: AppTokens.neutral800,
+            weight: AppTokens.weightSemibold,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppTokens.spacingXs),
         TextField(
           controller: controller,
-          obscureText: obscureText,
-          style: AppTextStyles.arimo(
-            fontSize: 16,
-            color: Colors.black,
-          ),
+          keyboardType: keyboardType,
+          obscureText: obscure,
+          style: AppTextStyles.bodySm(color: AppTokens.neutral900),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.arimo(
-              fontSize: 16,
-              color: const Color(0xFF9E9E9E),
-            ),
-            filled: true,
-            fillColor:
-                hasError ? const Color(0xFFFFEBEE) : const Color(0xFFF5F5F5),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: hasError
-                  ? const BorderSide(color: Colors.red, width: 1)
-                  : BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: hasError
-                  ? const BorderSide(color: Colors.red, width: 1)
-                  : BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: hasError ? Colors.red : AppTheme.canfyGreen,
-                width: 2,
-              ),
-            ),
+            hintStyle: AppTextStyles.bodySm(color: AppTokens.neutral500),
+            prefixIcon: Icon(icon, color: AppTokens.neutral600, size: 22),
+            suffixIcon: trailing,
+            filled: false,
+            isDense: true,
+            border: border(AppTokens.neutral300),
+            enabledBorder:
+                border(hasError ? AppTokens.error : AppTokens.neutral300),
+            focusedBorder:
+                border(hasError ? AppTokens.error : AppTokens.primary, 2),
             errorText: errorText,
-            errorStyle: AppTextStyles.arimo(
-              fontSize: 12,
-              color: Colors.red,
-            ),
+            errorStyle: AppTextStyles.bodyXs(color: AppTokens.error),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-            suffixIcon: IconButton(
-              icon: Icon(
-                obscureText ? Icons.visibility_off : Icons.visibility,
-                color: const Color(0xFF9E9E9E),
-              ),
-              onPressed: onToggleVisibility,
+              horizontal: AppTokens.spacingM,
+              vertical: 14,
             ),
           ),
         ),

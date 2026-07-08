@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../constants/app_colors.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
@@ -93,6 +94,41 @@ class _ConsultationDetailsPageState extends State<ConsultationDetailsPage> {
     return const AssetImage('assets/images/avatar_pictures.png');
   }
 
+  Future<void> _abrirReceita(String? url) async {
+    if (url == null || url.trim().isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('A receita ainda não possui documento disponível.')),
+      );
+      return;
+    }
+    final uri = Uri.tryParse(url);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir a receita.')),
+      );
+    }
+  }
+
+  Future<void> _cancelarConsulta() async {
+    final res =
+        await _patientService.cancelarConsulta(widget.consultationId);
+    if (!mounted) return;
+    if (res['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Consulta cancelada.')),
+      );
+      context.go('/patient/consultations');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível cancelar a consulta.')),
+      );
+    }
+  }
+
   /// Sheet de confirmação de cancelamento (design Figma)
   void _showCancelConsultationSheet(BuildContext context) {
     showDialog(
@@ -175,7 +211,7 @@ class _ConsultationDetailsPageState extends State<ConsultationDetailsPage> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        // TODO: chamar API para cancelar consulta
+                        _cancelarConsulta();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFDD372F),
@@ -511,9 +547,8 @@ class _ConsultationDetailsPageState extends State<ConsultationDetailsPage> {
                         Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            onTap: () {
-                              // TODO: download/share receita
-                            },
+                            onTap: () => _abrirReceita(
+                                prescription['documentoUrl'] as String?),
                             borderRadius: BorderRadius.circular(999),
                             child: Container(
                               padding: const EdgeInsets.symmetric(

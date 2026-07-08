@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../core/theme/text_styles.dart';
+import '../../widgets/common/app_button.dart';
 import '../../widgets/common/safe_image_asset.dart';
 import 'dart:math' as math;
 
@@ -129,71 +131,15 @@ class UserSelectionPage extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 34),
                   child: Column(
                     children: [
-                      // Botão Usar como paciente
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            context.go('/register?type=patient');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color(0xFF00994B), // green-800
-                            foregroundColor: Colors.white,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.all(
-                                  Radius.circular(999)), // Muito arredondado
-                            ),
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 14,
-                            ),
-                          ),
-                          child: Text(
-                            'Usar como paciente',
-                            style: AppTextStyles.arimo(
-                              fontSize: 14,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
+                      AppButton(
+                        text: 'Usar como paciente',
+                        onPressed: () => context.go('/register?type=patient'),
                       ),
-                      const SizedBox(height: 8),
-                      // Botão Usar como médico/Prescritor
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: OutlinedButton(
-                          onPressed: () {
-                            context.go('/register?type=doctor');
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF00994B),
-                            side: const BorderSide(
-                              color: Color(0xFF00994B),
-                              width: 1,
-                            ),
-                            shape: const RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(999)),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 14,
-                            ),
-                          ),
-                          child: Text(
-                            'Usar como médico/Prescritor',
-                            style: AppTextStyles.arimo(
-                              fontSize: 14,
-                              fontWeight: FontWeight.normal,
-                              color: const Color(0xFF00994B),
-                            ),
-                          ),
-                        ),
+                      const SizedBox(height: AppTokens.spacingXs),
+                      AppButton(
+                        text: 'Usar como médico/Prescritor',
+                        variant: AppButtonVariant.secondary,
+                        onPressed: () => context.go('/register?type=doctor'),
                       ),
                     ],
                   ),

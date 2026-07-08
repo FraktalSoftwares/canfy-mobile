@@ -764,7 +764,8 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
             height: 49,
             child: ElevatedButton(
               onPressed: () {
-                context.push('/appointment/prescription-products');
+                context.push('/appointment/prescription-products',
+                    extra: widget.consultationId);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00994B),

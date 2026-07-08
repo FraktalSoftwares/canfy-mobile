@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/theme/text_styles.dart';
+import '../../services/api/medico_service.dart';
+import '../../utils/product_image_utils.dart';
+import '../../widgets/common/app_button.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
-import '../../widgets/common/safe_image_asset.dart';
 
 class PrescriptionProductsPage extends StatefulWidget {
   const PrescriptionProductsPage({super.key});
@@ -12,53 +16,81 @@ class PrescriptionProductsPage extends StatefulWidget {
 }
 
 class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
-  final Set<int> _selectedProducts = {};
+  final MedicoService _medicoService = MedicoService();
+  final Set<String> _selected = {};
+  List<Map<String, dynamic>> _products = [];
+  bool _loading = true;
+  String? _error;
 
-  final List<Map<String, dynamic>> _products = [
-    {
-      'name': 'Canabidiol Óleo',
-      'indications': ['Insônia', 'Ansiedade'],
-      'image': 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
-    },
-    {
-      'name': 'Canabidiol Creme',
-      'indications': ['Dor', 'Inflamação'],
-      'image': 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
-    },
-    {
-      'name': 'Canabidiol Óleo',
-      'indications': ['Insônia', 'Ansiedade'],
-      'image': 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
-    },
-    {
-      'name': 'Canabidiol Óleo',
-      'indications': ['Insônia', 'Ansiedade'],
-      'image': 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
-    },
-    {
-      'name': 'Canabidiol Óleo',
-      'indications': ['Insônia', 'Ansiedade'],
-      'image': 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
-    },
-    {
-      'name': 'Canabidiol Óleo',
-      'indications': ['Insônia', 'Ansiedade'],
-      'image': 'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
-    },
-  ];
+  String? get _consultaId {
+    final e = GoRouterState.of(context).extra;
+    if (e is String) return e;
+    if (e is Map) return (e['id'] ?? e['consultaId']) as String?;
+    return null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final result = await _medicoService.getProdutosCatalogo(limit: 50);
+    if (!mounted) return;
+    if (result['success'] != true || result['data'] == null) {
+      setState(() {
+        _loading = false;
+        _error = 'Erro ao carregar produtos.';
+      });
+      return;
+    }
+    final products = <Map<String, dynamic>>[];
+    for (final raw in (result['data'] as List)) {
+      if (raw is! Map<String, dynamic>) continue;
+      final p = raw;
+      final indications = p['indicacoes'] ?? p['indications'] ?? p['indicacao'];
+      List<String> indList = [];
+      if (indications is List) {
+        indList = indications.map((e) => e.toString()).toList();
+      } else if (indications is String && indications.isNotEmpty) {
+        indList = [indications];
+      }
+      products.add({
+        'id': p['id'] as String,
+        'name': p['nome_comercial'] as String? ?? p['nome'] as String? ?? 'Produto',
+        'type': p['tipo'] as String? ?? p['forma'] as String? ?? '—',
+        'indications': indList,
+        'imageUrl': ProductImageUtils.resolveProductImageUrl(
+            ProductImageUtils.getProductImageValue(p)),
+      });
+    }
+    setState(() {
+      _products = products;
+      _loading = false;
+    });
+  }
+
+  void _continue() {
+    final selected = _products
+        .where((p) => _selected.contains(p['id']))
+        .map((p) => {'id': p['id'], 'name': p['name']})
+        .toList();
+    context.go('/appointment/prescription-details', extra: {
+      'consultaId': _consultaId,
+      'produtos': selected,
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTokens.neutral000,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTokens.neutral000,
         elevation: 0,
         leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708,
-            child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-          ),
+          icon: const Icon(Icons.arrow_back, color: AppTokens.neutral900),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -67,249 +99,166 @@ class _PrescriptionProductsPageState extends State<PrescriptionProductsPage> {
             }
           },
         ),
-        title: const Text(
+        title: Text(
           'Prescrição dos produtos',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+          style: AppTextStyles.bodySm(
+            color: AppTokens.neutral900,
+            weight: AppTokens.weightSemibold,
           ),
         ),
         centerTitle: true,
-        actions: const [
-          DoctorAppBarAvatar(),
-        ],
+        actions: const [DoctorAppBarAvatar()],
       ),
-      body: Column(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Text(_error!,
+                      style: AppTextStyles.bodyMd(color: AppTokens.neutral600)))
+              : Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            Text('Produtos',
+                                style: AppTextStyles.headingMd(
+                                    color: AppTokens.neutral900)),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Selecione os produtos a prescrever.',
+                              style: AppTextStyles.bodySm(
+                                  color: AppTokens.neutral600),
+                            ),
+                            const SizedBox(height: 16),
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 0.62,
+                              ),
+                              itemCount: _products.length,
+                              itemBuilder: (context, index) =>
+                                  _buildProductCard(_products[index]),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    _buildFooter(),
+                  ],
+                ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: AppTokens.neutral000,
+        boxShadow: AppTokens.dropShadow,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  // Card do paciente
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7F7F5),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Paciente',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF7C7C79),
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Laura Flores',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.chevron_right,
-                              color: Colors.transparent),
-                          onPressed: null,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Produtos',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Grid de produtos
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.6,
-                    ),
-                    itemCount: _products.length,
-                    itemBuilder: (context, index) {
-                      final product = _products[index];
-                      final isSelected = _selectedProducts.contains(index);
-                      return _buildProductCard(product, index, isSelected);
-                    },
-                  ),
-                ],
-              ),
+          Text(
+            'Produtos selecionados: ${_selected.length}',
+            style: AppTextStyles.bodyMd(
+              color: AppTokens.neutral900,
+              weight: AppTokens.weightSemibold,
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 9,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'Produtos selecionados: ${_selectedProducts.length}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 49,
-                  child: ElevatedButton(
-                    onPressed: _selectedProducts.isEmpty
-                        ? null
-                        : () {
-                            context.go('/appointment/prescription-details');
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00994B),
-                      disabledBackgroundColor: Colors.grey[300],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                    child: const Text(
-                      'Continuar',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 16),
+          AppButton(
+            text: 'Continuar',
+            onPressed: _selected.isEmpty ? null : _continue,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProductCard(
-      Map<String, dynamic> product, int index, bool isSelected) {
+  Widget _buildProductCard(Map<String, dynamic> product) {
+    final id = product['id'] as String;
+    final isSelected = _selected.contains(id);
+    final imageUrl = product['imageUrl'] as String?;
+    final indications = (product['indications'] as List).cast<String>();
+
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          if (isSelected) {
-            _selectedProducts.remove(index);
-          } else {
-            _selectedProducts.add(index);
-          }
-        });
-      },
+      onTap: () => setState(() {
+        if (isSelected) {
+          _selected.remove(id);
+        } else {
+          _selected.add(id);
+        }
+      }),
       child: Container(
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE6F8EF) : const Color(0xFFF7F7F5),
+          color: isSelected ? AppTokens.green100 : AppTokens.neutral050,
           border: Border.all(
-            color: isSelected ? const Color(0xFF00994B) : Colors.transparent,
+            color: isSelected ? AppTokens.primary : Colors.transparent,
             width: 2,
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppTokens.radius16),
         ),
+        padding: const EdgeInsets.all(12),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 16),
-            SizedBox(
-              width: 96,
-              height: 96,
-              child: SafeImageAsset(
-                imagePath: product['image'] as String,
-                fit: BoxFit.contain,
-                placeholderIcon: Icons.local_pharmacy,
+            Center(
+              child: Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  color: AppTokens.accentPurpleMedium,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: imageUrl != null && imageUrl.isNotEmpty
+                    ? Image.network(imageUrl, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                            Icons.local_pharmacy,
+                            size: 40,
+                            color: AppTokens.neutral900))
+                    : const Icon(Icons.local_pharmacy,
+                        size: 40, color: AppTokens.neutral900),
               ),
             ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product['name'] as String,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Indicado para:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF7C7C79),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
-                    children: (product['indications'] as List<String>)
-                        .map((indication) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE6F8EF),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                indication,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF00994B),
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'detalhes',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF00994B),
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 12),
+            Text(
+              product['name'] as String,
+              style: AppTextStyles.bodyMd(
+                color: AppTokens.neutral900,
+                weight: AppTokens.weightSemibold,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: indications
+                  .map((ind) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTokens.green100,
+                          borderRadius:
+                              BorderRadius.circular(AppTokens.radiusPill),
+                        ),
+                        child: Text(ind,
+                            style: AppTextStyles.bodyXs(
+                                color: AppTokens.green900)),
+                      ))
+                  .toList(),
             ),
           ],
         ),

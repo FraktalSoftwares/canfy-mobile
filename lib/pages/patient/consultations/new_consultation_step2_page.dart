@@ -50,41 +50,26 @@ class _NewConsultationStep2PageState extends State<NewConsultationStep2Page> {
     30
   };
 
-  // Horários disponíveis (10h às 18h com slots de 15 min)
-  final List<String> _availableTimes = [
-    '10h00',
-    '10h15',
-    '10h30',
-    '10h45',
-    '11h00',
-    '11h15',
-    '11h30',
-    '11h45',
-    '12h00',
-    '12h15',
-    '12h30',
-    '12h45',
-    '13h00',
-    '13h15',
-    '13h30',
-    '13h45',
-    '14h00',
-    '14h15',
-    '14h30',
-    '14h45',
-    '15h00',
-    '15h15',
-    '15h30',
-    '15h45',
-    '16h00',
-    '16h15',
-    '16h30',
-    '16h45',
-    '17h00',
-    '17h15',
-    '17h30',
-    '17h45',
-  ];
+  // Horários disponíveis (10h às 18h, slots de 15 min) gerados dinamicamente.
+  // Quando a data escolhida é hoje, exclui horários que já passaram.
+  List<String> get _availableTimes {
+    final slots = <String>[];
+    final now = DateTime.now();
+    final isToday = _selectedDate != null &&
+        _selectedDate!.year == now.year &&
+        _selectedDate!.month == now.month &&
+        _selectedDate!.day == now.day;
+    for (int h = 10; h <= 17; h++) {
+      for (int m = 0; m < 60; m += 15) {
+        if (isToday && (h < now.hour || (h == now.hour && m <= now.minute))) {
+          continue;
+        }
+        slots.add(
+            '${h.toString().padLeft(2, '0')}h${m.toString().padLeft(2, '0')}');
+      }
+    }
+    return slots;
+  }
 
   @override
   void initState() {

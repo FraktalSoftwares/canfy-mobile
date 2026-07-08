@@ -41,7 +41,7 @@ dependencies:
   supabase_flutter: ^2.5.4
   
   # Fontes
-  google_fonts: ^6.1.0
+  google_fonts: ^8.1.0
   
   # Utilitários
   intl: ^0.20.2

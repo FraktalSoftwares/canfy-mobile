@@ -4,8 +4,6 @@ import '../../pages/splash/splash_page.dart';
 import '../../pages/user_selection/user_selection_page.dart';
 import '../../pages/register/register_page.dart';
 import '../../pages/login/login_page.dart';
-import '../../pages/phone_verification/phone_verification_page.dart';
-import '../../pages/pending_review/pending_review_page.dart';
 import '../../pages/forgot_password/forgot_password_page.dart';
 import '../../pages/forgot_password/email_sent_page.dart';
 import '../../pages/forgot_password/reset_password_page.dart';
@@ -113,25 +111,6 @@ class AppRouter {
         pageBuilder: (context, state) => _noTransitionPage(
           state: state,
           child: const LoginPage(),
-        ),
-      ),
-      GoRoute(
-        path: '/phone-verification',
-        name: 'phone-verification',
-        pageBuilder: (context, state) {
-          final phoneNumber = state.uri.queryParameters['phone'];
-          return _noTransitionPage(
-            state: state,
-            child: PhoneVerificationPage(phoneNumber: phoneNumber),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/pending-review',
-        name: 'pending-review',
-        pageBuilder: (context, state) => _noTransitionPage(
-          state: state,
-          child: const PendingReviewPage(),
         ),
       ),
       GoRoute(

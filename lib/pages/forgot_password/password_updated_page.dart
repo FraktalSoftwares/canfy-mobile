@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../core/theme/text_styles.dart';
-import '../../core/theme/app_theme.dart';
+import '../../widgets/common/app_button.dart';
 
 class PasswordUpdatedPage extends StatelessWidget {
   const PasswordUpdatedPage({super.key});
@@ -9,69 +10,37 @@ class PasswordUpdatedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTokens.neutral000,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTokens.neutral000,
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: AppTokens.spacingM),
           child: Column(
             children: [
-              const SizedBox(height: 150),
-              // Ícone de check
+              const SizedBox(height: 120),
               Container(
                 width: 100,
                 height: 100,
-                decoration: BoxDecoration(
-                  color: AppTheme.canfyGreen.withOpacity(0.1),
+                decoration: const BoxDecoration(
+                  color: AppTokens.green100,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.check,
-                  size: 36,
-                  color: AppTheme.canfyGreen,
-                ),
+                child: const Icon(Icons.check, size: 40, color: AppTokens.primary),
               ),
               const SizedBox(height: 40),
-              // Título
               Text(
                 'Sua senha foi atualizada com sucesso',
-                style: AppTextStyles.truculenta(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+                style: AppTextStyles.headingMd(color: AppTokens.neutral900),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
-              // Botão Ir para o login
-              SizedBox(
-                width: double.infinity,
-                height: 49,
-                child: ElevatedButton(
-                  onPressed: () {
-                    context.go('/login');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.canfyGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Ir para o login',
-                    style: AppTextStyles.arimo(
-                      fontSize: 14,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+              const SizedBox(height: AppTokens.spacingXl),
+              AppButton(
+                text: 'Ir para o login',
+                onPressed: () => context.go('/login'),
               ),
             ],
           ),

@@ -1,24 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../widgets/common/safe_image_asset.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/theme/text_styles.dart';
+import '../../services/api/medico_service.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
 
-class AppointmentDetailsPage extends StatelessWidget {
+class AppointmentDetailsPage extends StatefulWidget {
   const AppointmentDetailsPage({super.key});
 
   @override
+  State<AppointmentDetailsPage> createState() => _AppointmentDetailsPageState();
+}
+
+class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
+  final MedicoService _medicoService = MedicoService();
+  static const String _valorConsulta = r'R$ 200,00';
+
+  Map<String, dynamic>? _consulta;
+  Map<String, dynamic>? _detalhe;
+  bool _loading = true;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
+    final extra = GoRouterState.of(context).extra;
+    if (extra is Map<String, dynamic>) _consulta = extra;
+    _load();
+  }
+
+  Future<void> _load() async {
+    final id = _consulta?['id'] as String?;
+    if (id == null) {
+      setState(() => _loading = false);
+      return;
+    }
+    final res = await _medicoService.getAtendimentoDetalhe(id);
+    if (!mounted) return;
+    setState(() {
+      _detalhe = res['data'] as Map<String, dynamic>?;
+      _loading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final paciente = (_consulta?['paciente_nome'] as String?)?.trim();
+    final queixa = (_consulta?['queixa_principal'] as String?)?.trim();
+    final dt = DateTime.tryParse(_consulta?['data_consulta']?.toString() ?? '');
+    final resumo = _detalhe?['resumo'] as String?;
+    final receita = _detalhe?['receita'] as Map<String, dynamic>?;
+    final itens = (_detalhe?['itens'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTokens.neutral000,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTokens.neutral000,
         elevation: 0,
         leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708,
-            child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-          ),
+          icon: const Icon(Icons.arrow_back, color: AppTokens.neutral900),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -27,313 +70,201 @@ class AppointmentDetailsPage extends StatelessWidget {
             }
           },
         ),
-        title: const Text(
-          'Detalhes da consulta',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: Text('Detalhes da consulta',
+            style: AppTextStyles.bodySm(
+              color: AppTokens.neutral900,
+              weight: AppTokens.weightSemibold,
+            )),
         centerTitle: true,
-        actions: const [
-          DoctorAppBarAvatar(),
-        ],
+        actions: const [DoctorAppBarAvatar()],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-            // Card da consulta
-            Container(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F5),
-                borderRadius: BorderRadius.circular(16),
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '#12345 • 01/09/25 • 09:30',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF212121),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF66DDA2),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Text(
-                          'Concluída',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF174F38),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 8),
+                  _card(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Paciente',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF7C7C79),
+                            Expanded(
+                              child: Text(
+                                dt != null ? _fmtDateTime(dt) : 'Consulta',
+                                style: AppTextStyles.bodySm(
+                                  color: AppTokens.neutral900,
+                                  weight: AppTokens.weightSemibold,
+                                ),
                               ),
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Laura Flores',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Text(
-                                  'Principal queixa:',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF7C7C79),
-                                  ),
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Insônia',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            _statusChip(_consulta?['status'] as String? ?? ''),
                           ],
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.more_vert,
-                            color: Color(0xFF00994B)),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Row(
-                    children: [
-                      Text(
-                        'Valor da consulta:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF7C7C79),
+                        const SizedBox(height: 16),
+                        Text('Paciente',
+                            style: AppTextStyles.bodySm(
+                                color: AppTokens.neutral600)),
+                        const SizedBox(height: 4),
+                        Text(
+                          paciente?.isNotEmpty == true ? paciente! : 'Paciente',
+                          style: AppTextStyles.bodyMd(
+                            color: AppTokens.neutral900,
+                            weight: AppTokens.weightSemibold,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'R\$100,00',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
+                        if (queixa?.isNotEmpty == true) ...[
+                          const SizedBox(height: 8),
+                          _inline('Principal queixa:', queixa!),
+                        ],
+                        const SizedBox(height: 12),
+                        _inline('Valor da consulta:', _valorConsulta),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: 24),
+                  if (receita != null) ...[
+                    Text('Receita médica',
+                        style:
+                            AppTextStyles.headingSm(color: AppTokens.neutral900)),
+                    const SizedBox(height: 12),
+                    _card(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _inline('Nº:',
+                              receita['numero_receita']?.toString() ?? '--'),
+                          const SizedBox(height: 4),
+                          _inline('Validade:',
+                              _fmtDateOnly(receita['validade']?.toString())),
+                          if ((receita['observacoes'] as String?)
+                                  ?.trim()
+                                  .isNotEmpty ==
+                              true) ...[
+                            const SizedBox(height: 8),
+                            Text(receita['observacoes'] as String,
+                                style: AppTextStyles.bodySm(
+                                    color: AppTokens.neutral600)),
+                          ],
+                          const Divider(height: 24),
+                          ...itens.map((it) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(it['produto_nome']?.toString() ?? 'Produto',
+                                        style: AppTextStyles.bodyMd(
+                                          color: AppTokens.neutral900,
+                                          weight: AppTokens.weightSemibold,
+                                        )),
+                                    if ((it['posologia'] as String?)
+                                            ?.trim()
+                                            .isNotEmpty ==
+                                        true)
+                                      Text(it['posologia'] as String,
+                                          style: AppTextStyles.bodySm(
+                                              color: AppTokens.neutral600)),
+                                  ],
+                                ),
+                              )),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (resumo?.trim().isNotEmpty == true) ...[
+                    Text('Observações',
+                        style:
+                            AppTextStyles.headingSm(color: AppTokens.neutral900)),
+                    const SizedBox(height: 12),
+                    _card(
+                      child: Text(resumo!,
+                          style:
+                              AppTextStyles.bodySm(color: AppTokens.neutral600)),
+                    ),
+                  ],
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            // Card de receita
-            _buildPrescriptionCard(),
-            const SizedBox(height: 16),
-            // Card de observações
-            _buildObservationsCard(),
-          ],
-        ),
-      ),
-      bottomNavigationBar: const DoctorBottomNavigationBar(
-        currentIndex: 1, // Atendimento tab is active
-      ),
+      bottomNavigationBar: const DoctorBottomNavigationBar(currentIndex: 1),
     );
   }
 
-  Widget _buildPrescriptionCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Column(
+  Widget _card({required Widget child}) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTokens.neutral050,
+          borderRadius: BorderRadius.circular(AppTokens.radius16),
+        ),
+        child: child,
+      );
+
+  Widget _inline(String label, String value) => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Receita médica',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              SizedBox(
-                width: 64,
-                height: 64,
-                child: SafeImageAsset(
-                  imagePath:
-                      'assets/images/8ea03714bcc629ced1e1b647110a530c2ee52667.png',
-                  fit: BoxFit.contain,
-                  placeholderIcon: Icons.local_pharmacy,
-                ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _InfoRow(label: 'Formas de uso:', value: 'Óleo'),
-                    SizedBox(height: 4),
-                    _InfoRow(label: 'Dosagem:', value: '20mg/ml'),
-                    SizedBox(height: 4),
-                    _InfoRow(label: 'Concentração:', value: '20mg/ml de THC'),
-                    SizedBox(height: 4),
-                    _InfoRow(label: 'Data de emissão:', value: '05/09/2025'),
-                    SizedBox(height: 4),
-                    _InfoRow(label: 'Validade:', value: '04/03/2026 (6 meses)'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Indicado para:',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF7C7C79),
-            ),
-          ),
-          SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _Tag(text: 'Insônia'),
-              _Tag(text: 'Ansiedade'),
-            ],
+          Text(label, style: AppTextStyles.bodySm(color: AppTokens.neutral600)),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(value,
+                style: AppTextStyles.bodySm(
+                  color: AppTokens.neutral900,
+                  weight: AppTokens.weightSemibold,
+                )),
           ),
         ],
-      ),
-    );
-  }
+      );
 
-  Widget _buildObservationsCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Observações',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Paciente relatou melhora significativa após início do tratamento. Manter acompanhamento mensal.',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF7C7C79),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF7C7C79),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Tag extends StatelessWidget {
-  final String text;
-
-  const _Tag({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _statusChip(String status) {
+    late Color bg;
+    late Color fg;
+    late String label;
+    switch (status) {
+      case 'finalizada':
+        bg = AppTokens.green100;
+        fg = AppTokens.green900;
+        label = 'Concluída';
+        break;
+      case 'cancelada':
+        bg = AppTokens.neutral200;
+        fg = AppTokens.neutral700;
+        label = 'Cancelada';
+        break;
+      case 'em_andamento':
+        bg = AppTokens.blue100;
+        fg = AppTokens.blue900;
+        label = 'Em andamento';
+        break;
+      default:
+        bg = AppTokens.green100;
+        fg = AppTokens.green900;
+        label = 'Agendada';
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFE6F8EF),
-        borderRadius: BorderRadius.circular(999),
+        color: bg,
+        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-          color: Color(0xFF00994B),
-        ),
-      ),
+      child: Text(label,
+          style: AppTextStyles.bodyXs(color: fg, weight: AppTokens.weightSemibold)),
     );
+  }
+
+  String _fmtDateTime(DateTime d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.day)}/${two(d.month)}/${two(d.year % 100)} • ${two(d.hour)}:${two(d.minute)}';
+  }
+
+  String _fmtDateOnly(String? iso) {
+    if (iso == null) return '--';
+    final d = DateTime.tryParse(iso);
+    if (d == null) return '--';
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.day)}/${two(d.month)}/${d.year}';
   }
 }

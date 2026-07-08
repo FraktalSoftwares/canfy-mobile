@@ -33,6 +33,11 @@ class _SchedulePageState extends State<SchedulePage> {
   String? _selectedInterval;
   bool _modoFerias = false;
 
+  /// Horários/intervalos personalizados adicionados pelo médico (fora das
+  /// listas padrão), para que apareçam como chips.
+  final Set<String> _customTimes = {};
+  final Set<String> _customIntervals = {};
+
   DateTime _displayedMonth;
   DateTime? _selectedDate;
 
@@ -117,10 +122,69 @@ class _SchedulePageState extends State<SchedulePage> {
       _selectedTimes.addAll(
           horarios.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
     }
+    // Horários salvos fora da grade padrão viram chips personalizados.
+    _customTimes.addAll(_selectedTimes.where((t) => !_timeSlots.contains(t)));
     _selectedInterval = medico['disponibilidade_intervalo'] as String?;
+    if (_selectedInterval != null &&
+        !_intervals.contains(_selectedInterval)) {
+      _customIntervals.add(_selectedInterval!);
+    }
     _modoFerias = medico['autoriza_compartilhamento_dados'] == true;
     if (!mounted) return;
     setState(() => _isLoading = false);
+  }
+
+  /// Abre um seletor de horário e adiciona como chip personalizado (já selecionado).
+  Future<void> _addCustomTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 8, minute: 0),
+    );
+    if (picked == null) return;
+    final label =
+        '${picked.hour.toString().padLeft(2, '0')}h${picked.minute.toString().padLeft(2, '0')}';
+    setState(() {
+      _customTimes.add(label);
+      _selectedTimes.add(label);
+    });
+  }
+
+  /// Solicita um intervalo em minutos e adiciona como chip personalizado.
+  Future<void> _addCustomInterval() async {
+    final ctrl = TextEditingController();
+    final value = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Adicionar intervalo'),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Minutos',
+            hintText: 'Ex.: 45',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final n = int.tryParse(ctrl.text.trim());
+              Navigator.of(ctx).pop(n != null && n > 0 ? '$n minutos' : null);
+            },
+            child: const Text('Adicionar'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (value == null) return;
+    setState(() {
+      _customIntervals.add(value);
+      _selectedInterval = value;
+    });
   }
 
   Future<void> _confirmar() async {
@@ -428,7 +492,7 @@ class _SchedulePageState extends State<SchedulePage> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _timeSlots.map((time) {
+          children: [..._timeSlots, ..._customTimes].map((time) {
             final isSelected = _selectedTimes.contains(time);
             return _buildChip(
               label: time,
@@ -447,9 +511,7 @@ class _SchedulePageState extends State<SchedulePage> {
         ),
         const SizedBox(height: 12),
         GestureDetector(
-          onTap: () {
-            // TODO: Adicionar horário específico (dialog ou navegação)
-          },
+          onTap: _addCustomTime,
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -477,7 +539,7 @@ class _SchedulePageState extends State<SchedulePage> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _intervals.map((interval) {
+          children: [..._intervals, ..._customIntervals].map((interval) {
             final isSelected = _selectedInterval == interval;
             return _buildChip(
               label: interval,
@@ -492,9 +554,7 @@ class _SchedulePageState extends State<SchedulePage> {
         ),
         const SizedBox(height: 12),
         GestureDetector(
-          onTap: () {
-            // TODO: Adicionar intervalo específico
-          },
+          onTap: _addCustomInterval,
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [

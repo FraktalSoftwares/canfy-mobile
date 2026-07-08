@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
@@ -187,10 +188,38 @@ class _PatientHomePageState extends State<PatientHomePage> {
                 style: AppTextStyles.truculenta(
                   fontSize: 32,
                   fontWeight: FontWeight.normal,
-                  color: const Color(0xFF3F3F3D),
+                  color: AppTokens.neutral800,
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
+              // Banner "Complete seus dados"
+              GestureDetector(
+                onTap: () => context.push('/patient/account/basic-data'),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTokens.yellow100,
+                    borderRadius: BorderRadius.circular(AppTokens.radius16),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline,
+                          size: 20, color: AppTokens.yellow900),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Complete seus dados cadastrais para começar a agendar consultas e receber compras dentro da Canfy.',
+                          style:
+                              AppTextStyles.bodyXs(color: AppTokens.yellow900),
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right,
+                          size: 20, color: AppTokens.yellow900),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
               // Próximas consultas section
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

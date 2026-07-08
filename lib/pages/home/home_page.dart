@@ -23,7 +23,7 @@ class _HomePageState extends State<HomePage> {
   String? _error;
 
   // Dados reais da home
-  final String _totalReceber = 'R\$ 0,00';
+  String _totalReceber = 'R\$ 0,00';
   int _consultasRealizadas = 0;
   int _atendimentosSemana = 0;
   List<Map<String, dynamic>> _upcomingAppointments = [];
@@ -117,6 +117,7 @@ class _HomePageState extends State<HomePage> {
       if (medicoId != null) {
         await _loadHomeStats(medicoId);
         await _loadCatalog();
+        await _loadTotalReceber();
       }
 
       if (mounted) {
@@ -130,6 +131,33 @@ class _HomePageState extends State<HomePage> {
         });
       }
     }
+  }
+
+  /// Total a receber = soma dos repasses pendentes (medico_resumo_financeiro).
+  Future<void> _loadTotalReceber() async {
+    final resumo = await _medicoService.resumoFinanceiro();
+    if (!mounted) return;
+    if (resumo['success'] == true &&
+        resumo['data'] is List &&
+        (resumo['data'] as List).isNotEmpty) {
+      final row = (resumo['data'] as List).first as Map<String, dynamic>;
+      final pendente = row['total_pendente'];
+      final valor = pendente is num
+          ? pendente.toDouble()
+          : double.tryParse(pendente?.toString() ?? '') ?? 0;
+      setState(() => _totalReceber = _formatMoney(valor));
+    }
+  }
+
+  static String _formatMoney(double v) {
+    final s = v.toStringAsFixed(2).replaceAll('.', ',');
+    final parts = s.split(',');
+    final buf = StringBuffer();
+    for (var i = 0; i < parts[0].length; i++) {
+      if (i > 0 && (parts[0].length - i) % 3 == 0) buf.write('.');
+      buf.write(parts[0][i]);
+    }
+    return 'R\$ $buf,${parts[1]}';
   }
 
   Future<void> _loadHomeStats(String medicoId) async {

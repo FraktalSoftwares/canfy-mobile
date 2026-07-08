@@ -202,6 +202,165 @@ class MedicoService {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Loop médico↔paciente (RPCs medico_* — migration 018).
+  // Cada RPC é SECURITY DEFINER e valida internamente que o chamador é o médico.
+  // ---------------------------------------------------------------------------
+
+  /// Wrapper padrão para chamadas RPC, normalizando o retorno em
+  /// {success, data, message} e tratando exceções.
+  Future<Map<String, dynamic>> _rpc(
+    String fn, {
+    Map<String, dynamic>? params,
+  }) async {
+    try {
+      final data = await ApiService.client.rpc(fn, params: params);
+      return {'success': true, 'data': data, 'message': 'OK'};
+    } catch (e) {
+      return {'success': false, 'data': null, 'message': e.toString()};
+    }
+  }
+
+  /// Lista os atendimentos (consultas) do médico logado.
+  /// [incluirFila] inclui consultas agendadas sem médico (fila para assumir).
+  Future<Map<String, dynamic>> listarAtendimentos({
+    String? status,
+    bool incluirFila = false,
+    int limit = 100,
+  }) {
+    return _rpc('medico_listar_atendimentos', params: {
+      'p_status': status,
+      'p_incluir_fila': incluirFila,
+      'p_limit': limit,
+    });
+  }
+
+  /// Médico assume uma consulta da fila (medico_id ainda nulo).
+  Future<Map<String, dynamic>> assumirConsulta(String consultaId) {
+    return _rpc('medico_assumir_consulta', params: {
+      'p_consulta_id': consultaId,
+    });
+  }
+
+  /// Atualiza o status de uma consulta do médico
+  /// (agendada | em_andamento | finalizada).
+  Future<Map<String, dynamic>> atualizarStatusConsulta(
+    String consultaId,
+    String status,
+  ) {
+    return _rpc('medico_atualizar_status_consulta', params: {
+      'p_consulta_id': consultaId,
+      'p_status': status,
+    });
+  }
+
+  /// Finaliza o atendimento, gravando um resumo opcional.
+  Future<Map<String, dynamic>> finalizarAtendimento(
+    String consultaId, {
+    String? resumo,
+  }) {
+    return _rpc('medico_finalizar_atendimento', params: {
+      'p_consulta_id': consultaId,
+      'p_resumo': resumo,
+    });
+  }
+
+  /// Emite uma receita (receitas + receita_itens) para um paciente.
+  ///
+  /// [itens] é uma lista de mapas:
+  /// { 'produto_id', 'posologia', 'quantidade_prescrita', 'duracao_tratamento' }.
+  /// [validade] no formato ISO 'yyyy-MM-dd'. Se [consultaId] for informado, a
+  /// receita é vinculada à consulta e o paciente é derivado dela.
+  Future<Map<String, dynamic>> emitirReceita({
+    String? pacienteId,
+    required String validade,
+    required List<Map<String, dynamic>> itens,
+    String? consultaId,
+    String? observacoes,
+  }) {
+    assert(pacienteId != null || consultaId != null,
+        'Informe pacienteId ou consultaId');
+    return _rpc('medico_emitir_receita', params: {
+      'p_paciente_id': pacienteId,
+      'p_validade': validade,
+      'p_itens': itens,
+      'p_consulta_id': consultaId,
+      'p_observacoes': observacoes,
+    });
+  }
+
+  /// Lista os repasses financeiros do médico logado.
+  Future<Map<String, dynamic>> listarRepasses({int limit = 100}) {
+    return _rpc('medico_listar_repasses', params: {'p_limit': limit});
+  }
+
+  /// Resumo financeiro do médico (total recebido, pendente, nº de atendimentos).
+  Future<Map<String, dynamic>> resumoFinanceiro() {
+    return _rpc('medico_resumo_financeiro');
+  }
+
+  /// Detalhe de um atendimento do médico: resumo + receita + itens.
+  /// Usa o SELECT permitido ao médico sobre suas consultas/receitas (RLS).
+  Future<Map<String, dynamic>> getAtendimentoDetalhe(String consultaId) async {
+    final cRes = await _api.getFiltered('consultas',
+        filters: {'id': consultaId}, limit: 1);
+    String? resumo;
+    String? receitaId;
+    if (cRes['success'] == true &&
+        cRes['data'] is List &&
+        (cRes['data'] as List).isNotEmpty) {
+      final row = (cRes['data'] as List).first as Map<String, dynamic>;
+      resumo = row['resumo_atendimento'] as String?;
+      receitaId = row['receita_id'] as String?;
+    }
+
+    Map<String, dynamic>? receita;
+    final itens = <Map<String, dynamic>>[];
+    if (receitaId != null) {
+      final rRes = await _api.getFiltered('receitas',
+          filters: {'id': receitaId}, limit: 1);
+      if (rRes['success'] == true &&
+          rRes['data'] is List &&
+          (rRes['data'] as List).isNotEmpty) {
+        receita = (rRes['data'] as List).first as Map<String, dynamic>;
+      }
+      final iRes = await _api.getFiltered('receita_itens',
+          filters: {'receita_id': receitaId}, limit: 50);
+      if (iRes['success'] == true && iRes['data'] is List) {
+        for (final raw in (iRes['data'] as List)) {
+          final item = raw as Map<String, dynamic>;
+          String nome = 'Produto';
+          final prodId = item['produto_id'] as String?;
+          if (prodId != null) {
+            final pRes = await _api.getFiltered('produtos',
+                filters: {'id': prodId}, limit: 1);
+            if (pRes['success'] == true &&
+                pRes['data'] is List &&
+                (pRes['data'] as List).isNotEmpty) {
+              nome = (pRes['data'] as List).first['nome_comercial'] as String? ??
+                  nome;
+            }
+          }
+          itens.add({
+            'produto_nome': nome,
+            'posologia': item['posologia'],
+            'quantidade_prescrita': item['quantidade_prescrita'],
+            'duracao_tratamento': item['duracao_tratamento'],
+          });
+        }
+      }
+    }
+
+    return {
+      'success': true,
+      'data': {
+        'resumo': resumo,
+        'receita': receita,
+        'itens': itens,
+      },
+    };
+  }
+
   /// Retorna o nome do paciente (nome_completo do profile) a partir do paciente_id.
   Future<String> getPacienteNome(String pacienteId) async {
     final pac = await _api.getFiltered(

@@ -1,23 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/theme/text_styles.dart';
+import '../../services/api/medico_service.dart';
+import '../../widgets/common/app_button.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
 
-class PreConsultationPage extends StatelessWidget {
-  const PreConsultationPage({super.key});
+class PreConsultationPage extends StatefulWidget {
+  /// Consulta a ser atendida (mapa retornado por medico_listar_atendimentos),
+  /// recebida via GoRouter `extra`.
+  final Map<String, dynamic>? consulta;
+
+  const PreConsultationPage({super.key, this.consulta});
+
+  @override
+  State<PreConsultationPage> createState() => _PreConsultationPageState();
+}
+
+class _PreConsultationPageState extends State<PreConsultationPage> {
+  final MedicoService _medicoService = MedicoService();
+  bool _iniciando = false;
+
+  Map<String, dynamic>? get _consulta =>
+      widget.consulta ??
+      (GoRouterState.of(context).extra as Map<String, dynamic>?);
+
+  Future<void> _iniciarAtendimento(Map<String, dynamic> consulta) async {
+    final id = consulta['id'] as String;
+    setState(() => _iniciando = true);
+    // Marca em andamento (idempotente se já estiver).
+    await _medicoService.atualizarStatusConsulta(id, 'em_andamento');
+    if (!mounted) return;
+    setState(() => _iniciando = false);
+    context.go('/appointment/live/$id', extra: consulta);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final consulta = _consulta;
+    final paciente = (consulta?['paciente_nome'] as String?)?.trim();
+    final queixa = (consulta?['queixa_principal'] as String?)?.trim();
+    final dt = DateTime.tryParse(consulta?['data_consulta']?.toString() ?? '');
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTokens.neutral000,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTokens.neutral000,
         elevation: 0,
         leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708, // 90 graus em radianos
-            child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-          ),
+          icon: const Icon(Icons.arrow_back, color: AppTokens.neutral900),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -26,18 +58,15 @@ class PreConsultationPage extends StatelessWidget {
             }
           },
         ),
-        title: const Text(
+        title: Text(
           'Pré-consulta',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+          style: AppTextStyles.bodySm(
+            color: AppTokens.neutral900,
+            weight: AppTokens.weightSemibold,
           ),
         ),
         centerTitle: true,
-        actions: const [
-          DoctorAppBarAvatar(),
-        ],
+        actions: const [DoctorAppBarAvatar()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -45,248 +74,99 @@ class PreConsultationPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-            const Text(
-              'Pré-consulta',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
+            Text('Pré-consulta',
+                style: AppTextStyles.headingMd(color: AppTokens.neutral900)),
             const SizedBox(height: 24),
-            // Card do paciente
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F5),
-                borderRadius: BorderRadius.circular(16),
+                color: AppTokens.neutral050,
+                borderRadius: BorderRadius.circular(AppTokens.radius16),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Paciente',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF7C7C79),
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Laura Flores',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.chevron_right,
-                            color: Colors.transparent),
-                        onPressed: null,
-                      ),
-                    ],
+                  _infoLabel('Paciente'),
+                  const SizedBox(height: 4),
+                  Text(
+                    paciente?.isNotEmpty == true ? paciente! : 'Paciente',
+                    style: AppTextStyles.bodyMd(
+                      color: AppTokens.neutral900,
+                      weight: AppTokens.weightSemibold,
+                    ),
                   ),
-                  SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text(
-                        'Telefone:',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF7C7C79),
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        '(99) 99999-9999',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        'Principal queixa:',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF7C7C79),
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Insônia',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
+                  const SizedBox(height: 16),
+                  _infoRow('Data:',
+                      dt != null ? _fmtDate(dt) : 'A definir'),
+                  const SizedBox(height: 4),
+                  _infoRow('Principal queixa:',
+                      queixa?.isNotEmpty == true ? queixa! : 'Não informada'),
                 ],
               ),
             ),
             const SizedBox(height: 32),
-            const Text(
-              'Consultas anteriores',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Consultas anteriores
-            _buildPreviousConsultation('01/04/2025', 'Insônia'),
-            const SizedBox(height: 16),
-            _buildPreviousConsultation('01/04/2025', 'Insônia'),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 49,
-              child: ElevatedButton(
-                onPressed: () {
-                  context.go('/appointment/live-consultation');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00994B),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-                child: const Text(
-                  'Iniciar atendimento',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
+            AppButton(
+              text: 'Iniciar atendimento',
+              isLoading: _iniciando,
+              onPressed: consulta == null
+                  ? null
+                  : () => _iniciarAtendimento(consulta),
             ),
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF33CC80),
-                borderRadius: BorderRadius.circular(999),
+                color: AppTokens.green100,
+                borderRadius: BorderRadius.circular(AppTokens.radiusPill),
               ),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.video_call, color: Colors.white),
-                    onPressed: () {},
-                  ),
-                  const Expanded(
+                  const Icon(Icons.info_outline,
+                      color: AppTokens.green900, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
                     child: Text(
                       'Disponível 10 minutos antes do horário',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                      style: AppTextStyles.bodyXs(
+                        color: AppTokens.green900,
+                        weight: AppTokens.weightSemibold,
                       ),
                     ),
                   ),
-                  const Icon(Icons.info_outline, color: Colors.white, size: 22),
                 ],
               ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: const DoctorBottomNavigationBar(
-        currentIndex: 1, // Atendimento tab is active
-      ),
+      bottomNavigationBar: const DoctorBottomNavigationBar(currentIndex: 1),
     );
   }
 
-  Widget _buildPreviousConsultation(String date, String complaint) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            date,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF7C7C79),
+  Widget _infoLabel(String text) =>
+      Text(text, style: AppTextStyles.bodySm(color: AppTokens.neutral600));
+
+  Widget _infoRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.bodySm(color: AppTokens.neutral600)),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            value,
+            style: AppTextStyles.bodySm(
+              color: AppTokens.neutral900,
+              weight: AppTokens.weightSemibold,
             ),
           ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Text(
-                'Principal queixa:',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF7C7C79),
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                complaint,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F7F5),
-              border: Border.all(color: const Color(0xFF33CC80)),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.visibility, color: Color(0xFF00994B)),
-                  onPressed: () {},
-                ),
-                const Expanded(
-                  child: Text(
-                    'receita_médica.pdf',
-                    style: TextStyle(
-                      color: Color(0xFF00994B),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.download, color: Color(0xFF00994B)),
-                  onPressed: () {},
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
+  }
+
+  String _fmtDate(DateTime d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(d.day)}/${two(d.month)}/${d.year}';
   }
 }

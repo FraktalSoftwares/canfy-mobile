@@ -5,6 +5,56 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class PatientService {
   final ApiService _apiService = ApiService();
 
+  /// Lista produtos do catálogo (visão do paciente).
+  Future<Map<String, dynamic>> getProdutos({int limit = 50}) {
+    return _apiService.getFiltered('produtos', limit: limit);
+  }
+
+  /// Retorna um produto do catálogo por id (ou null se não encontrado).
+  Future<Map<String, dynamic>?> getProdutoById(String id) async {
+    final res = await _apiService.getFiltered(
+      'produtos',
+      filters: {'id': id},
+      limit: 1,
+    );
+    if (res['success'] == true && res['data'] is List &&
+        (res['data'] as List).isNotEmpty) {
+      return (res['data'] as List).first as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  /// Nomes das indicações clínicas de um produto (join produto_indicacoes).
+  Future<List<String>> getProdutoIndicacoes(String produtoId) async {
+    try {
+      final res = await ApiService.client
+          .from('produto_indicacoes')
+          .select('indicacoes_clinicas(nome)')
+          .eq('produto_id', produtoId);
+      return (res as List)
+          .map((e) =>
+              ((e as Map)['indicacoes_clinicas']?['nome'] ?? '').toString())
+          .where((s) => s.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Cancela uma consulta do paciente (RLS permite o paciente atualizar a
+  /// própria consulta). Marca status e metadados de cancelamento.
+  Future<Map<String, dynamic>> cancelarConsulta(
+    String consultaId, {
+    String? motivo,
+  }) {
+    return _apiService.put('consultas', {'id': consultaId}, {
+      'status': 'cancelada',
+      'cancelada_por': 'paciente',
+      'motivo_cancelamento': motivo,
+      'cancelada_em': DateTime.now().toUtc().toIso8601String(),
+    });
+  }
+
   /// Obter dados do paciente atual (profile + dados do paciente)
   Future<Map<String, dynamic>> getCurrentPatient() async {
     try {
@@ -895,6 +945,7 @@ class PatientService {
             'product': product,
             'prescribedBy': prescribedBy,
             'observations': rec['observacoes'] as String? ?? '',
+            'documentoUrl': rec['documento_url'] as String?,
           };
         }
       }

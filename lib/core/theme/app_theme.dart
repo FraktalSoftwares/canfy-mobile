@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_tokens.dart';
+
 class AppTheme {
-  // Cores principais
-  static const Color primaryColor = Color(0xFF4B39EF);
-  static const Color secondaryColor = Color(0xFF39D2C0);
-  static const Color tertiaryColor = Color(0xFFEE8B60);
-  static const Color errorColor = Color(0xFFFF5963);
-  static const Color successColor = Color(0xFF249689);
-  static const Color warningColor = Color(0xFFF9CF58);
-  
+  // Cores principais (derivadas de AppTokens — Fase 0)
+  static const Color primaryColor = AppTokens.primary; // verde da marca
+  static const Color secondaryColor = AppTokens.green900;
+  static const Color tertiaryColor = AppTokens.accentPurpleMedium;
+  static const Color errorColor = AppTokens.error;
+  static const Color successColor = AppTokens.success;
+  static const Color warningColor = AppTokens.warning;
+
   // Cores do Canfy
-  static const Color canfyGreen = Color(0xFF00994B); // green-800 do Figma
-  static const Color canfyPurple = Color(0xFF9C27B0); // Roxo para gradiente
+  static const Color canfyGreen = AppTokens.green800; // #00994B
+  static const Color canfyPurple = AppTokens.accentPurple;
 
   // Tema claro
   static ThemeData get lightTheme {
@@ -26,91 +28,91 @@ class AppTheme {
         secondary: secondaryColor,
         tertiary: tertiaryColor,
         error: errorColor,
-        surface: Color(0xFFFFFFFF),
+        surface: AppTokens.neutral000,
       ),
-      scaffoldBackgroundColor: const Color(0xFFF1F4F8),
+      scaffoldBackgroundColor: AppTokens.surface,
       appBarTheme: AppBarTheme(
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 2,
-        titleTextStyle: GoogleFonts.interTight(
+        titleTextStyle: GoogleFonts.truculenta(
           fontSize: 22,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
       ),
       textTheme: TextTheme(
-        displayLarge: GoogleFonts.interTight(
+        displayLarge: GoogleFonts.truculenta(
           fontSize: 64,
           fontWeight: FontWeight.w600,
           color: const Color(0xFF14181B),
         ),
-        displayMedium: GoogleFonts.interTight(
+        displayMedium: GoogleFonts.truculenta(
           fontSize: 44,
           fontWeight: FontWeight.w600,
           color: const Color(0xFF14181B),
         ),
-        displaySmall: GoogleFonts.interTight(
+        displaySmall: GoogleFonts.truculenta(
           fontSize: 36,
           fontWeight: FontWeight.w600,
           color: const Color(0xFF14181B),
         ),
-        headlineLarge: GoogleFonts.interTight(
+        headlineLarge: GoogleFonts.truculenta(
           fontSize: 32,
           fontWeight: FontWeight.w600,
           color: const Color(0xFF14181B),
         ),
-        headlineMedium: GoogleFonts.interTight(
+        headlineMedium: GoogleFonts.truculenta(
           fontSize: 28,
           fontWeight: FontWeight.w600,
           color: const Color(0xFF14181B),
         ),
-        headlineSmall: GoogleFonts.interTight(
+        headlineSmall: GoogleFonts.truculenta(
           fontSize: 24,
           fontWeight: FontWeight.w600,
           color: const Color(0xFF14181B),
         ),
-        titleLarge: GoogleFonts.interTight(
+        titleLarge: GoogleFonts.truculenta(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: const Color(0xFF14181B),
         ),
-        titleMedium: GoogleFonts.interTight(
+        titleMedium: GoogleFonts.truculenta(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: const Color(0xFF14181B),
         ),
-        titleSmall: GoogleFonts.interTight(
+        titleSmall: GoogleFonts.truculenta(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: const Color(0xFF14181B),
         ),
-        bodyLarge: GoogleFonts.inter(
+        bodyLarge: GoogleFonts.arimo(
           fontSize: 16,
           fontWeight: FontWeight.normal,
           color: const Color(0xFF14181B),
         ),
-        bodyMedium: GoogleFonts.inter(
+        bodyMedium: GoogleFonts.arimo(
           fontSize: 14,
           fontWeight: FontWeight.normal,
           color: const Color(0xFF14181B),
         ),
-        bodySmall: GoogleFonts.inter(
+        bodySmall: GoogleFonts.arimo(
           fontSize: 12,
           fontWeight: FontWeight.normal,
           color: const Color(0xFF57636C),
         ),
-        labelLarge: GoogleFonts.inter(
+        labelLarge: GoogleFonts.arimo(
           fontSize: 16,
           fontWeight: FontWeight.normal,
           color: const Color(0xFF57636C),
         ),
-        labelMedium: GoogleFonts.inter(
+        labelMedium: GoogleFonts.arimo(
           fontSize: 14,
           fontWeight: FontWeight.normal,
           color: const Color(0xFF57636C),
         ),
-        labelSmall: GoogleFonts.inter(
+        labelSmall: GoogleFonts.arimo(
           fontSize: 12,
           fontWeight: FontWeight.normal,
           color: const Color(0xFF57636C),
@@ -137,84 +139,84 @@ class AppTheme {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 2,
-        titleTextStyle: GoogleFonts.interTight(
+        titleTextStyle: GoogleFonts.truculenta(
           fontSize: 22,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
       ),
       textTheme: TextTheme(
-        displayLarge: GoogleFonts.interTight(
+        displayLarge: GoogleFonts.truculenta(
           fontSize: 64,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        displayMedium: GoogleFonts.interTight(
+        displayMedium: GoogleFonts.truculenta(
           fontSize: 44,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        displaySmall: GoogleFonts.interTight(
+        displaySmall: GoogleFonts.truculenta(
           fontSize: 36,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        headlineLarge: GoogleFonts.interTight(
+        headlineLarge: GoogleFonts.truculenta(
           fontSize: 32,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        headlineMedium: GoogleFonts.interTight(
+        headlineMedium: GoogleFonts.truculenta(
           fontSize: 28,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        headlineSmall: GoogleFonts.interTight(
+        headlineSmall: GoogleFonts.truculenta(
           fontSize: 24,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        titleLarge: GoogleFonts.interTight(
+        titleLarge: GoogleFonts.truculenta(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        titleMedium: GoogleFonts.interTight(
+        titleMedium: GoogleFonts.truculenta(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        titleSmall: GoogleFonts.interTight(
+        titleSmall: GoogleFonts.truculenta(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        bodyLarge: GoogleFonts.inter(
+        bodyLarge: GoogleFonts.arimo(
           fontSize: 16,
           fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
-        bodyMedium: GoogleFonts.inter(
+        bodyMedium: GoogleFonts.arimo(
           fontSize: 14,
           fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
-        bodySmall: GoogleFonts.inter(
+        bodySmall: GoogleFonts.arimo(
           fontSize: 12,
           fontWeight: FontWeight.normal,
           color: const Color(0xFF95A1AC),
         ),
-        labelLarge: GoogleFonts.inter(
+        labelLarge: GoogleFonts.arimo(
           fontSize: 16,
           fontWeight: FontWeight.normal,
           color: const Color(0xFF95A1AC),
         ),
-        labelMedium: GoogleFonts.inter(
+        labelMedium: GoogleFonts.arimo(
           fontSize: 14,
           fontWeight: FontWeight.normal,
           color: const Color(0xFF95A1AC),
         ),
-        labelSmall: GoogleFonts.inter(
+        labelSmall: GoogleFonts.arimo(
           fontSize: 12,
           fontWeight: FontWeight.normal,
           color: const Color(0xFF95A1AC),

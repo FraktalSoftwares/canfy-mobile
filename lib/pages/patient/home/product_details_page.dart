@@ -1,352 +1,133 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'share_product_modal.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/theme/text_styles.dart';
+import '../../../services/api/patient_service.dart';
+import '../../../utils/product_image_utils.dart';
+import '../../../widgets/common/app_button.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 
 class PatientProductDetailsPage extends StatefulWidget {
   final String productId;
-  
-  const PatientProductDetailsPage({
-    super.key,
-    required this.productId,
-  });
+
+  const PatientProductDetailsPage({super.key, required this.productId});
 
   @override
-  State<PatientProductDetailsPage> createState() => _PatientProductDetailsPageState();
+  State<PatientProductDetailsPage> createState() =>
+      _PatientProductDetailsPageState();
 }
 
 class _PatientProductDetailsPageState extends State<PatientProductDetailsPage> {
+  final PatientService _patientService = PatientService();
+  Map<String, dynamic>? _produto;
+  List<String> _indicacoes = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final produto = await _patientService.getProdutoById(widget.productId);
+    final indic = await _patientService.getProdutoIndicacoes(widget.productId);
+    if (!mounted) return;
+    setState(() {
+      _produto = produto;
+      _indicacoes = indic;
+      _loading = false;
+    });
+  }
+
+  String get _nome =>
+      (_produto?['nome_comercial'] as String?)?.trim().isNotEmpty == true
+          ? _produto!['nome_comercial'] as String
+          : 'Produto';
+
+  String? get _imageUrl => ProductImageUtils.resolveProductImageUrl(
+      _produto?['imagem_url'] ?? ProductImageUtils.getProductImageValue(_produto ?? {}));
+
+  String get _composicao {
+    final ativo = (_produto?['principio_ativo'] as String?)?.trim();
+    final cbd = (_produto?['concentracao_cbd'] as String?)?.trim();
+    final thc = (_produto?['concentracao_thc'] as String?)?.trim();
+    final conc = [
+      if (cbd?.isNotEmpty == true) 'CBD $cbd',
+      if (thc?.isNotEmpty == true) 'THC $thc',
+    ].join(' / ');
+    return [
+      if (ativo?.isNotEmpty == true) ativo,
+      if (conc.isNotEmpty) conc,
+    ].join(' · ').trim().isEmpty
+        ? '—'
+        : [
+            if (ativo?.isNotEmpty == true) ativo,
+            if (conc.isNotEmpty) conc,
+          ].join(' · ');
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: AppTokens.neutral000,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTokens.neutral000,
       body: CustomScrollView(
         slivers: [
-          // App bar with image
           SliverAppBar(
             expandedHeight: 324,
             pinned: true,
-            backgroundColor: Colors.transparent,
-            leading: IconButton(
-              icon: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1EDFC).withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(Icons.arrow_back, color: Color(0xFF212121)),
-              ),
-              onPressed: () {
-                context.pop();
-              },
-            ),
-            actions: [
-              IconButton(
-                icon: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1EDFC).withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Icon(Icons.share, color: Color(0xFF212121)),
-                ),
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (context) => const ShareProductModal(),
-                  );
-                },
-              ),
-            ],
+            backgroundColor: AppTokens.neutral000,
+            leading: _circleButton(Icons.arrow_back, () => context.pop()),
+            actions: [_circleButton(Icons.share, _openShare)],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.grey[200]!,
-                      Colors.grey[100]!,
-                    ],
-                  ),
-                ),
+                color: AppTokens.accentPurpleLight,
                 child: Center(
                   child: Container(
                     width: 200,
                     height: 200,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD7FA80),
+                      color: AppTokens.accentLime,
                       borderRadius: BorderRadius.circular(100),
                     ),
-                    child: const Icon(Icons.local_pharmacy, size: 100, color: Colors.black54),
+                    clipBehavior: Clip.antiAlias,
+                    child: _imageUrl != null && _imageUrl!.isNotEmpty
+                        ? Image.network(_imageUrl!, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                                Icons.local_pharmacy,
+                                size: 100,
+                                color: Colors.black54))
+                        : const Icon(Icons.local_pharmacy,
+                            size: 100, color: Colors.black54),
                   ),
                 ),
               ),
             ),
           ),
-          // Content
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product title and share button
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Óleo Canabidiol 20mg/ml',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF212121),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1EDFC),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(Icons.share, color: Color(0xFF212121)),
-                        ),
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) => const ShareProductModal(),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                  Text(_nome,
+                      style: AppTextStyles.headingSm(color: AppTokens.neutral900)),
                   const SizedBox(height: 24),
-                  // Warning card
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFDF7E3),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF6DC5E),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.info_outline, size: 16, color: Color(0xFF9E831B)),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'Este produto só pode ser comercializado\ne utilizado com receita médica.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF9E831B),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _warningCard(),
                   const SizedBox(height: 24),
-                  // Product details
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7F7F5),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildDetailRow(
-                          'Composição e concentração',
-                          '20:1 CBD:THC',
-                        ),
-                        const Divider(height: 32),
-                        _buildDetailRow(
-                          'Formas de uso',
-                          'Óleo, cápsula, flor',
-                        ),
-                        const Divider(height: 32),
-                        _buildDetailRow(
-                          'Indicações clínicas',
-                          'Dor crônica, ansiedade e insônia',
-                        ),
-                      ],
-                    ),
-                  ),
+                  _detailsCard(),
                   const SizedBox(height: 24),
-                  // Usage instructions
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7F7F5),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Orientações de uso gerais',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF212121),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: const Color(0xFFA987F5)),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1EDFC),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: const Icon(Icons.visibility, color: Color(0xFF9067F1), size: 20),
-                              ),
-                              const SizedBox(width: 16),
-                              const Expanded(
-                                child: Text(
-                                  'Orientações.pdf',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF9067F1),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1EDFC),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: const Icon(Icons.download, color: Color(0xFF9067F1), size: 20),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Related products
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Produtos relacionados',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF212121),
-                          fontFamily: 'Truculenta',
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          context.push('/patient/catalog');
-                        },
-                        child: const Text(
-                          'Ver tudo',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF9067F1),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 178,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: List.generate(3, (index) {
-                        return Container(
-                          width: 144,
-                          margin: EdgeInsets.only(right: index < 2 ? 16 : 0),
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: index == 0 
-                                ? const Color(0xFFC3A6F9) 
-                                : const Color(0xFFF1EDFC),
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 96,
-                                height: 96,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFD7FA80),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: const Icon(Icons.local_pharmacy, size: 48, color: Colors.black54),
-                              ),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'Óleo\nCanabidiol',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFF212121),
-                                  height: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Request product button
-                  ElevatedButton(
-                    onPressed: () {
-                      // Request product
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9067F1),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 49),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                    child: const Text(
-                      'Solicitar produto',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
+                  AppButton(
+                    text: 'Solicitar produto',
+                    variant: AppButtonVariant.primary,
+                    onPressed: () => context.push('/patient/orders/new'),
                   ),
                   const SizedBox(height: 32),
                 ],
@@ -355,39 +136,104 @@ class _PatientProductDetailsPageState extends State<PatientProductDetailsPage> {
           ),
         ],
       ),
-      bottomNavigationBar: const PatientBottomNavigationBar(
-        currentIndex: 0, // Home tab is active
+      bottomNavigationBar: const PatientBottomNavigationBar(currentIndex: 0),
+    );
+  }
+
+  Widget _circleButton(IconData icon, VoidCallback onTap) {
+    return IconButton(
+      icon: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppTokens.accentPurpleLight,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Icon(icon, color: AppTokens.neutral900, size: 20),
+      ),
+      onPressed: onTap,
+    );
+  }
+
+  void _openShare() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const ShareProductModal(),
+    );
+  }
+
+  Widget _warningCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTokens.yellow100,
+        borderRadius: BorderRadius.circular(AppTokens.radius16),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, size: 20, color: AppTokens.yellow900),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Este produto só pode ser comercializado e utilizado com receita médica.',
+              style: AppTextStyles.bodyXs(color: AppTokens.yellow900),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _detailsCard() {
+    final forma = (_produto?['forma_farmaceutica']?.toString() ?? '').trim();
+    final volume = (_produto?['volume_quantidade'] as String?)?.trim();
+    final fabricante = (_produto?['fabricante'] as String?)?.trim();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTokens.neutral050,
+        borderRadius: BorderRadius.circular(AppTokens.radius16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _detailRow('Composição e concentração', _composicao),
+          if (forma.isNotEmpty) ...[
+            const Divider(height: 32),
+            _detailRow('Forma farmacêutica', forma),
+          ],
+          if (volume?.isNotEmpty == true) ...[
+            const Divider(height: 32),
+            _detailRow('Volume / quantidade', volume!),
+          ],
+          if (fabricante?.isNotEmpty == true) ...[
+            const Divider(height: 32),
+            _detailRow('Fabricante', fabricante!),
+          ],
+          if (_indicacoes.isNotEmpty) ...[
+            const Divider(height: 32),
+            _detailRow('Indicações clínicas', _indicacoes.join(', ')),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF7C7C79),
-          ),
-        ),
+        Text(label, style: AppTextStyles.bodySm(color: AppTokens.neutral600)),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF3F3F3D),
-          ),
-        ),
+        Text(value,
+            style: AppTextStyles.bodyMd(
+              color: AppTokens.neutral800,
+              weight: AppTokens.weightSemibold,
+            )),
       ],
     );
   }
 }
-
-
-
-
-
-
