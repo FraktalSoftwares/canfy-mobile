@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../constants/app_colors.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/theme/text_styles.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
 import '../../../services/api/patient_service.dart';
@@ -554,13 +556,9 @@ class _ConsultationsPageState extends State<ConsultationsPage>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Consultas',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.neutral900,
-                  ),
+                  style: AppTextStyles.headingMd(color: AppTokens.neutral900),
                 ),
                 GestureDetector(
                   onTap: () {
