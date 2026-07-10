@@ -336,7 +336,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
       case 'finalizada':
         bg = AppTokens.green100;
         fg = AppTokens.green900;
-        label = 'Concluída';
+        label = 'Realizada';
         break;
       case 'cancelada':
         bg = AppTokens.neutral200;

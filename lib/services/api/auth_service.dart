@@ -12,66 +12,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthService {
   final ApiService _apiService = ApiService();
 
-  /// Monta endereço completo a partir dos campos separados
-  String _buildFullAddress({
-    String? cep,
-    String? address,
-    String? addressNumber,
-    String? complement,
-    String? neighborhood,
-    String? city,
-    String? state,
-  }) {
-    final parts = <String>[];
-
-    if (address != null && address.isNotEmpty) {
-      parts.add(address);
-      if (addressNumber != null && addressNumber.isNotEmpty) {
-        parts.add('nº $addressNumber');
-      }
-    }
-
-    if (neighborhood != null && neighborhood.isNotEmpty) {
-      parts.add(neighborhood);
-    }
-
-    if (city != null && city.isNotEmpty) {
-      parts.add(city);
-    }
-
-    if (state != null && state.isNotEmpty) {
-      parts.add(state);
-    }
-
-    if (cep != null && cep.isNotEmpty) {
-      parts.add('CEP: $cep');
-    }
-
-    if (complement != null && complement.isNotEmpty) {
-      parts.add('($complement)');
-    }
-
-    return parts.join(', ');
-  }
-
   /// Cadastrar novo paciente
   ///
-  /// Cria o usuário no Supabase Auth, depois cria o profile e o registro em pacientes
+  /// Cria o usuário no Supabase Auth, depois cria o profile e o registro em pacientes.
+  /// CPF e RG são opcionais no cadastro inicial (podem ser completados depois);
+  /// endereço não é coletado nesta tela (fica para etapas posteriores).
   Future<Map<String, dynamic>> registerPatient({
     required String name,
     required String email,
     required String password,
     String? phone,
-    required String cpf,
+    String? cpf,
     required DateTime birthDate,
     String? gender,
-    String? cep,
-    String? address,
-    String? addressNumber,
-    String? complement,
-    String? neighborhood,
-    String? city,
-    String? state,
+    String? rg,
     bool authorizeDataSharing = false,
   }) async {
     try {
@@ -158,18 +112,9 @@ class AuthService {
         }
       }
 
-      // 4. Montar endereço completo
-      final enderecoCompleto = _buildFullAddress(
-        cep: cep,
-        address: address,
-        addressNumber: addressNumber,
-        complement: complement,
-        neighborhood: neighborhood,
-        city: city,
-        state: state,
-      );
-
       // 4. Verificar se o paciente foi criado pelo trigger e atualizar
+      // (o trigger on_auth_user_created já preenche um CPF/data_nascimento
+      // temporários; aqui sobrescrevemos com os dados reais informados)
       final existingPaciente = await _apiService.getFiltered(
         'pacientes',
         filters: {'user_id': userId},
@@ -177,9 +122,10 @@ class AuthService {
       );
 
       final pacienteUpdateData = {
-        'cpf': cpf,
+        if (cpf != null && cpf.isNotEmpty) 'cpf': cpf,
         'data_nascimento': birthDate.toIso8601String().split('T')[0],
-        if (enderecoCompleto.isNotEmpty) 'endereco_completo': enderecoCompleto,
+        if (gender != null && gender.isNotEmpty) 'sexo': gender,
+        if (rg != null && rg.isNotEmpty) 'rg': rg,
       };
 
       final pacienteResult = existingPaciente['success'] == true &&
@@ -323,43 +269,20 @@ class AuthService {
 
   /// Cadastrar novo médico/prescritor
   ///
-  /// Cria o usuário no Supabase Auth com tipo_usuario = medico, atualiza o profile
-  /// e insere o registro em medicos (CRM/UF, CPF, endereço). Não cria registro em pacientes.
+  /// Cria o usuário no Supabase Auth com tipo_usuario = medico e atualiza o profile.
+  /// CRM/UF, endereço e documentos são coletados depois no fluxo de validação
+  /// profissional (Etapa 1/2), não neste cadastro inicial.
   Future<Map<String, dynamic>> registerDoctor({
     required String name,
     required String email,
     required String password,
     String? phone,
     String? cpf,
-    required String crm,
-    String? cro,
-    String? cep,
-    String? address,
-    String? addressNumber,
-    String? complement,
-    String? neighborhood,
-    String? city,
-    String? state,
+    required DateTime birthDate,
+    String? gender,
+    String? rg,
   }) async {
     try {
-      // Parse CRM: aceita "123456/SP" -> crm="123456", uf_crm="SP"; senão crm=texto, uf_crm="A confirmar"
-      String crmNum = crm.trim();
-      String ufCrm = 'A confirmar';
-      if (crmNum.contains('/')) {
-        final parts = crmNum.split('/');
-        crmNum = parts[0].trim();
-        if (parts.length > 1 && parts[1].trim().isNotEmpty) {
-          ufCrm = parts[1].trim();
-        }
-      }
-      if (crmNum.isEmpty) {
-        return {
-          'success': false,
-          'message': 'CRM é obrigatório',
-          'data': null,
-        };
-      }
-
       // 1. Criar usuário no Supabase Auth com tipo médico
       final authResult = await _apiService.signUp(
         email: email,
@@ -420,43 +343,18 @@ class AuthService {
       // 2.1 Remover registro em pacientes se existir (trigger pode ter criado por default)
       await _apiService.delete('pacientes', {'user_id': userId});
 
-      // Montar endereço completo no mesmo formato da página de dados profissionais
-      final enderecoParts = <String>[];
-      if (address != null && address.trim().isNotEmpty) {
-        enderecoParts.add(address.trim());
-        if (addressNumber != null && addressNumber.trim().isNotEmpty) {
-          enderecoParts.add('nº ${addressNumber.trim()}');
-        }
-      }
-      if (neighborhood != null && neighborhood.trim().isNotEmpty) {
-        enderecoParts.add(neighborhood.trim());
-      }
-      if (city != null && city.trim().isNotEmpty) {
-        enderecoParts.add(city.trim());
-      }
-      if (state != null && state.trim().isNotEmpty) {
-        enderecoParts.add(state.trim());
-      }
-      if (cep != null && cep.trim().isNotEmpty) {
-        enderecoParts.add('CEP: ${cep.trim()}');
-      }
-      if (complement != null && complement.trim().isNotEmpty) {
-        enderecoParts.add('(${complement.trim()})');
-      }
-      final enderecoCompleto =
-          enderecoParts.isEmpty ? null : enderecoParts.join(', ');
-
-      // 3. Inserir em medicos (nome, email, crm, uf_crm, cpf, endereco_completo; user_id referencia profiles.id)
+      // 3. Inserir em medicos (nome, email, cpf, data de nascimento, sexo, RG).
+      // CRM/UF e endereço profissional NÃO são coletados aqui: ficam para a
+      // Etapa 1 do fluxo de validação profissional (Step1ProfessionalDataPage).
       final medicoData = {
         'user_id': userId,
         'nome': name,
         'email': email,
         if (phone != null && phone.isNotEmpty) 'telefone': phone,
         if (cpf != null && cpf.trim().isNotEmpty) 'cpf': cpf.trim(),
-        'crm': crmNum,
-        'uf_crm': ufCrm,
-        if (enderecoCompleto != null && enderecoCompleto.isNotEmpty)
-          'endereco_completo': enderecoCompleto,
+        'data_nascimento': birthDate.toIso8601String().split('T')[0],
+        if (gender != null && gender.isNotEmpty) 'sexo': gender,
+        if (rg != null && rg.isNotEmpty) 'rg': rg,
       };
 
       final medicoResult = await _apiService.post('medicos', medicoData);

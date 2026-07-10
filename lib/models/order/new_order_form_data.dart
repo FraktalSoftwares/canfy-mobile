@@ -57,6 +57,23 @@ class NewOrderFormData {
   /// Nome do arquivo Anvisa (exibição)
   final String? anvisaFileName;
 
+  /// URL do documento complementar que comprove vínculo com o titular do
+  /// comprovante de residência (step 3)
+  final String? complementarDocumentUrl;
+
+  /// Nome do arquivo complementar (exibição)
+  final String? complementarFileName;
+
+  /// URL do laudo médico (step 3)
+  final String? laudoDocumentUrl;
+
+  /// Nome do arquivo do laudo (exibição)
+  final String? laudoFileName;
+
+  /// Se o paciente pediu para a Canfy providenciar a autorização Anvisa
+  /// em seu nome (dispensa o upload do documento nesta etapa)
+  final bool anvisaSolicitadaCanfy;
+
   /// Endereço de entrega (step 5)
   final String? deliveryAddress;
 
@@ -81,6 +98,12 @@ class NewOrderFormData {
   /// Nome legível do serviço ME (ex: "PAC", "SEDEX")
   final String? shippingServiceName;
 
+  /// Se o paciente assinou a procuração Canfy via DocuSign (etapa opcional)
+  final bool procuracaoAssinada;
+
+  /// ID do envelope DocuSign da procuração assinada (se houver)
+  final String? procuracaoEnvelopeId;
+
   NewOrderFormData({
     required this.prescriptionId,
     required this.productName,
@@ -101,6 +124,11 @@ class NewOrderFormData {
     this.addressProofFileName,
     this.anvisaDocumentUrl,
     this.anvisaFileName,
+    this.complementarDocumentUrl,
+    this.complementarFileName,
+    this.laudoDocumentUrl,
+    this.laudoFileName,
+    this.anvisaSolicitadaCanfy = false,
     this.deliveryAddress,
     this.paymentMethod,
     this.shippingCost = 0.0,
@@ -109,6 +137,8 @@ class NewOrderFormData {
     this.produtoId,
     this.shippingServiceId,
     this.shippingServiceName,
+    this.procuracaoAssinada = false,
+    this.procuracaoEnvelopeId,
   });
 
   /// Rótulo amigável da forma farmacêutica (mesmo mapeamento do web FORMA_LABEL).
@@ -157,6 +187,11 @@ class NewOrderFormData {
     String? addressProofFileName,
     String? anvisaDocumentUrl,
     String? anvisaFileName,
+    String? complementarDocumentUrl,
+    String? complementarFileName,
+    String? laudoDocumentUrl,
+    String? laudoFileName,
+    bool? anvisaSolicitadaCanfy,
     String? deliveryAddress,
     String? paymentMethod,
     double? shippingCost,
@@ -165,6 +200,8 @@ class NewOrderFormData {
     String? produtoId,
     int? shippingServiceId,
     String? shippingServiceName,
+    bool? procuracaoAssinada,
+    String? procuracaoEnvelopeId,
   }) {
     return NewOrderFormData(
       prescriptionId: prescriptionId ?? this.prescriptionId,
@@ -186,6 +223,12 @@ class NewOrderFormData {
       addressProofFileName: addressProofFileName ?? this.addressProofFileName,
       anvisaDocumentUrl: anvisaDocumentUrl ?? this.anvisaDocumentUrl,
       anvisaFileName: anvisaFileName ?? this.anvisaFileName,
+      complementarDocumentUrl:
+          complementarDocumentUrl ?? this.complementarDocumentUrl,
+      complementarFileName: complementarFileName ?? this.complementarFileName,
+      laudoDocumentUrl: laudoDocumentUrl ?? this.laudoDocumentUrl,
+      laudoFileName: laudoFileName ?? this.laudoFileName,
+      anvisaSolicitadaCanfy: anvisaSolicitadaCanfy ?? this.anvisaSolicitadaCanfy,
       deliveryAddress: deliveryAddress ?? this.deliveryAddress,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       shippingCost: shippingCost ?? this.shippingCost,
@@ -194,6 +237,8 @@ class NewOrderFormData {
       produtoId: produtoId ?? this.produtoId,
       shippingServiceId: shippingServiceId ?? this.shippingServiceId,
       shippingServiceName: shippingServiceName ?? this.shippingServiceName,
+      procuracaoAssinada: procuracaoAssinada ?? this.procuracaoAssinada,
+      procuracaoEnvelopeId: procuracaoEnvelopeId ?? this.procuracaoEnvelopeId,
     );
   }
 }

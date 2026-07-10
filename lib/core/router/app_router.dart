@@ -25,6 +25,7 @@ import '../../pages/appointment/prescription_products_page.dart';
 import '../../pages/appointment/prescription_details_page.dart';
 import '../../pages/appointment/finish_appointment_page.dart';
 import '../../pages/appointment/appointment_details_page.dart';
+import '../../pages/appointment/prontuario_page.dart';
 import '../../pages/financial/financial_page.dart';
 import '../../pages/financial/financial_history_page.dart';
 import '../../pages/home/home_page.dart';
@@ -34,6 +35,7 @@ import '../../pages/patient/account/account_page.dart';
 import '../../pages/patient/account/basic_data_page.dart';
 import '../../pages/patient/account/settings_page.dart';
 import '../../pages/patient/account/anvisa_page.dart';
+import '../../pages/patient/account/canfy_id_page.dart';
 import '../../pages/patient/account/about_page.dart';
 import '../../pages/patient/orders/orders_history_page.dart';
 import '../../pages/patient/orders/order_details_page.dart';
@@ -41,6 +43,7 @@ import '../../pages/patient/orders/new_order_step1_page.dart';
 import '../../pages/patient/orders/new_order_step2_page.dart';
 import '../../pages/patient/orders/new_order_step3_page.dart';
 import '../../pages/patient/orders/new_order_step4_page.dart';
+import '../../pages/patient/orders/procuracao_docusign_page.dart';
 import '../../pages/patient/orders/new_order_step5_page.dart';
 import '../../pages/patient/orders/order_payment_success_page.dart';
 import '../../pages/patient/consultations/consultations_page.dart';
@@ -48,6 +51,7 @@ import '../../pages/patient/consultations/consultation_details_page.dart';
 import '../../pages/patient/consultations/live_consultation_page.dart';
 import '../../pages/patient/consultations/finish_consultation_page.dart';
 import '../../pages/patient/consultations/new_consultation_step1_page.dart';
+import '../../pages/patient/consultations/new_consultation_health_history_page.dart';
 import '../../pages/patient/consultations/new_consultation_step2_page.dart';
 import '../../pages/patient/consultations/new_consultation_step3_page.dart';
 import '../../pages/patient/consultations/new_consultation_step4_page.dart';
@@ -124,10 +128,13 @@ class AppRouter {
           GoRoute(
             path: 'email-sent',
             name: 'email-sent',
-            pageBuilder: (context, state) => _noTransitionPage(
-              state: state,
-              child: const EmailSentPage(),
-            ),
+            pageBuilder: (context, state) {
+              final email = state.extra as String?;
+              return _noTransitionPage(
+                state: state,
+                child: EmailSentPage(email: email),
+              );
+            },
           ),
           GoRoute(
             path: 'reset',
@@ -305,6 +312,17 @@ class AppRouter {
               child: const AppointmentDetailsPage(),
             ),
           ),
+          GoRoute(
+            path: 'prontuario/:consultaId',
+            name: 'prontuario',
+            pageBuilder: (context, state) {
+              final consultaId = state.pathParameters['consultaId'] ?? '';
+              return _noTransitionPage(
+                state: state,
+                child: ProntuarioPage(consultaId: consultaId),
+              );
+            },
+          ),
         ],
       ),
       GoRoute(
@@ -376,6 +394,14 @@ class AppRouter {
             ),
           ),
           GoRoute(
+            path: 'canfy-id',
+            name: 'patient-canfy-id',
+            pageBuilder: (context, state) => _noTransitionPage(
+              state: state,
+              child: const CanfyIdPage(),
+            ),
+          ),
+          GoRoute(
             path: 'settings',
             name: 'patient-settings',
             pageBuilder: (context, state) => _noTransitionPage(
@@ -441,6 +467,17 @@ class AppRouter {
                   return _noTransitionPage(
                     state: state,
                     child: NewOrderStep3Page(formData: formData),
+                  );
+                },
+              ),
+              GoRoute(
+                path: 'procuracao',
+                name: 'patient-new-order-procuracao',
+                pageBuilder: (context, state) {
+                  final formData = state.extra as NewOrderFormData?;
+                  return _noTransitionPage(
+                    state: state,
+                    child: ProcuracaoDocusignPage(formData: formData),
                   );
                 },
               ),
@@ -533,6 +570,18 @@ class AppRouter {
                   state: state,
                   child: const NewConsultationStep1Page(),
                 ),
+              ),
+              GoRoute(
+                path: 'health-history',
+                name: 'patient-new-consultation-health-history',
+                pageBuilder: (context, state) {
+                  final formData = state.extra as NewConsultationFormData?;
+                  return _noTransitionPage(
+                    state: state,
+                    child:
+                        NewConsultationHealthHistoryPage(formData: formData),
+                  );
+                },
               ),
               GoRoute(
                 path: 'step2',

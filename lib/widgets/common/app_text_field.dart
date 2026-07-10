@@ -79,18 +79,26 @@ class AppTextField extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: AppTextStyles.bodySm(color: AppTokens.neutral500),
-            prefixIcon:
-                icon != null ? Icon(icon, color: AppTokens.neutral600, size: 22) : null,
+            prefixIcon: icon != null
+                ? Icon(icon,
+                    color: hasError
+                        ? AppTokens.errorFieldBorder
+                        : AppTokens.neutral600,
+                    size: 22)
+                : null,
             suffixIcon: suffix,
-            filled: false,
+            filled: hasError,
+            fillColor: AppTokens.errorFieldFill,
             isDense: true,
             border: border(AppTokens.neutral300),
-            enabledBorder:
-                border(hasError ? AppTokens.error : AppTokens.neutral300),
-            focusedBorder:
-                border(hasError ? AppTokens.error : AppTokens.primary, 2),
+            enabledBorder: border(
+                hasError ? AppTokens.errorFieldBorder : AppTokens.neutral300),
+            focusedBorder: border(
+                hasError ? AppTokens.errorFieldBorder : AppTokens.primary, 2),
             errorText: errorText,
-            errorStyle: AppTextStyles.bodyXs(color: AppTokens.error),
+            errorStyle: AppTextStyles.bodyXs(
+                color: AppTokens.errorFieldBorder,
+                weight: AppTokens.weightSemibold),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppTokens.spacingM,
               vertical: 14,

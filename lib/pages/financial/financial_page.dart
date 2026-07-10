@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_tokens.dart';
 import '../../core/theme/text_styles.dart';
 import '../../services/api/medico_service.dart';
@@ -17,9 +18,13 @@ class _FinancialPageState extends State<FinancialPage> {
 
   bool _loading = true;
   String? _error;
-  double _totalRecebido = 0;
-  double _totalPendente = 0;
   List<Map<String, dynamic>> _repasses = [];
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+
+  static const _mesesNomes = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
+    'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  ];
 
   @override
   void initState() {
@@ -32,24 +37,53 @@ class _FinancialPageState extends State<FinancialPage> {
       _loading = true;
       _error = null;
     });
-    final resumo = await _medicoService.resumoFinanceiro();
     final lista = await _medicoService.listarRepasses(limit: 100);
     if (!mounted) return;
 
-    if (resumo['success'] == true && resumo['data'] is List &&
-        (resumo['data'] as List).isNotEmpty) {
-      final row = (resumo['data'] as List).first as Map<String, dynamic>;
-      _totalRecebido = _toDouble(row['total_recebido']);
-      _totalPendente = _toDouble(row['total_pendente']);
-    }
     if (lista['success'] == true && lista['data'] is List) {
       _repasses = (lista['data'] as List).cast<Map<String, dynamic>>();
     }
     setState(() {
       _loading = false;
-      if (resumo['success'] != true && lista['success'] != true) {
+      if (lista['success'] != true) {
         _error = 'Não foi possível carregar o financeiro.';
       }
+    });
+  }
+
+  double get _totalPendenteDoMes => _repassesDoMes
+      .where((r) => r['status'] != 'pago')
+      .fold(0.0, (sum, r) => sum + _toDouble(r['valor']));
+
+  List<Map<String, dynamic>> get _repassesDoMes {
+    return _repasses.where((r) {
+      final dt = DateTime.tryParse(r['data_repasse']?.toString() ?? '');
+      return dt != null &&
+          dt.year == _selectedMonth.year &&
+          dt.month == _selectedMonth.month;
+    }).toList();
+  }
+
+  Map<String, dynamic>? get _ultimoRepasse {
+    final pagos = _repasses.where((r) => r['status'] == 'pago').toList()
+      ..sort((a, b) => (b['data_repasse'] ?? '')
+          .toString()
+          .compareTo((a['data_repasse'] ?? '').toString()));
+    return pagos.isNotEmpty ? pagos.first : null;
+  }
+
+  Map<String, dynamic>? get _proximoRepasse {
+    final pendentes = _repasses.where((r) => r['status'] != 'pago').toList()
+      ..sort((a, b) => (a['data_repasse'] ?? '')
+          .toString()
+          .compareTo((b['data_repasse'] ?? '').toString()));
+    return pendentes.isNotEmpty ? pendentes.first : null;
+  }
+
+  void _mudarMes(int delta) {
+    setState(() {
+      _selectedMonth =
+          DateTime(_selectedMonth.year, _selectedMonth.month + delta);
     });
   }
 
@@ -93,23 +127,65 @@ class _FinancialPageState extends State<FinancialPage> {
                                 color: AppTokens.neutral900)),
                         const SizedBox(height: 24),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _monthNavButton(Icons.chevron_left, () => _mudarMes(-1)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: AppTokens.green100,
+                                  borderRadius:
+                                      BorderRadius.circular(AppTokens.radiusPill),
+                                ),
+                                child: Text(
+                                  _mesesNomes[_selectedMonth.month - 1],
+                                  textAlign: TextAlign.center,
+                                  style: AppTextStyles.bodyMd(
+                                    color: AppTokens.green900,
+                                    weight: AppTokens.weightSemibold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            _monthNavButton(Icons.chevron_right, () => _mudarMes(1)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _summaryCard('Total a receber', _totalPendenteDoMes),
+                        const SizedBox(height: 16),
+                        Row(
                           children: [
                             Expanded(
-                              child: _summaryCard(
-                                  'Total a receber', _totalPendente),
-                            ),
+                                child: _repasseMiniCard(
+                                    'Último repasse', _ultimoRepasse)),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: _summaryCard(
-                                  'Total recebido', _totalRecebido),
-                            ),
+                                child: _repasseMiniCard(
+                                    'Próximo repasse', _proximoRepasse)),
                           ],
                         ),
                         const SizedBox(height: 32),
-                        Text('Repasses',
-                            style: AppTextStyles.headingMd(
-                                color: AppTokens.neutral900)),
-                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Repasses',
+                                style: AppTextStyles.headingMd(
+                                    color: AppTokens.neutral900)),
+                            TextButton(
+                              onPressed: () => context.push('/financial/history'),
+                              child: Text('Ver tudo',
+                                  style: AppTextStyles.bodySm(
+                                    color: AppTokens.accentPurple,
+                                    weight: AppTokens.weightSemibold,
+                                  )),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                         if (_repasses.isEmpty)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 32),
@@ -120,12 +196,56 @@ class _FinancialPageState extends State<FinancialPage> {
                             ),
                           )
                         else
-                          ..._repasses.map(_buildRepasseCard),
+                          ..._repasses.take(3).map(_buildRepasseCard),
                       ],
                     ),
                   ),
                 ),
       bottomNavigationBar: const DoctorBottomNavigationBar(currentIndex: 2),
+    );
+  }
+
+  Widget _monthNavButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppTokens.green100,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: AppTokens.green900),
+      ),
+    );
+  }
+
+  Widget _repasseMiniCard(String label, Map<String, dynamic>? repasse) {
+    final dt = repasse != null
+        ? DateTime.tryParse(repasse['data_repasse']?.toString() ?? '')
+        : null;
+    final valor = repasse != null ? _toDouble(repasse['valor']) : null;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTokens.neutral050,
+        borderRadius: BorderRadius.circular(AppTokens.radius16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(dt != null ? _fmtDate(dt) : '--',
+              style: AppTextStyles.bodyXs(color: AppTokens.neutral600)),
+          const SizedBox(height: 4),
+          Text(label, style: AppTextStyles.bodySm(color: AppTokens.neutral600)),
+          const SizedBox(height: 4),
+          Text(valor != null ? _money(valor) : '--',
+              style: AppTextStyles.bodyMd(
+                color: AppTokens.neutral900,
+                weight: AppTokens.weightSemibold,
+              )),
+        ],
+      ),
     );
   }
 

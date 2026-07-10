@@ -326,7 +326,7 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
     }
   }
 
-  /// Item de documento no estilo Figma: borda verde, fundo verde claro, ícone editar, nome em verde, ícone excluir.
+  /// Item de documento no estilo Figma: borda verde, fundo verde claro, ícone download, nome em verde, ícone excluir.
   Widget _buildDocumentItem(Map<String, dynamic> doc) {
     final displayName = _documentDisplayName(doc);
     final docId = doc['id'] as String?;
@@ -349,7 +349,8 @@ class _PatientBasicDataPageState extends State<PatientBasicDataPage> {
               borderRadius: BorderRadius.circular(999),
             ),
             child: IconButton(
-              icon: const Icon(Icons.edit, color: Color(0xFF00994B), size: 20),
+              icon: const Icon(Icons.download_outlined,
+                  color: Color(0xFF00994B), size: 20),
               onPressed: url != null && url.isNotEmpty
                   ? () => _openDocumentUrl(url)
                   : null,

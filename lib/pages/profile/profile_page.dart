@@ -57,16 +57,16 @@ class ProfilePage extends StatelessWidget {
             const SizedBox(height: 16),
             _buildMenuItem(
               context,
-              icon: Icons.calendar_today_outlined,
-              title: 'Agenda',
-              onTap: () => context.go('/profile/schedule'),
+              icon: Icons.settings_outlined,
+              title: 'Configurações',
+              onTap: () => context.go('/profile/settings'),
             ),
             const SizedBox(height: 16),
             _buildMenuItem(
               context,
-              icon: Icons.settings_outlined,
-              title: 'Configurações',
-              onTap: () => context.go('/profile/settings'),
+              icon: Icons.calendar_today_outlined,
+              title: 'Agenda',
+              onTap: () => context.go('/profile/schedule'),
             ),
             const SizedBox(height: 16),
             _buildMenuItem(

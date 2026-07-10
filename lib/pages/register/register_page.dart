@@ -9,7 +9,6 @@ import '../../services/api/api_service.dart';
 import '../../widgets/common/app_button.dart';
 import '../../services/api/auth_service.dart';
 import '../../services/api/asaas_service.dart';
-import '../../services/api/cep_service.dart';
 import '../../utils/input_masks.dart';
 import '../../utils/error_messages.dart';
 
@@ -30,29 +29,21 @@ class _RegisterPageState extends State<RegisterPage>
   late TabController _tabController;
   bool _isRegisterTab = true;
 
-  // Controllers dos campos
+  // Controllers dos campos (cadastro) - conforme frame "1 Cadastro" do Figma
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
   final _birthDateController = TextEditingController();
   final _cpfController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _cepController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _numberController = TextEditingController();
-  final _complementController = TextEditingController();
-  final _neighborhoodController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _stateController = TextEditingController();
-  final _crmController = TextEditingController();
-  final _croController = TextEditingController();
+  final _rgController = TextEditingController();
+  final _emailOrPhoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  // Controller do campo de e-mail usado na aba de Login (sempre e-mail real)
+  final _loginEmailController = TextEditingController();
 
   // Máscaras
   final _cpfMask = InputMasks.cpf;
-  final _phoneMask = InputMasks.phone;
   final _dateMask = InputMasks.date;
-  final _cepMask = InputMasks.cep;
 
   // Estados de visibilidade de senha
   bool _obscurePassword = true;
@@ -64,22 +55,18 @@ class _RegisterPageState extends State<RegisterPage>
 
   // Estados de validação
   String? _nameError;
-  String? _emailError;
+  String? _emailOrPhoneError;
   String? _passwordError;
   String? _confirmPasswordError;
   String? _cpfError;
-  String? _phoneError;
   String? _birthDateError;
-  String? _cepError;
+  String? _loginEmailError;
 
   String? _selectedGender;
   bool _isDoctor = false;
   bool _isLoading = false;
-  bool _isLoadingCep = false;
-  String? _lastSearchedCep;
   final AuthService _authService = AuthService();
   final AsaasService _asaasService = AsaasService();
-  final CepService _cepService = CepService();
   final List<String> _genders = [
     'Masculino',
     'Feminino',
@@ -98,7 +85,7 @@ class _RegisterPageState extends State<RegisterPage>
         // Limpar erros apenas quando mudar para a tab de cadastro
         // Manter erros na tab de login para feedback ao usuário
         if (_tabController.index == 0) {
-          _emailError = null;
+          _loginEmailError = null;
           _passwordError = null;
         }
       });
@@ -106,37 +93,25 @@ class _RegisterPageState extends State<RegisterPage>
 
     // Adicionar listeners para validação em tempo real
     _nameController.addListener(() => _validateName());
-    _emailController.addListener(() => _validateEmail());
+    _emailOrPhoneController.addListener(() => _validateEmailOrPhone());
     _passwordController.addListener(() => _validatePassword());
     _confirmPasswordController.addListener(() => _validateConfirmPassword());
     _cpfController.addListener(() => _validateCPF());
-    _phoneController.addListener(() => _validatePhone());
     _birthDateController.addListener(() => _validateBirthDate());
-    _cepController.addListener(() {
-      _validateCEP();
-      _handleCepSearch();
-    });
+    _loginEmailController.addListener(() => _validateLoginEmail());
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
     _birthDateController.dispose();
     _cpfController.dispose();
-    _phoneController.dispose();
-    _cepController.dispose();
-    _addressController.dispose();
-    _numberController.dispose();
-    _complementController.dispose();
-    _neighborhoodController.dispose();
-    _cityController.dispose();
-    _stateController.dispose();
-    _crmController.dispose();
-    _croController.dispose();
+    _rgController.dispose();
+    _emailOrPhoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _loginEmailController.dispose();
     super.dispose();
   }
 
@@ -151,13 +126,40 @@ class _RegisterPageState extends State<RegisterPage>
     }
   }
 
-  void _validateEmail() {
-    if (_emailController.text.trim().isEmpty) {
-      setState(() => _emailError = 'Email é obrigatório');
-    } else if (!InputMasks.isValidEmail(_emailController.text.trim())) {
-      setState(() => _emailError = 'Email inválido');
+  /// Verifica se o texto informado se parece com um e-mail (contém "@")
+  bool _looksLikeEmail(String value) => value.contains('@');
+
+  /// Valida o campo unificado "E-mail ou telefone": aceita um e-mail válido
+  /// ou um telefone brasileiro plausível (10-11 dígitos).
+  void _validateEmailOrPhone() {
+    final value = _emailOrPhoneController.text.trim();
+    if (value.isEmpty) {
+      setState(() => _emailOrPhoneError = 'E-mail ou telefone é obrigatório');
+      return;
+    }
+    if (_looksLikeEmail(value)) {
+      if (!InputMasks.isValidEmail(value)) {
+        setState(() => _emailOrPhoneError = 'E-mail inválido');
+      } else {
+        setState(() => _emailOrPhoneError = null);
+      }
     } else {
-      setState(() => _emailError = null);
+      final digits = InputMasks.removeNonNumeric(value);
+      if (!InputMasks.isValidPhone(digits)) {
+        setState(() => _emailOrPhoneError = 'Informe um e-mail ou telefone válido');
+      } else {
+        setState(() => _emailOrPhoneError = null);
+      }
+    }
+  }
+
+  void _validateLoginEmail() {
+    if (_loginEmailController.text.trim().isEmpty) {
+      setState(() => _loginEmailError = 'Email é obrigatório');
+    } else if (!InputMasks.isValidEmail(_loginEmailController.text.trim())) {
+      setState(() => _loginEmailError = 'Email inválido');
+    } else {
+      setState(() => _loginEmailError = null);
     }
   }
 
@@ -185,25 +187,15 @@ class _RegisterPageState extends State<RegisterPage>
     }
   }
 
+  /// CPF é opcional no cadastro inicial: só valida formato se algo foi digitado.
   void _validateCPF() {
     final cpf = _cpfMask.getUnmaskedText();
     if (cpf.isEmpty) {
-      setState(() => _cpfError = 'CPF é obrigatório');
+      setState(() => _cpfError = null);
     } else if (!InputMasks.isValidCPF(cpf)) {
       setState(() => _cpfError = 'CPF inválido');
     } else {
       setState(() => _cpfError = null);
-    }
-  }
-
-  void _validatePhone() {
-    final phone = _phoneMask.getUnmaskedText();
-    if (phone.isEmpty) {
-      setState(() => _phoneError = 'Telefone é obrigatório');
-    } else if (!InputMasks.isValidPhone(phone)) {
-      setState(() => _phoneError = 'Telefone inválido');
-    } else {
-      setState(() => _phoneError = null);
     }
   }
 
@@ -217,47 +209,28 @@ class _RegisterPageState extends State<RegisterPage>
     }
   }
 
-  void _validateCEP() {
-    if (_cepController.text.isNotEmpty) {
-      final cep = _cepMask.getUnmaskedText();
-      if (!InputMasks.isValidCEP(cep)) {
-        setState(() => _cepError = 'CEP inválido');
-      } else {
-        setState(() => _cepError = null);
-      }
-    } else {
-      setState(() => _cepError = null);
-    }
-  }
-
   /// Valida se o formulário de login está válido
   bool _isLoginFormValid() {
-    return _emailError == null &&
+    return _loginEmailError == null &&
         _passwordError == null &&
-        _emailController.text.trim().isNotEmpty &&
+        _loginEmailController.text.trim().isNotEmpty &&
         _passwordController.text.isNotEmpty;
   }
 
   /// Método para fazer login
   Future<void> _handleLogin() async {
-    print('=== INÍCIO DO LOGIN (RegisterPage) ===');
-    print('Login - Email: ${_emailController.text.trim()}');
-    print('Login - Senha preenchida: ${_passwordController.text.isNotEmpty}');
-
     // Validar formulário novamente antes de prosseguir
-    _validateEmail();
+    _validateLoginEmail();
     _validatePassword();
 
     // Verificar se o formulário está válido ANTES de fazer qualquer coisa
     final isValid = _isLoginFormValid();
-    print('Login - Formulário válido após validação: $isValid');
 
     if (!isValid) {
-      print('Login - Formulário inválido, abortando login');
       setState(() {
         // Forçar exibição dos erros
-        if (_emailController.text.trim().isEmpty) {
-          _emailError = 'Email é obrigatório';
+        if (_loginEmailController.text.trim().isEmpty) {
+          _loginEmailError = 'Email é obrigatório';
         }
         if (_passwordController.text.isEmpty) {
           _passwordError = 'Senha é obrigatória';
@@ -266,21 +239,18 @@ class _RegisterPageState extends State<RegisterPage>
       return;
     }
 
-    print('Login - Formulário válido, iniciando autenticação...');
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final email = _emailController.text.trim();
+      final email = _loginEmailController.text.trim();
       final password = _passwordController.text;
 
-      print('Login - Chamando AuthService.login...');
       final result = await _authService.login(
         email: email,
         password: password,
       );
-      print('Login - Resultado recebido: success=${result['success']}');
 
       if (mounted) {
         setState(() {
@@ -292,10 +262,6 @@ class _RegisterPageState extends State<RegisterPage>
           final data = result['data'] as Map<String, dynamic>?;
           final profile = data?['profile'];
 
-          // Debug: imprimir dados recebidos
-          print('Login - Dados recebidos: $data');
-          print('Login - Profile: $profile');
-
           // O profile pode ser um Map ou uma lista com um Map
           Map<String, dynamic>? profileMap;
           if (profile is Map<String, dynamic>) {
@@ -306,7 +272,6 @@ class _RegisterPageState extends State<RegisterPage>
 
           // O tipo_usuario vem como string do Supabase
           final tipoUsuario = profileMap?['tipo_usuario'] as String?;
-          print('Login - Tipo usuário: $tipoUsuario');
 
           // Redirecionar baseado no tipo de usuário
           String targetRoute = '/patient/home';
@@ -314,8 +279,6 @@ class _RegisterPageState extends State<RegisterPage>
           if (tipoUsuario != null) {
             if (tipoUsuario == 'paciente') {
               targetRoute = '/patient/home';
-              print(
-                  'Login - Usuário é paciente, redirecionando para /patient/home');
             } else if (tipoUsuario == 'medico' || tipoUsuario == 'prescritor') {
               // Médico: se status pendente_aprovacao, vai para fluxo de validação
               final user = data?['user'] as Map<String, dynamic>?;
@@ -335,12 +298,8 @@ class _RegisterPageState extends State<RegisterPage>
                   if (status == 'pendente_aprovacao') {
                     targetRoute =
                         '/professional-validation/step1-professional-data';
-                    print(
-                        'Login - Médico pendente de aprovação, redirecionando para validação');
                   } else {
                     targetRoute = '/home';
-                    print(
-                        'Login - Usuário é médico/prescritor, redirecionando para /home');
                   }
                 } else {
                   targetRoute = '/home';
@@ -352,7 +311,6 @@ class _RegisterPageState extends State<RegisterPage>
           }
 
           // Redirecionar
-          print('Login - Executando redirecionamento para: $targetRoute');
           Future.delayed(const Duration(milliseconds: 100), () {
             if (mounted) {
               context.go(targetRoute);
@@ -392,7 +350,6 @@ class _RegisterPageState extends State<RegisterPage>
               ),
             ),
           );
-          print('Login - Falha no login: ${result['message']}');
         }
       }
     } catch (e) {
@@ -432,71 +389,7 @@ class _RegisterPageState extends State<RegisterPage>
             ),
           ),
         );
-        print('Login - Exceção durante o login: ${e.toString()}');
       }
-    }
-  }
-
-  /// Busca endereço pelo CEP quando o campo está completo
-  Future<void> _handleCepSearch() async {
-    final cep = _cepMask.getUnmaskedText();
-
-    // Só busca se tiver 8 dígitos, não estiver carregando e for um CEP diferente do último buscado
-    if (cep.length == 8 && !_isLoadingCep && cep != _lastSearchedCep) {
-      setState(() {
-        _isLoadingCep = true;
-        _cepError = null;
-        _lastSearchedCep = cep;
-      });
-
-      try {
-        // Pequeno delay para evitar múltiplas chamadas
-        await Future.delayed(const Duration(milliseconds: 300));
-
-        final result = await _cepService.getAddressByCep(cep);
-
-        if (mounted) {
-          setState(() {
-            _isLoadingCep = false;
-          });
-
-          if (result['success'] == true) {
-            final data = result['data'] as Map<String, dynamic>;
-
-            // Preencher campos automaticamente
-            _addressController.text = data['logradouro'] as String? ?? '';
-            _neighborhoodController.text = data['bairro'] as String? ?? '';
-            _cityController.text = data['localidade'] as String? ?? '';
-            _stateController.text = data['uf'] as String? ?? '';
-
-            // Complemento pode vir da API, mas não sobrescreve se já tiver algo
-            if (_complementController.text.isEmpty) {
-              _complementController.text = data['complemento'] as String? ?? '';
-            }
-
-            // Limpar erro se houver
-            setState(() => _cepError = null);
-          } else {
-            setState(() {
-              final errorMsg =
-                  result['message'] as String? ?? 'CEP não encontrado';
-              _cepError = ErrorMessages.formatError(errorMsg);
-              _lastSearchedCep = null; // Permite tentar novamente
-            });
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          setState(() {
-            _isLoadingCep = false;
-            _cepError = ErrorMessages.formatError(e);
-            _lastSearchedCep = null; // Permite tentar novamente
-          });
-        }
-      }
-    } else if (cep.length < 8) {
-      // Resetar último CEP buscado se o usuário apagar
-      _lastSearchedCep = null;
     }
   }
 
@@ -583,52 +476,30 @@ class _RegisterPageState extends State<RegisterPage>
               if (_isRegisterTab) ...[
                 _buildTextField(
                   controller: _nameController,
-                  label: 'Nome completo',
+                  label: 'Nome Completo *',
                   hint: 'Digite seu nome completo',
                   errorText: _nameError,
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
-                  controller: _emailController,
-                  label: 'Email',
-                  hint: 'Digite seu email',
-                  keyboardType: TextInputType.emailAddress,
-                  errorText: _emailError,
-                ),
-                const SizedBox(height: 16),
-                _buildPasswordField(
-                  controller: _passwordController,
-                  label: 'Senha',
-                  hint: 'Crie uma senha segura',
-                  obscureText: _obscurePassword,
-                  errorText: _passwordError,
-                  onToggleVisibility: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildPasswordField(
-                  controller: _confirmPasswordController,
-                  label: 'Confirmar senha',
-                  hint: 'Repita sua senha',
-                  obscureText: _obscureConfirmPassword,
-                  errorText: _confirmPasswordError,
-                  onToggleVisibility: () {
-                    setState(() {
-                      _obscureConfirmPassword = !_obscureConfirmPassword;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
                   controller: _birthDateController,
-                  label: 'Data de nascimento',
+                  label: 'Data de nascimento *',
                   hint: 'DD/MM/AAAA',
                   keyboardType: TextInputType.number,
                   inputFormatters: [_dateMask],
                   errorText: _birthDateError,
+                ),
+                const SizedBox(height: 16),
+                _buildDropdownField(
+                  label: 'Sexo *',
+                  value: _selectedGender,
+                  items: _genders,
+                  hint: 'Selecione o sexo',
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedGender = value;
+                    });
+                  },
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
@@ -641,86 +512,44 @@ class _RegisterPageState extends State<RegisterPage>
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
-                  controller: _phoneController,
-                  label: 'Telefone',
-                  hint: '(00) 00000-0000',
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [_phoneMask],
-                  errorText: _phoneError,
+                  controller: _rgController,
+                  label: 'RG',
+                  hint: 'Digite seu RG',
                 ),
                 const SizedBox(height: 16),
-                _buildDropdownField(
-                  label: 'Gênero',
-                  value: _selectedGender,
-                  items: _genders,
-                  hint: 'Selecione seu gênero',
-                  onChanged: (value) {
+                _buildTextField(
+                  controller: _emailOrPhoneController,
+                  label: 'E-mail ou telefone *',
+                  hint: 'Digite seu e-mail ou telefone',
+                  keyboardType: TextInputType.emailAddress,
+                  errorText: _emailOrPhoneError,
+                ),
+                const SizedBox(height: 16),
+                _buildPasswordField(
+                  controller: _passwordController,
+                  label: 'Criar senha *',
+                  hint: 'Crie uma senha segura',
+                  obscureText: _obscurePassword,
+                  errorText: _passwordError,
+                  onToggleVisibility: () {
                     setState(() {
-                      _selectedGender = value;
+                      _obscurePassword = !_obscurePassword;
                     });
                   },
                 ),
                 const SizedBox(height: 16),
-                _buildCepField(
-                  controller: _cepController,
-                  label: 'CEP',
-                  hint: '00000-000',
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [_cepMask],
-                  errorText: _cepError,
-                  isLoading: _isLoadingCep,
+                _buildPasswordField(
+                  controller: _confirmPasswordController,
+                  label: 'Confirmar senha *',
+                  hint: 'Repita sua senha',
+                  obscureText: _obscureConfirmPassword,
+                  errorText: _confirmPasswordError,
+                  onToggleVisibility: () {
+                    setState(() {
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                    });
+                  },
                 ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _addressController,
-                  label: 'Endereço',
-                  hint: 'Digite seu endereço',
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _numberController,
-                  label: 'Número',
-                  hint: 'Digite o número',
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _complementController,
-                  label: 'Complemento',
-                  hint: 'Digite o complemento (opcional)',
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _neighborhoodController,
-                  label: 'Bairro',
-                  hint: 'Digite o bairro',
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _cityController,
-                  label: 'Cidade',
-                  hint: 'Digite a cidade',
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _stateController,
-                  label: 'Estado',
-                  hint: 'Digite o estado',
-                ),
-                if (_isDoctor) ...[
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _crmController,
-                    label: 'CRM + UF',
-                    hint: 'Ex: 123456/SP',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _croController,
-                    label: 'CRO',
-                    hint: 'Digite seu CRO',
-                  ),
-                ],
                 const SizedBox(height: 24),
                 // Checkboxes
                 _buildCheckbox(
@@ -754,18 +583,20 @@ class _RegisterPageState extends State<RegisterPage>
                 AppButton(
                   text: 'Criar conta',
                   isLoading: _isLoading,
-                  onPressed: (_agreeTerms && _isFormValid())
+                  onPressed: (_agreeTerms &&
+                          _authorizeDataSharing &&
+                          _isFormValid())
                       ? _handleRegister
                       : null,
                 ),
               ] else ...[
                 // Tela de Login dentro do RegisterPage
                 _buildTextField(
-                  controller: _emailController,
+                  controller: _loginEmailController,
                   label: 'E-mail',
                   hint: 'Insira seu e-mail',
                   keyboardType: TextInputType.emailAddress,
-                  errorText: _emailError,
+                  errorText: _loginEmailError,
                 ),
                 const SizedBox(height: 16),
                 _buildPasswordField(
@@ -802,11 +633,11 @@ class _RegisterPageState extends State<RegisterPage>
                     if (_isLoginFormValid() && !_isLoading) {
                       _handleLogin();
                     } else {
-                      _validateEmail();
+                      _validateLoginEmail();
                       _validatePassword();
                       setState(() {
-                        if (_emailController.text.trim().isEmpty) {
-                          _emailError = 'Email é obrigatório';
+                        if (_loginEmailController.text.trim().isEmpty) {
+                          _loginEmailError = 'Email é obrigatório';
                         }
                         if (_passwordController.text.isEmpty) {
                           _passwordError = 'Senha é obrigatória';
@@ -850,23 +681,18 @@ class _RegisterPageState extends State<RegisterPage>
   }
 
   bool _isFormValid() {
-    final baseValid = _nameError == null &&
-        _emailError == null &&
+    return _nameError == null &&
+        _emailOrPhoneError == null &&
         _passwordError == null &&
         _confirmPasswordError == null &&
         _cpfError == null &&
-        _phoneError == null &&
         _birthDateError == null &&
         _nameController.text.trim().isNotEmpty &&
-        _emailController.text.trim().isNotEmpty &&
+        _emailOrPhoneController.text.trim().isNotEmpty &&
         _passwordController.text.isNotEmpty &&
         _confirmPasswordController.text.isNotEmpty &&
-        _cpfMask.getUnmaskedText().isNotEmpty &&
-        _phoneMask.getUnmaskedText().isNotEmpty &&
-        _birthDateController.text.trim().isNotEmpty;
-    if (!baseValid) return false;
-    if (_isDoctor && _crmController.text.trim().isEmpty) return false;
-    return true;
+        _birthDateController.text.trim().isNotEmpty &&
+        _selectedGender != null;
   }
 
   Widget _buildTextField({
@@ -936,94 +762,6 @@ class _RegisterPageState extends State<RegisterPage>
               horizontal: 16,
               vertical: 16,
             ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCepField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    String? errorText,
-    required bool isLoading,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.arimo(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          style: AppTextStyles.arimo(
-            fontSize: 16,
-            color: Colors.black,
-          ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: AppTextStyles.arimo(
-              fontSize: 16,
-              color: const Color(0xFF9E9E9E),
-            ),
-            filled: false,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-              borderSide: const BorderSide(color: AppTokens.neutral300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-              borderSide: const BorderSide(color: AppTokens.neutral300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-              borderSide: const BorderSide(color: AppTokens.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: Color(0xFFD32F2F), width: 1.5),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
-            ),
-            errorText: errorText,
-            errorStyle: AppTextStyles.arimo(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFFD32F2F),
-            ),
-            errorMaxLines: 2,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-            suffixIcon: isLoading
-                ? const Padding(
-                    padding: EdgeInsets.all(12.0),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(AppTheme.canfyGreen),
-                      ),
-                    ),
-                  )
-                : null,
           ),
         ),
       ],
@@ -1252,18 +990,40 @@ class _RegisterPageState extends State<RegisterPage>
     return null;
   }
 
-  /// Processa o cadastro do paciente
+  /// Resolve o e-mail usado para autenticação no Supabase Auth a partir do
+  /// campo unificado "E-mail ou telefone". Se o usuário digitou um e-mail,
+  /// usamos ele diretamente. Se digitou um telefone, sintetizamos um e-mail
+  /// de placeholder (o Supabase Auth exige um e-mail único para signUp) e
+  /// guardamos o telefone real em profiles.telefone.
+  String _resolveAuthEmail(String rawValue) {
+    final trimmed = rawValue.trim();
+    if (_looksLikeEmail(trimmed)) {
+      return trimmed;
+    }
+    final digits = InputMasks.removeNonNumeric(trimmed);
+    return '$digits@phone.canfy.local';
+  }
+
+  /// Retorna o telefone (somente dígitos) quando o campo unificado contém um
+  /// telefone, ou null quando contém um e-mail.
+  String? _resolvePhoneFromUnifiedField(String rawValue) {
+    final trimmed = rawValue.trim();
+    if (_looksLikeEmail(trimmed)) return null;
+    final digits = InputMasks.removeNonNumeric(trimmed);
+    return digits.isEmpty ? null : digits;
+  }
+
+  /// Processa o cadastro do paciente ou médico
   Future<void> _handleRegister() async {
     // Validar formulário novamente antes de enviar
     _validateName();
-    _validateEmail();
+    _validateEmailOrPhone();
     _validatePassword();
     _validateConfirmPassword();
     _validateCPF();
-    _validatePhone();
     _validateBirthDate();
 
-    if (!_isFormValid() || !_agreeTerms) {
+    if (!_isFormValid() || !_agreeTerms || !_authorizeDataSharing) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Row(
@@ -1311,75 +1071,31 @@ class _RegisterPageState extends State<RegisterPage>
 
       // Obter valores sem máscara
       final cpf = _cpfMask.getUnmaskedText();
-      final phone = _phoneMask.getUnmaskedText();
-
-      // Validar que CPF não está vazio (já validado antes, mas garantir)
-      if (cpf.isEmpty) {
-        throw Exception('CPF é obrigatório');
-      }
+      final rg = _rgController.text.trim();
+      final rawEmailOrPhone = _emailOrPhoneController.text;
+      final authEmail = _resolveAuthEmail(rawEmailOrPhone);
+      final phone = _resolvePhoneFromUnifiedField(rawEmailOrPhone);
 
       final result = _isDoctor
           ? await _authService.registerDoctor(
               name: _nameController.text.trim(),
-              email: _emailController.text.trim(),
+              email: authEmail,
               password: _passwordController.text,
-              phone: phone.isNotEmpty ? phone : null,
+              phone: phone,
               cpf: cpf.isNotEmpty ? cpf : null,
-              crm: _crmController.text.trim(),
-              cro: _croController.text.trim().isEmpty
-                  ? null
-                  : _croController.text.trim(),
-              cep: _cepMask.getUnmaskedText().isEmpty
-                  ? null
-                  : _cepMask.getUnmaskedText(),
-              address: _addressController.text.trim().isEmpty
-                  ? null
-                  : _addressController.text.trim(),
-              addressNumber: _numberController.text.trim().isEmpty
-                  ? null
-                  : _numberController.text.trim(),
-              complement: _complementController.text.trim().isEmpty
-                  ? null
-                  : _complementController.text.trim(),
-              neighborhood: _neighborhoodController.text.trim().isEmpty
-                  ? null
-                  : _neighborhoodController.text.trim(),
-              city: _cityController.text.trim().isEmpty
-                  ? null
-                  : _cityController.text.trim(),
-              state: _stateController.text.trim().isEmpty
-                  ? null
-                  : _stateController.text.trim(),
+              birthDate: birthDate,
+              gender: _selectedGender,
+              rg: rg.isNotEmpty ? rg : null,
             )
           : await _authService.registerPatient(
               name: _nameController.text.trim(),
-              email: _emailController.text.trim(),
+              email: authEmail,
               password: _passwordController.text,
-              phone: phone.isNotEmpty ? phone : null,
-              cpf: cpf,
+              phone: phone,
+              cpf: cpf.isNotEmpty ? cpf : null,
               birthDate: birthDate,
               gender: _selectedGender,
-              cep: _cepMask.getUnmaskedText().isEmpty
-                  ? null
-                  : _cepMask.getUnmaskedText(),
-              address: _addressController.text.trim().isEmpty
-                  ? null
-                  : _addressController.text.trim(),
-              addressNumber: _numberController.text.trim().isEmpty
-                  ? null
-                  : _numberController.text.trim(),
-              complement: _complementController.text.trim().isEmpty
-                  ? null
-                  : _complementController.text.trim(),
-              neighborhood: _neighborhoodController.text.trim().isEmpty
-                  ? null
-                  : _neighborhoodController.text.trim(),
-              city: _cityController.text.trim().isEmpty
-                  ? null
-                  : _cityController.text.trim(),
-              state: _stateController.text.trim().isEmpty
-                  ? null
-                  : _stateController.text.trim(),
+              rg: rg.isNotEmpty ? rg : null,
               authorizeDataSharing: _authorizeDataSharing,
             );
 
@@ -1394,11 +1110,10 @@ class _RegisterPageState extends State<RegisterPage>
           } else {
             // Criar cliente no Asaas e salvar asaas_customer_id no profile (para pagamentos)
             final cpfFinal = _cpfMask.getUnmaskedText();
-            final phoneFinal = _phoneMask.getUnmaskedText();
             await _asaasService.syncCustomer(
               name: _nameController.text.trim(),
-              email: _emailController.text.trim(),
-              mobilePhone: phoneFinal.isNotEmpty ? phoneFinal : null,
+              email: authEmail,
+              mobilePhone: phone,
               cpfCnpj: cpfFinal.isNotEmpty ? cpfFinal : null,
             );
             context.go('/patient/home');

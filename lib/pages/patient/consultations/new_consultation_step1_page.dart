@@ -24,14 +24,18 @@ class _NewConsultationStep1PageState extends State<NewConsultationStep1Page> {
   final List<String> _symptoms = [
     'Ansiedade',
     'Insônia',
-    'Estresse',
     'Dor crônica',
-    'Epilepsia',
-    'TDAM',
-    'Autismo',
+    'Estresse',
     'Depressão',
-    'PTSD',
+    'TDAH',
+    'Epilepsia',
+    'Câncer',
+    'Fibromialgia',
+    'Autismo',
   ];
+
+  final TextEditingController _pesoController = TextEditingController();
+  final TextEditingController _alturaController = TextEditingController();
 
   @override
   void initState() {
@@ -42,6 +46,8 @@ class _NewConsultationStep1PageState extends State<NewConsultationStep1Page> {
   @override
   void dispose() {
     _descriptionController.dispose();
+    _pesoController.dispose();
+    _alturaController.dispose();
     super.dispose();
   }
 
@@ -91,9 +97,11 @@ class _NewConsultationStep1PageState extends State<NewConsultationStep1Page> {
       description: _descriptionController.text.trim().isNotEmpty
           ? _descriptionController.text.trim()
           : null,
+      peso: double.tryParse(_pesoController.text.replaceAll(',', '.')),
+      altura: double.tryParse(_alturaController.text.replaceAll(',', '.')),
     );
     context.push(
-      '/patient/consultations/new/step2',
+      '/patient/consultations/new/health-history',
       extra: formData,
     );
   }
@@ -143,6 +151,37 @@ class _NewConsultationStep1PageState extends State<NewConsultationStep1Page> {
                                 onTap: () => _toggleSymptom(symptom),
                               ))
                           .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Peso e altura
+                  ConsultationSectionCard(
+                    title: 'Peso e altura',
+                    subtitle:
+                        'Estes dados auxiliam o médico a entender seu perfil de saúde',
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ConsultationTextField(
+                            label: 'Peso em kg',
+                            controller: _pesoController,
+                            hintText: '70 kg',
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ConsultationTextField(
+                            label: 'Altura em cm',
+                            controller: _alturaController,
+                            hintText: '170 cm',
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),

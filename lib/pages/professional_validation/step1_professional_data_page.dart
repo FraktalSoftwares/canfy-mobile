@@ -46,12 +46,27 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
   bool _isSaving = false;
   String? _loadError;
 
+  final List<String> _selectedQueixas = [];
+
   static const List<String> _tempoAtuacaoItems = [
     'Menos de 1 ano',
     '1 a 5 anos',
     '5 a 10 anos',
     '10 a 20 anos',
     'Mais de 20 anos',
+  ];
+
+  static const List<String> _queixasOptions = [
+    'Ansiedade',
+    'Insônia',
+    'Dor crônica',
+    'Estresse',
+    'Depressão',
+    'TDAH',
+    'Epilepsia',
+    'Câncer',
+    'Fibromialgia',
+    'Autismo',
   ];
 
   @override
@@ -90,6 +105,8 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
     _selectedEspecialidadeId = medico['especialidade_id'] as String?;
     _selectedYearsOfExperience = medico['tempo_atuacao'] as String?;
     _parseEnderecoCompleto(medico['endereco_completo'] as String?);
+    final queixas = (medico['queixas_atendidas'] as List?)?.cast<String>();
+    if (queixas != null) _selectedQueixas.addAll(queixas);
 
     // Carregar foto do perfil (profiles.foto_perfil_url)
     if (_userId != null) {
@@ -282,6 +299,7 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
         tempoAtuacao: _selectedYearsOfExperience,
         enderecoCompleto:
             _buildEnderecoCompleto().isEmpty ? null : _buildEnderecoCompleto(),
+        queixasAtendidas: _selectedQueixas,
       );
 
       if (!mounted) return;
@@ -864,6 +882,82 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
                                     _selectedYearsOfExperience = value;
                                   });
                                 },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        // Card Queixas
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF7F7F5), // neutral-050
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Queixas',
+                                style: AppTextStyles.arimo(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF3F3F3D),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Marque uma ou mais queixas que você atende',
+                                style: AppTextStyles.arimo(
+                                  fontSize: 14,
+                                  color: const Color(0xFF7C7C79),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _queixasOptions.map((queixa) {
+                                  final selected =
+                                      _selectedQueixas.contains(queixa);
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        if (selected) {
+                                          _selectedQueixas.remove(queixa);
+                                        } else {
+                                          _selectedQueixas.add(queixa);
+                                        }
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: selected
+                                            ? AppTheme.canfyGreen
+                                            : Colors.white,
+                                        borderRadius:
+                                            BorderRadius.circular(999),
+                                        border: Border.all(
+                                          color: selected
+                                              ? AppTheme.canfyGreen
+                                              : const Color(0xFFD6D6D3),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        queixa,
+                                        style: AppTextStyles.arimo(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: selected
+                                              ? Colors.white
+                                              : const Color(0xFF3F3F3D),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
                               ),
                             ],
                           ),

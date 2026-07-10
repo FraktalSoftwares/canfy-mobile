@@ -36,9 +36,19 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
   String _consultationDate = '--';
   String _status = 'agendada';
   String _mainComplaint = '';
+  DateTime? _scheduledDateTime;
+  Timer? _delayTimer;
 
   // Mensagens
   List<Map<String, dynamic>> _messages = [];
+
+  /// Médico é considerado em atraso se a consulta ainda não começou
+  /// (status 'agendada') e já passaram mais de 10 minutos do horário agendado.
+  bool get _isDoctorDelayed {
+    if (_status != 'agendada' || _scheduledDateTime == null) return false;
+    return DateTime.now()
+        .isAfter(_scheduledDateTime!.add(const Duration(minutes: 10)));
+  }
 
   @override
   void initState() {
@@ -49,6 +59,7 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
   @override
   void dispose() {
     _messagesSubscription?.cancel();
+    _delayTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -77,8 +88,17 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
           _status =
               (data['status_raw'] as String?)?.toLowerCase() ?? 'agendada';
           _mainComplaint = data['mainComplaint'] as String? ?? '';
+          final rawDate = data['data_consulta_raw'];
+          _scheduledDateTime = rawDate != null
+              ? DateTime.tryParse(rawDate.toString())?.toLocal()
+              : null;
           _isConsultationEnded = _status == 'finalizada';
           _isLoading = false;
+        });
+
+        _delayTimer?.cancel();
+        _delayTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+          if (mounted) setState(() {});
         });
 
         // Iniciar stream de mensagens em tempo real
@@ -244,6 +264,7 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
           children: [
             // Header/Navbar conforme Figma
             _buildHeader(),
+            if (_isDoctorDelayed) _buildDelayedBanner(),
             // Área de mensagens
             Expanded(
               child: Stack(
@@ -260,6 +281,102 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildDelayedBanner() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF9E68C)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.access_time_filled,
+              color: Color(0xFF654C01), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Atendimento pendente',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF654C01),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'O médico ainda não iniciou a consulta. Você pode aguardar mais um pouco ou cancelar.',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF654C01)),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: _cancelDelayedConsultation,
+                  child: const Text(
+                    'Cancelar consulta',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF654C01),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _cancelDelayedConsultation() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancelar consulta?'),
+        content: const Text(
+            'O médico não iniciou a consulta no horário agendado. Deseja cancelar?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Voltar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Cancelar consulta',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final result = await _patientService.cancelarConsulta(
+      widget.consultationId,
+      motivo: 'Médico não iniciou a consulta no horário agendado',
+    );
+
+    if (!mounted) return;
+    if (result['success'] == true) {
+      context.go('/patient/consultations');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Erro ao cancelar consulta'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   /// Header conforme Figma (node 2314:5960)

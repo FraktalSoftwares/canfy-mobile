@@ -22,6 +22,8 @@ class _PatientProductDetailsPageState extends State<PatientProductDetailsPage> {
   final PatientService _patientService = PatientService();
   Map<String, dynamic>? _produto;
   List<String> _indicacoes = [];
+  String? _marcaNome;
+  List<Map<String, dynamic>> _relacionados = [];
   bool _loading = true;
 
   @override
@@ -33,10 +35,21 @@ class _PatientProductDetailsPageState extends State<PatientProductDetailsPage> {
   Future<void> _load() async {
     final produto = await _patientService.getProdutoById(widget.productId);
     final indic = await _patientService.getProdutoIndicacoes(widget.productId);
+    String? marcaNome;
+    final marcaId = produto?['associacao_marca_id'] as String?;
+    if (marcaId != null && marcaId.isNotEmpty) {
+      marcaNome = await _patientService.getAssociacaoMarcaNome(marcaId);
+    }
+    final relacionados = await _patientService.getRelatedProdutos(
+      widget.productId,
+      formaFarmaceutica: produto?['forma_farmaceutica'] as String?,
+    );
     if (!mounted) return;
     setState(() {
       _produto = produto;
       _indicacoes = indic;
+      _marcaNome = marcaNome;
+      _relacionados = relacionados;
       _loading = false;
     });
   }
@@ -123,6 +136,7 @@ class _PatientProductDetailsPageState extends State<PatientProductDetailsPage> {
                   _warningCard(),
                   const SizedBox(height: 24),
                   _detailsCard(),
+                  _relatedProductsSection(),
                   const SizedBox(height: 24),
                   AppButton(
                     text: 'Solicitar produto',
@@ -188,8 +202,10 @@ class _PatientProductDetailsPageState extends State<PatientProductDetailsPage> {
 
   Widget _detailsCard() {
     final forma = (_produto?['forma_farmaceutica']?.toString() ?? '').trim();
-    final volume = (_produto?['volume_quantidade'] as String?)?.trim();
     final fabricante = (_produto?['fabricante'] as String?)?.trim();
+    final marca = _marcaNome?.trim().isNotEmpty == true
+        ? _marcaNome
+        : (fabricante?.isNotEmpty == true ? fabricante : null);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -203,22 +219,104 @@ class _PatientProductDetailsPageState extends State<PatientProductDetailsPage> {
           _detailRow('Composição e concentração', _composicao),
           if (forma.isNotEmpty) ...[
             const Divider(height: 32),
-            _detailRow('Forma farmacêutica', forma),
-          ],
-          if (volume?.isNotEmpty == true) ...[
-            const Divider(height: 32),
-            _detailRow('Volume / quantidade', volume!),
-          ],
-          if (fabricante?.isNotEmpty == true) ...[
-            const Divider(height: 32),
-            _detailRow('Fabricante', fabricante!),
+            _detailRow('Formas de uso', forma),
           ],
           if (_indicacoes.isNotEmpty) ...[
             const Divider(height: 32),
             _detailRow('Indicações clínicas', _indicacoes.join(', ')),
           ],
+          if (marca?.isNotEmpty == true) ...[
+            const Divider(height: 32),
+            _detailRow('Marca/Fornecedor', marca!),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _relatedProductsSection() {
+    if (_relacionados.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Produtos relacionados',
+                style: AppTextStyles.headingSm(color: AppTokens.neutral900)),
+            TextButton(
+              onPressed: () => context.push('/patient/catalog'),
+              child: Text('Ver tudo',
+                  style: AppTextStyles.bodySm(
+                    color: AppTokens.accentPurple,
+                    weight: AppTokens.weightSemibold,
+                  )),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 176,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _relacionados.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            itemBuilder: (context, index) {
+              final produto = _relacionados[index];
+              final nome = (produto['nome_comercial'] as String?)?.trim();
+              final imageUrl = ProductImageUtils.resolveProductImageUrl(
+                  produto['imagem_url'] ??
+                      ProductImageUtils.getProductImageValue(produto));
+              return GestureDetector(
+                onTap: () => context.pushReplacement(
+                    '/patient/catalog/product-details/${produto['id']}'),
+                child: Container(
+                  width: 144,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: AppTokens.neutral050,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          color: AppTokens.accentPurpleMedium,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: imageUrl != null && imageUrl.isNotEmpty
+                            ? Image.network(imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.local_pharmacy,
+                                    color: Colors.white))
+                            : const Icon(Icons.local_pharmacy,
+                                color: Colors.white),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        nome?.isNotEmpty == true ? nome! : 'Produto',
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodySm(
+                          color: AppTokens.neutral900,
+                          weight: AppTokens.weightSemibold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

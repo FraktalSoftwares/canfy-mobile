@@ -151,6 +151,8 @@ class NewConsultationFormData {
   // Step 1 - Motivo da consulta
   final List<String> symptoms;
   final String? description;
+  final double? peso;
+  final double? altura;
 
   // Step 2 - Data e horário
   final DateTime? selectedDate;
@@ -166,37 +168,62 @@ class NewConsultationFormData {
   // Valor da consulta (fixo por enquanto)
   final double consultationValue;
 
+  // Histórico de saúde (entre step 1 e step 2)
+  final List<String> examesRecentes;
+  final List<String> produtosUtilizados;
+  final String? reacoesAdversas;
+  final bool? prefereProdutosNacionais;
+
   NewConsultationFormData({
     this.symptoms = const [],
     this.description,
+    this.peso,
+    this.altura,
     this.selectedDate,
     this.selectedTime,
     this.billingAddress,
     this.paymentMethod,
     this.couponCode,
     this.consultationValue = 200.0,
+    this.examesRecentes = const [],
+    this.produtosUtilizados = const [],
+    this.reacoesAdversas,
+    this.prefereProdutosNacionais,
   });
 
   /// Cria uma cópia com os campos atualizados
   NewConsultationFormData copyWith({
     List<String>? symptoms,
     String? description,
+    double? peso,
+    double? altura,
     DateTime? selectedDate,
     String? selectedTime,
     BillingAddress? billingAddress,
     String? paymentMethod,
     String? couponCode,
     double? consultationValue,
+    List<String>? examesRecentes,
+    List<String>? produtosUtilizados,
+    String? reacoesAdversas,
+    bool? prefereProdutosNacionais,
   }) {
     return NewConsultationFormData(
       symptoms: symptoms ?? this.symptoms,
       description: description ?? this.description,
+      peso: peso ?? this.peso,
+      altura: altura ?? this.altura,
       selectedDate: selectedDate ?? this.selectedDate,
       selectedTime: selectedTime ?? this.selectedTime,
       billingAddress: billingAddress ?? this.billingAddress,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       couponCode: couponCode ?? this.couponCode,
       consultationValue: consultationValue ?? this.consultationValue,
+      examesRecentes: examesRecentes ?? this.examesRecentes,
+      produtosUtilizados: produtosUtilizados ?? this.produtosUtilizados,
+      reacoesAdversas: reacoesAdversas ?? this.reacoesAdversas,
+      prefereProdutosNacionais:
+          prefereProdutosNacionais ?? this.prefereProdutosNacionais,
     );
   }
 
@@ -230,12 +257,18 @@ class NewConsultationFormData {
     return {
       'symptoms': symptoms,
       'description': description,
+      'peso': peso,
+      'altura': altura,
       'selectedDate': selectedDate?.toIso8601String(),
       'selectedTime': selectedTime,
       'billingAddress': billingAddress?.toJson(),
       'paymentMethod': paymentMethod,
       'couponCode': couponCode,
       'consultationValue': consultationValue,
+      'examesRecentes': examesRecentes,
+      'produtosUtilizados': produtosUtilizados,
+      'reacoesAdversas': reacoesAdversas,
+      'prefereProdutosNacionais': prefereProdutosNacionais,
     };
   }
 
@@ -243,6 +276,8 @@ class NewConsultationFormData {
     return NewConsultationFormData(
       symptoms: (json['symptoms'] as List<dynamic>?)?.cast<String>() ?? [],
       description: json['description'] as String?,
+      peso: (json['peso'] as num?)?.toDouble(),
+      altura: (json['altura'] as num?)?.toDouble(),
       selectedDate: json['selectedDate'] != null
           ? DateTime.parse(json['selectedDate'] as String)
           : null,
@@ -255,6 +290,13 @@ class NewConsultationFormData {
       couponCode: json['couponCode'] as String?,
       consultationValue:
           (json['consultationValue'] as num?)?.toDouble() ?? 200.0,
+      examesRecentes:
+          (json['examesRecentes'] as List<dynamic>?)?.cast<String>() ?? [],
+      produtosUtilizados:
+          (json['produtosUtilizados'] as List<dynamic>?)?.cast<String>() ??
+              [],
+      reacoesAdversas: json['reacoesAdversas'] as String?,
+      prefereProdutosNacionais: json['prefereProdutosNacionais'] as bool?,
     );
   }
 }

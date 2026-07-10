@@ -24,6 +24,40 @@ class PatientService {
     return null;
   }
 
+  /// Nome da associação/marca de um produto (para exibir em "Marca/Fornecedor").
+  Future<String?> getAssociacaoMarcaNome(String associacaoMarcaId) async {
+    try {
+      final res = await ApiService.client
+          .from('associacoes_marcas')
+          .select('nome')
+          .eq('id', associacaoMarcaId)
+          .maybeSingle();
+      return (res as Map?)?['nome'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Produtos relacionados a [produtoId] (mesma forma farmacêutica, excluindo
+  /// o próprio produto). Usado no carrossel "Produtos relacionados".
+  Future<List<Map<String, dynamic>>> getRelatedProdutos(
+    String produtoId, {
+    String? formaFarmaceutica,
+    int limit = 6,
+  }) async {
+    try {
+      dynamic query = ApiService.client.from('produtos').select();
+      if (formaFarmaceutica != null && formaFarmaceutica.isNotEmpty) {
+        query = query.eq('forma_farmaceutica', formaFarmaceutica);
+      }
+      query = query.neq('id', produtoId).eq('status', 'ativo').limit(limit);
+      final res = await query;
+      return (res as List).cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
+    }
+  }
+
   /// Nomes das indicações clínicas de um produto (join produto_indicacoes).
   Future<List<String>> getProdutoIndicacoes(String produtoId) async {
     try {
@@ -112,6 +146,22 @@ class PatientService {
         'error': e.toString(),
       };
     }
+  }
+
+  /// Retorna a receita mais recente do paciente (usada pelo QR code do Canfy ID).
+  Future<Map<String, dynamic>?> getMostRecentReceita(String pacienteId) async {
+    final res = await _apiService.getFiltered(
+      'receitas',
+      filters: {'paciente_id': pacienteId},
+      orderBy: 'data_emissao',
+      ascending: false,
+      limit: 1,
+    );
+    if (res['success'] == true && res['data'] is List &&
+        (res['data'] as List).isNotEmpty) {
+      return (res['data'] as List).first as Map<String, dynamic>;
+    }
+    return null;
   }
 
   /// Buscar pedidos recentes do paciente
@@ -718,6 +768,7 @@ class PatientService {
     required String dataConsultaIso,
     required String queixaPrincipal,
     String? medicoId,
+    List<String>? sintomas,
   }) async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -737,6 +788,7 @@ class PatientService {
             queixaPrincipal.isNotEmpty ? queixaPrincipal : 'Consulta agendada',
         'eh_retorno': false,
         if (medicoId != null && medicoId.isNotEmpty) 'medico_id': medicoId,
+        if (sintomas != null && sintomas.isNotEmpty) 'sintomas': sintomas,
       };
 
       final result = await _apiService.insertWithReturn('consultas', row);
@@ -771,6 +823,58 @@ class PatientService {
         'data': null,
         'error': e.toString(),
       };
+    }
+  }
+
+  /// Salva o histórico de saúde do paciente (exames recentes, produtos de
+  /// cannabis já utilizados, reações adversas, preferência por produtos
+  /// nacionais). Atualiza a linha existente em `paciente_anamnese` ou cria
+  /// uma nova.
+  Future<void> upsertAnamnese({
+    required String pacienteId,
+    required bool nenhumExameRecente,
+    required List<String> examesRecentes,
+    required bool nuncaUtilizouProdutos,
+    required List<String> produtosUtilizados,
+    String? reacoesAdversas,
+    bool? prefereProdutosNacionais,
+    double? peso,
+    double? altura,
+  }) async {
+    try {
+      final existing = await _apiService.getFiltered(
+        'paciente_anamnese',
+        filters: {'paciente_id': pacienteId},
+        limit: 1,
+      );
+      final row = <String, dynamic>{
+        'paciente_id': pacienteId,
+        'tem_exames_recentes': !nenhumExameRecente,
+        'exames_recentes_detalhes':
+            nenhumExameRecente ? null : examesRecentes.join(', '),
+        'produtos_cannabis_utilizados':
+            nuncaUtilizouProdutos ? '' : produtosUtilizados.join(', '),
+        'tem_reacoes_adversas': !nuncaUtilizouProdutos &&
+            (reacoesAdversas?.trim().isNotEmpty ?? false),
+        'reacoes_adversas_detalhes':
+            nuncaUtilizouProdutos ? null : reacoesAdversas,
+        'preferencia_produto_nacional': prefereProdutosNacionais,
+        if (peso != null) 'peso': peso,
+        if (altura != null) 'altura': altura,
+      };
+
+      final existingRows = existing['success'] == true
+          ? existing['data'] as List? ?? []
+          : [];
+      if (existingRows.isNotEmpty) {
+        final id = (existingRows.first as Map)['id'] as String;
+        await _apiService.put('paciente_anamnese', {'id': id}, row);
+      } else {
+        await _apiService.insertWithReturn('paciente_anamnese', row);
+      }
+    } catch (_) {
+      // Histórico de saúde é complementar; falha aqui não deve bloquear
+      // a criação da consulta.
     }
   }
 
@@ -956,6 +1060,8 @@ class PatientService {
         'success': true,
         'data': {
           'id': c['id'],
+          'pacienteId': c['paciente_id'],
+          'medicoId': c['medico_id'],
           'date': dt != null ? _formatDate(dt.toIso8601String()) : '--',
           'time': _formatTime(dataConsulta),
           'status': statusText,
@@ -965,6 +1071,7 @@ class PatientService {
           'doctorSpecialty': doctorSpecialty,
           'doctorAvatar': doctorAvatar,
           'mainComplaint': c['queixa_principal'] as String? ?? '',
+          'resumoAtendimento': c['resumo_atendimento'] as String?,
           'prescription': prescription,
           'isReturn': c['eh_retorno'] == true,
         },
@@ -977,6 +1084,24 @@ class PatientService {
         'error': e.toString(),
       };
     }
+  }
+
+  /// Registra a avaliação (1-5 estrelas + comentário opcional) de uma
+  /// consulta finalizada.
+  Future<Map<String, dynamic>> avaliarConsulta({
+    required String pacienteId,
+    String? medicoId,
+    required int nota,
+    String? comentario,
+    dynamic dataConsulta,
+  }) {
+    return _apiService.insertWithReturn('feedbacks_consultas', {
+      'paciente_id': pacienteId,
+      if (medicoId != null) 'medico_id': medicoId,
+      'nota': nota,
+      if (comentario != null && comentario.isNotEmpty) 'comentario': comentario,
+      if (dataConsulta != null) 'data_consulta': dataConsulta,
+    });
   }
 
   /// Buscar receitas do paciente (ativas e válidas)
@@ -1532,6 +1657,8 @@ class PatientService {
     String? rgDocumentUrl,
     String? addressProofUrl,
     String? anvisaDocumentUrl,
+    String? complementarDocumentUrl,
+    String? laudoDocumentUrl,
     int? shippingServiceId,
     double? freteValor,
     int? prazoEntregaDias,
@@ -1608,11 +1735,15 @@ class PatientService {
       // Vincula cada documento ao pedido (pedido_id) para exibir só os docs deste pedido na tela de detalhes.
       if (rgDocumentUrl != null ||
           addressProofUrl != null ||
-          anvisaDocumentUrl != null) {
+          anvisaDocumentUrl != null ||
+          complementarDocumentUrl != null ||
+          laudoDocumentUrl != null) {
         final docTypes = <String, String?>{
           'identidade': rgDocumentUrl,
           'comprovante_residencia': addressProofUrl,
           'autorizacao_anvisa': anvisaDocumentUrl,
+          'outro': complementarDocumentUrl,
+          'laudo_medico': laudoDocumentUrl,
         };
         for (final entry in docTypes.entries) {
           if (entry.value != null && entry.value!.isNotEmpty) {

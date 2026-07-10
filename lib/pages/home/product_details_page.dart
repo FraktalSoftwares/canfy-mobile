@@ -128,41 +128,13 @@ class ProductDetailsPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Óleo Canabidiol 20mg/ml',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF212121),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Transform.rotate(
-                          angle: 1.5708,
-                          child: Transform.rotate(
-                            angle: 4.7124,
-                            child: const Icon(Icons.share, color: Colors.black),
-                          ),
-                        ),
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) => const ShareProductModal(),
-                          );
-                        },
-                        style: IconButton.styleFrom(
-                          backgroundColor: const Color(0xFFE6F8EF),
-                          shape: const CircleBorder(),
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Óleo Canabidiol 20mg/ml',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF212121),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   // Aviso

@@ -26,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   String _totalReceber = 'R\$ 0,00';
   int _consultasRealizadas = 0;
   int _atendimentosSemana = 0;
+  int _totalAusencias = 0;
   List<Map<String, dynamic>> _upcomingAppointments = [];
   List<Map<String, dynamic>> _catalogProducts = [];
 
@@ -97,21 +98,25 @@ class _HomePageState extends State<HomePage> {
           if (avatarUrl != null) avatarUrl = _resolveAvatarUrl(avatarUrl);
         }
       }
+      int ausencias = 0;
       if ((nome == null || nome.trim().isEmpty) &&
           medicoResult['success'] == true &&
           medicoResult['data'] != null) {
         final medico = medicoResult['data'] as Map<String, dynamic>;
         nome = medico['nome'] as String?;
         medicoId = medico['id'] as String?;
+        ausencias = (medico['total_ausencias'] as num?)?.toInt() ?? 0;
       } else if (medicoResult['success'] == true &&
           medicoResult['data'] != null) {
-        medicoId =
-            (medicoResult['data'] as Map<String, dynamic>)['id'] as String?;
+        final medico = medicoResult['data'] as Map<String, dynamic>;
+        medicoId = medico['id'] as String?;
+        ausencias = (medico['total_ausencias'] as num?)?.toInt() ?? 0;
       }
 
       setState(() {
         _nomeCompleto = nome?.trim().isNotEmpty == true ? nome : null;
         _avatarUrl = avatarUrl?.trim().isNotEmpty == true ? avatarUrl : null;
+        _totalAusencias = ausencias;
       });
 
       if (medicoId != null) {
@@ -732,6 +737,120 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 16),
+                      // Ausências em consultas
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7F7F5),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Ausências em consultas',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF3F3F3D),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  '$_totalAusencias',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF3F3F3D),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.info_outline,
+                                  color: Color(0xFFD32F2F), size: 20),
+                              onPressed: () => showDialog(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  title: const Text('Ausências em consultas'),
+                                  content: RichText(
+                                    text: const TextSpan(
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF3F3F3D)),
+                                      children: [
+                                        TextSpan(
+                                            text: 'Para garantir a qualidade '
+                                                'dos atendimentos, existe uma '
+                                                'tolerância de até '),
+                                        TextSpan(
+                                            text: '15 ausências',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold)),
+                                        TextSpan(text: ' em consultas por ano.'),
+                                      ],
+                                    ),
+                                  ),
+                                  actions: [
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFDF7E3),
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                      child: const Text(
+                                        'Se esse limite for ultrapassado, sua '
+                                        'conta poderá ser temporariamente '
+                                        'inativada.',
+                                        style: TextStyle(
+                                            fontSize: 13,
+                                            color: Color(0xFF9E831B)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_totalAusencias == 0) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE6F8EF),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.check_circle,
+                                  color: Color(0xFF00994B), size: 20),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Parabéns! Você não possui nenhuma ausência.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF007A3B),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 32),
                       // Próximos atendimentos
                       Row(

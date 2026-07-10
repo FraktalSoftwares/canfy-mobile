@@ -46,6 +46,8 @@ class MedicoService {
     String? tempoAtuacao,
     String? enderecoCompleto,
     String? dataNascimento,
+    List<String>? queixasAtendidas,
+    String? observacoesPrescritorCannabis,
   }) async {
     final Map<String, dynamic> data = {};
     if (crm != null) data['crm'] = crm;
@@ -55,6 +57,10 @@ class MedicoService {
     if (tempoAtuacao != null) data['tempo_atuacao'] = tempoAtuacao;
     if (enderecoCompleto != null) data['endereco_completo'] = enderecoCompleto;
     if (dataNascimento != null) data['data_nascimento'] = dataNascimento;
+    if (queixasAtendidas != null) data['queixas_atendidas'] = queixasAtendidas;
+    if (observacoesPrescritorCannabis != null) {
+      data['observacoes_prescritor_cannabis'] = observacoesPrescritorCannabis;
+    }
     if (data.isEmpty) {
       return {'success': true, 'data': null, 'message': 'Nada a atualizar'};
     }
@@ -258,10 +264,14 @@ class MedicoService {
   Future<Map<String, dynamic>> finalizarAtendimento(
     String consultaId, {
     String? resumo,
+    int? avaliacaoNota,
+    String? avaliacaoComentario,
   }) {
     return _rpc('medico_finalizar_atendimento', params: {
       'p_consulta_id': consultaId,
       'p_resumo': resumo,
+      'p_avaliacao_nota': avaliacaoNota,
+      'p_avaliacao_comentario': avaliacaoComentario,
     });
   }
 
@@ -383,5 +393,151 @@ class MedicoService {
     if (pl.isEmpty) return 'Paciente';
     final nome = (pl[0] as Map<String, dynamic>)['nome_completo'] as String?;
     return nome?.trim().isNotEmpty == true ? nome! : 'Paciente';
+  }
+
+  /// Contexto completo para o Prontuário do Paciente: dados da consulta,
+  /// do paciente (profile + anamnese) e do médico responsável.
+  Future<Map<String, dynamic>> getProntuarioContexto(String consultaId) async {
+    final cRes = await _api.getFiltered('consultas',
+        filters: {'id': consultaId}, limit: 1);
+    if (cRes['success'] != true ||
+        cRes['data'] == null ||
+        (cRes['data'] as List).isEmpty) {
+      return {'success': false, 'message': 'Consulta não encontrada'};
+    }
+    final consulta = (cRes['data'] as List).first as Map<String, dynamic>;
+    final pacienteId = consulta['paciente_id'] as String?;
+    final medicoId = consulta['medico_id'] as String?;
+
+    Map<String, dynamic>? pacienteRow;
+    Map<String, dynamic>? profile;
+    Map<String, dynamic>? anamnese;
+    if (pacienteId != null) {
+      final pRes = await _api.getFiltered('pacientes',
+          filters: {'id': pacienteId}, limit: 1);
+      if (pRes['success'] == true &&
+          pRes['data'] != null &&
+          (pRes['data'] as List).isNotEmpty) {
+        pacienteRow = (pRes['data'] as List).first as Map<String, dynamic>;
+        final userId = pacienteRow['user_id'] as String?;
+        if (userId != null) {
+          final profRes = await _api.getFiltered('profiles',
+              filters: {'id': userId}, limit: 1);
+          if (profRes['success'] == true &&
+              profRes['data'] != null &&
+              (profRes['data'] as List).isNotEmpty) {
+            profile = (profRes['data'] as List).first as Map<String, dynamic>;
+          }
+        }
+      }
+      final anaRes = await _api.getFiltered('paciente_anamnese',
+          filters: {'paciente_id': pacienteId}, limit: 1);
+      if (anaRes['success'] == true &&
+          anaRes['data'] != null &&
+          (anaRes['data'] as List).isNotEmpty) {
+        anamnese = (anaRes['data'] as List).first as Map<String, dynamic>;
+      }
+    }
+
+    Map<String, dynamic>? medico;
+    if (medicoId != null) {
+      final mRes = await _api.getFiltered('medicos',
+          filters: {'id': medicoId}, limit: 1);
+      if (mRes['success'] == true &&
+          mRes['data'] != null &&
+          (mRes['data'] as List).isNotEmpty) {
+        medico = (mRes['data'] as List).first as Map<String, dynamic>;
+      }
+    }
+
+    return {
+      'success': true,
+      'data': {
+        'consulta': consulta,
+        'paciente': pacienteRow,
+        'profile': profile,
+        'anamnese': anamnese,
+        'medico': medico,
+      },
+    };
+  }
+
+  /// Consultas anteriores finalizadas do paciente (exceto [excludeConsultaId]),
+  /// cada uma com a receita vinculada (se houver), para a tela de pré-consulta.
+  Future<List<Map<String, dynamic>>> getConsultasAnteriores(
+    String pacienteId, {
+    String? excludeConsultaId,
+  }) async {
+    final res = await _api.getFiltered(
+      'consultas',
+      filters: {'paciente_id': pacienteId, 'status': 'finalizada'},
+      orderBy: 'data_consulta',
+      ascending: false,
+      limit: 10,
+    );
+    if (res['success'] != true || res['data'] == null) return [];
+    final consultas = (res['data'] as List)
+        .cast<Map<String, dynamic>>()
+        .where((c) => c['id'] != excludeConsultaId)
+        .toList();
+
+    final result = <Map<String, dynamic>>[];
+    for (final c in consultas) {
+      String? documentoUrl;
+      final receitaId = c['receita_id'] as String?;
+      if (receitaId != null) {
+        final rRes = await _api.getFiltered('receitas',
+            filters: {'id': receitaId}, limit: 1);
+        if (rRes['success'] == true &&
+            rRes['data'] != null &&
+            (rRes['data'] as List).isNotEmpty) {
+          documentoUrl = (rRes['data'] as List).first['documento_url']
+              as String?;
+        }
+      }
+      result.add({
+        'id': c['id'],
+        'data_consulta': c['data_consulta'],
+        'queixa_principal': c['queixa_principal'],
+        'documento_url': documentoUrl,
+      });
+    }
+    return result;
+  }
+
+  /// Busca o prontuário existente de uma consulta (ou null se ainda não criado).
+  Future<Map<String, dynamic>> getProntuario(String consultaId) async {
+    final res = await _api.getFiltered('prontuarios',
+        filters: {'consulta_id': consultaId}, limit: 1);
+    if (res['success'] != true) return res;
+    final list = (res['data'] as List?) ?? [];
+    return {
+      'success': true,
+      'data': list.isNotEmpty ? list.first as Map<String, dynamic> : null,
+    };
+  }
+
+  /// Cria ou atualiza o prontuário de uma consulta.
+  Future<Map<String, dynamic>> upsertProntuario({
+    String? prontuarioId,
+    required String consultaId,
+    required String pacienteId,
+    required String medicoId,
+    required Map<String, dynamic> conteudo,
+    required String status,
+  }) async {
+    if (prontuarioId != null) {
+      return _api.put('prontuarios', {'id': prontuarioId}, {
+        'conteudo': conteudo,
+        'status': status,
+      });
+    }
+    return _api.insertWithReturn('prontuarios', {
+      'consulta_id': consultaId,
+      'paciente_id': pacienteId,
+      'medico_id': medicoId,
+      'conteudo': conteudo,
+      'status': status,
+    });
   }
 }

@@ -1,11 +1,73 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_tokens.dart';
 import '../../core/theme/text_styles.dart';
+import '../../services/api/api_service.dart';
 import '../../widgets/common/app_button.dart';
 
-class EmailSentPage extends StatelessWidget {
-  const EmailSentPage({super.key});
+const _resendCooldownSeconds = 60;
+
+class EmailSentPage extends StatefulWidget {
+  final String? email;
+
+  const EmailSentPage({super.key, this.email});
+
+  @override
+  State<EmailSentPage> createState() => _EmailSentPageState();
+}
+
+class _EmailSentPageState extends State<EmailSentPage> {
+  final ApiService _apiService = ApiService();
+  Timer? _timer;
+  int _cooldown = 0;
+  bool _resending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCooldown();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startCooldown() {
+    _timer?.cancel();
+    setState(() => _cooldown = _resendCooldownSeconds);
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_cooldown <= 1) {
+        timer.cancel();
+        setState(() => _cooldown = 0);
+      } else {
+        setState(() => _cooldown--);
+      }
+    });
+  }
+
+  Future<void> _resend() async {
+    final email = widget.email;
+    if (email == null || email.isEmpty || _cooldown > 0 || _resending) return;
+    setState(() => _resending = true);
+    final result = await _apiService.resetPasswordForEmail(email);
+    if (!mounted) return;
+    setState(() => _resending = false);
+    if (result['success'] == true) {
+      _startCooldown();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text(result['message'] as String? ?? 'Erro ao reenviar email'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +128,22 @@ class EmailSentPage extends StatelessWidget {
                 text: 'Voltar para o login',
                 onPressed: () => context.go('/login'),
               ),
+              const SizedBox(height: AppTokens.spacingS),
+              if (widget.email != null)
+                TextButton(
+                  onPressed: _cooldown > 0 || _resending ? null : _resend,
+                  child: Text(
+                    _cooldown > 0
+                        ? 'Reenviar email (${_cooldown}s)'
+                        : 'Reenviar email',
+                    style: AppTextStyles.bodySm(
+                      color: _cooldown > 0
+                          ? AppTokens.neutral500
+                          : AppTokens.primary,
+                      weight: AppTokens.weightSemibold,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

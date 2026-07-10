@@ -68,7 +68,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
         if (result['success'] == true) {
           // Navegar para tela de confirmação
-          context.go('/forgot-password/email-sent');
+          context.go('/forgot-password/email-sent', extra: email);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

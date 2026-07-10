@@ -13,8 +13,8 @@ import '../../../services/api/melhor_envio_service.dart';
 import '../../../utils/currency_formatter.dart';
 import '../../../utils/input_masks.dart';
 
-/// Etapa 5 - Pagamento (design Figma: endereço, valor total, cupom, crédito/débito/Pix).
-/// Sem boleto. Integração Asaas.
+/// Etapa 5 - Pagamento (design Figma: endereço, valor total, cupom, crédito/débito/Pix/Boleto).
+/// Integração Asaas.
 class NewOrderStep5Page extends StatefulWidget {
   final NewOrderFormData? formData;
 
@@ -43,7 +43,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
   String? _asaasCustomerId;
   String? _errorPatient;
 
-  // Método: credit_card | debit_card | pix
+  // Método: credit_card | debit_card | pix | boleto
   String _paymentMethod = 'credit_card';
 
   // Endereço de cobrança (Figma Etapa 5)
@@ -74,6 +74,10 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
   String? _createdOrderId;
   String? _pixCopyPaste;
   String? _invoiceUrl;
+
+  // Após criar pedido + pagamento Boleto: exibir tela Boleto
+  bool _showBoletoScreen = false;
+  String? _bankSlipUrl;
   String? _productNameForSuccess;
   String? _totalFormattedForSuccess;
   String? _deliveryEstimateForSuccess;
@@ -264,6 +268,8 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
         rgDocumentUrl: f.rgDocumentUrl,
         addressProofUrl: f.addressProofUrl,
         anvisaDocumentUrl: f.anvisaDocumentUrl,
+        complementarDocumentUrl: f.complementarDocumentUrl,
+        laudoDocumentUrl: f.laudoDocumentUrl,
         shippingServiceId: _selectedServicoId,
         freteValor: _shippingCost > 0 ? _shippingCost : null,
         prazoEntregaDias: _selectedPrazoDias,
@@ -295,12 +301,8 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
           ? 'Até $_selectedPrazoDias dias úteis'
           : f.deliveryDeadline ?? 'A confirmar';
 
-      // 2) Criar cobrança Asaas (PIX, crédito ou débito)
-      final billingType = _paymentMethod == 'pix'
-          ? 'pix'
-          : _paymentMethod == 'debit_card'
-              ? 'debit_card'
-              : 'credit_card';
+      // 2) Criar cobrança Asaas (PIX, boleto, crédito ou débito)
+      final billingType = _paymentMethod;
 
       final paymentResult = await _asaasService.createPayment(
         asaasCustomerId: _asaasCustomerId,
@@ -324,6 +326,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
       final payData = paymentResult['data'] as Map<String, dynamic>;
       final invoiceUrl = payData['invoiceUrl'] as String?;
       final pixCopyPaste = payData['pixCopyPaste'] as String?;
+      final bankSlipUrl = payData['bankSlipUrl'] as String?;
       final status = payData['status'] as String?;
 
       if (_paymentMethod == 'pix') {
@@ -333,6 +336,16 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
           _createdOrderId = orderId;
           _pixCopyPaste = pixCopyPaste;
           _invoiceUrl = invoiceUrl;
+        });
+        return;
+      }
+
+      if (_paymentMethod == 'boleto') {
+        setState(() {
+          _submitting = false;
+          _showBoletoScreen = true;
+          _createdOrderId = orderId;
+          _bankSlipUrl = bankSlipUrl;
         });
         return;
       }
@@ -512,6 +525,10 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
 
     if (_showPixScreen && _createdOrderId != null) {
       return _buildPixScreen();
+    }
+
+    if (_showBoletoScreen && _createdOrderId != null) {
+      return _buildBoletoScreen();
     }
 
     return Scaffold(
@@ -744,6 +761,11 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
               value: 'pix',
               label: 'Pix',
               icon: Icons.qr_code_2,
+            ),
+            _buildPaymentOption(
+              value: 'boleto',
+              label: 'Boleto',
+              icon: Icons.receipt_long,
             ),
 
             // Formulário expandido: cartão (crédito ou débito)
@@ -1245,6 +1267,131 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
                 ),
               ),
             ],
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () {
+                  context.go(
+                    '/patient/orders/new/success',
+                    extra: {
+                      'orderId': _createdOrderId,
+                      'productName': _productNameForSuccess,
+                      'totalFormatted': _totalFormattedForSuccess,
+                      'deliveryEstimate': _deliveryEstimateForSuccess,
+                    },
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00994B),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                child: const Text('Ver detalhes do pedido'),
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: const PatientBottomNavigationBar(currentIndex: 1),
+    );
+  }
+
+  Widget _buildBoletoScreen() {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF212121)),
+          onPressed: () => context.go('/patient/orders'),
+        ),
+        title: const Text(
+          'Boleto',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF212121),
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Pague com boleto bancário',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF212121),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'O boleto pode levar até 2 dias úteis para ser compensado após o pagamento.',
+              style: TextStyle(fontSize: 14, color: Color(0xFF7C7C79)),
+            ),
+            const SizedBox(height: 24),
+            if (_bankSlipUrl != null && _bankSlipUrl!.isNotEmpty) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final uri = Uri.parse(_bankSlipUrl!);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri,
+                              mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      icon: const Icon(Icons.download_rounded),
+                      label: const Text('Baixar arquivo'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF00994B),
+                        side: const BorderSide(color: Color(0xFF00994B)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final uri = Uri.parse(_bankSlipUrl!);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri,
+                              mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      icon: const Icon(Icons.print_rounded),
+                      label: const Text('Imprimir boleto'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00994B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ] else
+              const Text(
+                'Não foi possível gerar o link do boleto. Tente novamente mais tarde.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF7C7C79)),
+              ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,

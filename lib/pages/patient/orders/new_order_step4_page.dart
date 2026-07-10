@@ -104,7 +104,7 @@ class NewOrderStep4Page extends StatelessWidget {
       backgroundColor: Colors.white,
       appBar: const PatientAppBar(
         title: 'Revisão do pedido',
-        fallbackRoute: '/patient/orders/new/step3',
+        fallbackRoute: '/patient/orders/new/procuracao',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

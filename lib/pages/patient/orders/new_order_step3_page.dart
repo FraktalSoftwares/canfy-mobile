@@ -36,6 +36,13 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
 
   // Anvisa: sempre novo anexo
   File? _anvisaFile;
+  bool _anvisaSolicitadaCanfy = false;
+
+  // Documento complementar: sempre novo anexo
+  File? _complementarFile;
+
+  // Laudo médico: sempre novo anexo
+  File? _laudoFile;
 
   bool _loadingExisting = true;
   bool _uploadingOnNext = false;
@@ -171,9 +178,16 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
       _addressProofFile != null ||
       (_addressProofExistingUrl != null &&
           _addressProofExistingUrl!.isNotEmpty);
-  bool get _hasAnvisa => _anvisaFile != null;
+  bool get _hasAnvisa => _anvisaFile != null || _anvisaSolicitadaCanfy;
+  bool get _hasComplementar => _complementarFile != null;
+  bool get _hasLaudo => _laudoFile != null;
 
-  bool get _canProceed => _hasRg && _hasAddressProof && _hasAnvisa;
+  bool get _canProceed =>
+      _hasRg &&
+      _hasAddressProof &&
+      _hasAnvisa &&
+      _hasComplementar &&
+      _hasLaudo;
 
   Future<void> _onNext() async {
     setState(() {
@@ -222,23 +236,62 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
             _displayFileName(_addressProofFile, null);
       }
 
-      if (_anvisaFile == null) {
+      if (_anvisaFile == null && !_anvisaSolicitadaCanfy) {
         throw Exception('Envie a autorização da Anvisa');
       }
-      final contentTypeAnvisa = _anvisaFile!.path.toLowerCase().endsWith('.pdf')
+      if (_anvisaFile != null) {
+        final contentTypeAnvisa =
+            _anvisaFile!.path.toLowerCase().endsWith('.pdf')
+                ? 'application/pdf'
+                : 'image/jpeg';
+        final resAnvisa = await _storageService.uploadDocument(
+          _anvisaFile!,
+          contentType: contentTypeAnvisa,
+        );
+        if (resAnvisa['success'] != true || resAnvisa['url'] == null) {
+          throw Exception(
+              resAnvisa['message'] ?? 'Falha ao enviar autorização Anvisa');
+        }
+        anvisaUrl = resAnvisa['url'] as String;
+        anvisaFileName = resAnvisa['fileName'] as String? ??
+            _displayFileName(_anvisaFile, null);
+      }
+
+      if (_complementarFile == null) {
+        throw Exception('Envie o documento complementar');
+      }
+      final contentTypeComplementar =
+          _complementarFile!.path.toLowerCase().endsWith('.pdf')
+              ? 'application/pdf'
+              : 'image/jpeg';
+      final resComplementar = await _storageService.uploadDocument(
+        _complementarFile!,
+        contentType: contentTypeComplementar,
+      );
+      if (resComplementar['success'] != true || resComplementar['url'] == null) {
+        throw Exception(resComplementar['message'] ??
+            'Falha ao enviar documento complementar');
+      }
+      final complementarUrl = resComplementar['url'] as String;
+      final complementarFileName = resComplementar['fileName'] as String? ??
+          _displayFileName(_complementarFile, null);
+
+      if (_laudoFile == null) {
+        throw Exception('Envie o laudo médico');
+      }
+      final contentTypeLaudo = _laudoFile!.path.toLowerCase().endsWith('.pdf')
           ? 'application/pdf'
           : 'image/jpeg';
-      final resAnvisa = await _storageService.uploadDocument(
-        _anvisaFile!,
-        contentType: contentTypeAnvisa,
+      final resLaudo = await _storageService.uploadDocument(
+        _laudoFile!,
+        contentType: contentTypeLaudo,
       );
-      if (resAnvisa['success'] != true || resAnvisa['url'] == null) {
-        throw Exception(
-            resAnvisa['message'] ?? 'Falha ao enviar autorização Anvisa');
+      if (resLaudo['success'] != true || resLaudo['url'] == null) {
+        throw Exception(resLaudo['message'] ?? 'Falha ao enviar laudo médico');
       }
-      anvisaUrl = resAnvisa['url'] as String;
-      anvisaFileName = resAnvisa['fileName'] as String? ??
-          _displayFileName(_anvisaFile, null);
+      final laudoUrl = resLaudo['url'] as String;
+      final laudoFileName =
+          resLaudo['fileName'] as String? ?? _displayFileName(_laudoFile, null);
 
       if (!mounted) return;
       final updated = formData.copyWith(
@@ -248,8 +301,13 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
         addressProofFileName: addressProofFileName,
         anvisaDocumentUrl: anvisaUrl,
         anvisaFileName: anvisaFileName,
+        complementarDocumentUrl: complementarUrl,
+        complementarFileName: complementarFileName,
+        laudoDocumentUrl: laudoUrl,
+        laudoFileName: laudoFileName,
+        anvisaSolicitadaCanfy: _anvisaSolicitadaCanfy,
       );
-      context.push('/patient/orders/new/step4', extra: updated);
+      context.push('/patient/orders/new/procuracao', extra: updated);
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -609,28 +667,114 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
                       }
                     : null,
               ),
-              // Card: Autorização da Anvisa
+              // Card: Documento complementar
               _buildDocumentUploadCard(
-                title: 'Autorização da Anvisa',
-                fileName: _displayFileName(_anvisaFile, null),
-                hasValue: _hasAnvisa,
+                title: 'Documento complementar',
+                fileName: _displayFileName(_complementarFile, null),
+                hasValue: _hasComplementar,
                 onAddOrReplace: () {
                   _showPickSourceSheet(
                     onCamera: () async {
                       final file = await _pickFromCamera();
                       if (mounted && file != null) {
-                        setState(() => _anvisaFile = file);
+                        setState(() => _complementarFile = file);
                       }
                     },
                     onGallery: () async {
                       final file = await _pickFromGallery();
                       if (mounted && file != null) {
-                        setState(() => _anvisaFile = file);
+                        setState(() => _complementarFile = file);
                       }
                     },
                   );
                 },
-                onReplace: _hasAnvisa
+                onReplace: _hasComplementar
+                    ? () {
+                        _showPickSourceSheet(
+                          onCamera: () async {
+                            final file = await _pickFromCamera();
+                            if (mounted && file != null) {
+                              setState(() => _complementarFile = file);
+                            }
+                          },
+                          onGallery: () async {
+                            final file = await _pickFromGallery();
+                            if (mounted && file != null) {
+                              setState(() => _complementarFile = file);
+                            }
+                          },
+                        );
+                      }
+                    : null,
+              ),
+              // Card: Laudo médico
+              _buildDocumentUploadCard(
+                title: 'Laudo',
+                fileName: _displayFileName(_laudoFile, null),
+                hasValue: _hasLaudo,
+                onAddOrReplace: () {
+                  _showPickSourceSheet(
+                    onCamera: () async {
+                      final file = await _pickFromCamera();
+                      if (mounted && file != null) {
+                        setState(() => _laudoFile = file);
+                      }
+                    },
+                    onGallery: () async {
+                      final file = await _pickFromGallery();
+                      if (mounted && file != null) {
+                        setState(() => _laudoFile = file);
+                      }
+                    },
+                  );
+                },
+                onReplace: _hasLaudo
+                    ? () {
+                        _showPickSourceSheet(
+                          onCamera: () async {
+                            final file = await _pickFromCamera();
+                            if (mounted && file != null) {
+                              setState(() => _laudoFile = file);
+                            }
+                          },
+                          onGallery: () async {
+                            final file = await _pickFromGallery();
+                            if (mounted && file != null) {
+                              setState(() => _laudoFile = file);
+                            }
+                          },
+                        );
+                      }
+                    : null,
+              ),
+              // Card: Autorização da Anvisa
+              _buildDocumentUploadCard(
+                title: 'Autorização da Anvisa',
+                fileName: _displayFileName(_anvisaFile, null),
+                hasValue: _anvisaFile != null,
+                onAddOrReplace: () {
+                  _showPickSourceSheet(
+                    onCamera: () async {
+                      final file = await _pickFromCamera();
+                      if (mounted && file != null) {
+                        setState(() {
+                          _anvisaFile = file;
+                          _anvisaSolicitadaCanfy = false;
+                        });
+                      }
+                    },
+                    onGallery: () async {
+                      final file = await _pickFromGallery();
+                      if (mounted && file != null) {
+                        setState(() {
+                          _anvisaFile = file;
+                          _anvisaSolicitadaCanfy = false;
+                        });
+                      }
+                    },
+                  );
+                },
+                onReplace: _anvisaFile != null
                     ? () {
                         _showPickSourceSheet(
                           onCamera: () async {
@@ -649,6 +793,38 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
                       }
                     : null,
               ),
+              if (_anvisaFile == null) ...[
+                const SizedBox(height: 4),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    'Não possui a autorização da Anvisa?\nNão se preocupe, podemos solicitar para você',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF7C7C79)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () =>
+                        setState(() => _anvisaSolicitadaCanfy = true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _anvisaSolicitadaCanfy
+                          ? const Color(0xFFC3A6F9)
+                          : const Color(0xFF9067F1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    child: Text(_anvisaSolicitadaCanfy
+                        ? 'Autorização solicitada à Canfy'
+                        : 'Solicitar autorização pela Canfy'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
               // Erro de upload, se houver
               if (_uploadError != null) ...[
                 const SizedBox(height: 16),

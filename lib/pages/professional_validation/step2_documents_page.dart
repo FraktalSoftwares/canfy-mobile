@@ -31,6 +31,7 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
   final Map<String, String?> _docUrls = {};
   final Map<String, String?> _docFileNames = {};
   final Map<String, File?> _docLocalFiles = {};
+  final TextEditingController _observacoesController = TextEditingController();
 
   static const List<Map<String, dynamic>> _documentTypes = [
     {'key': 'rg_ou_cnh', 'title': 'RG ou CNH', 'optional': false},
@@ -54,6 +55,11 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
       'key': 'outros_documentos',
       'title': 'Outros documentos',
       'optional': true
+    },
+    {
+      'key': 'certificado_prescritor_cannabis',
+      'title': 'Certificado prescritor de cannabis',
+      'optional': false
     },
   ];
 
@@ -80,6 +86,8 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
     }
     final medico = medicoResult['data'] as Map<String, dynamic>;
     _medicoId = medico['id'] as String?;
+    _observacoesController.text =
+        medico['observacoes_prescritor_cannabis'] as String? ?? '';
     if (_medicoId == null) {
       setState(() {
         _isLoading = false;
@@ -257,19 +265,32 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
     }
   }
 
-  void _goNext() {
+  Future<void> _goNext() async {
     if (!_canProceed) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Envie todos os documentos obrigatórios (RG ou CNH, Comprovante de residência, Comprovante do CRM/CRO e Diploma).'),
+              'Envie todos os documentos obrigatórios (RG ou CNH, Comprovante de residência, Comprovante do CRM/CRO, Diploma e Certificado prescritor de cannabis).'),
           backgroundColor: Color(0xFFD32F2F),
           duration: Duration(seconds: 4),
         ),
       );
       return;
     }
+    if (_medicoId != null && _observacoesController.text.trim().isNotEmpty) {
+      await _medicoService.updateMedico(
+        _medicoId!,
+        observacoesPrescritorCannabis: _observacoesController.text.trim(),
+      );
+    }
+    if (!mounted) return;
     context.go('/professional-validation/step3-availability');
+  }
+
+  @override
+  void dispose() {
+    _observacoesController.dispose();
+    super.dispose();
   }
 
   @override
@@ -439,6 +460,46 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
                             ),
                           );
                         }),
+                        Text(
+                          'Observações',
+                          style: AppTextStyles.arimo(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF3F3F3D),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _observacoesController,
+                          maxLines: 4,
+                          style: AppTextStyles.arimo(
+                              fontSize: 14, color: Colors.black),
+                          decoration: InputDecoration(
+                            hintText:
+                                'Nos conte um pouco sobre a sua experiência como prescritor de cannabis medicinal',
+                            hintStyle: AppTextStyles.arimo(
+                                fontSize: 14, color: const Color(0xFF7C7C79)),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.all(16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFD6D6D3)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFD6D6D3)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                  color: AppTheme.canfyGreen, width: 2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         if (_saveError != null) ...[
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),

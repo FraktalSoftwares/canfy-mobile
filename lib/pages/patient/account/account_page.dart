@@ -160,6 +160,13 @@ class _PatientAccountPageState extends State<PatientAccountPage> {
                 const SizedBox(height: 16),
                 _buildMenuItem(
                   context,
+                  icon: Icons.badge_outlined,
+                  title: 'Canfy ID',
+                  route: '/patient/account/canfy-id',
+                ),
+                const SizedBox(height: 16),
+                _buildMenuItem(
+                  context,
                   icon: Icons.settings,
                   title: 'Configurações',
                   route: '/patient/account/settings',

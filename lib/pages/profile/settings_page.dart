@@ -27,6 +27,10 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _anvisaAlerts = true;
   bool _newPrescriptionAlerts = true;
 
+  // Pré preenchimento pela IA
+  bool _iaAnamnese = true;
+  bool _iaEvolucaoClinica = false;
+
   bool _isLoading = true;
   String? _preferencesId;
 
@@ -65,6 +69,9 @@ class _SettingsPageState extends State<SettingsPage> {
             _deliveryAlerts = pref['tipos_entregas'] as bool? ?? true;
             _anvisaAlerts = pref['tipos_anvisa'] as bool? ?? true;
             _newPrescriptionAlerts = pref['tipos_novas_receitas'] as bool? ?? true;
+            _iaAnamnese = pref['ia_preenchimento_anamnese'] as bool? ?? true;
+            _iaEvolucaoClinica =
+                pref['ia_preenchimento_evolucao_clinica'] as bool? ?? false;
             _isLoading = false;
           });
         } else {
@@ -103,6 +110,8 @@ class _SettingsPageState extends State<SettingsPage> {
           'tipos_entregas': true,
           'tipos_anvisa': true,
           'tipos_novas_receitas': true,
+          'ia_preenchimento_anamnese': true,
+          'ia_preenchimento_evolucao_clinica': false,
         },
       );
 
@@ -130,6 +139,9 @@ class _SettingsPageState extends State<SettingsPage> {
           _deliveryAlerts = pref['tipos_entregas'] as bool? ?? true;
           _anvisaAlerts = pref['tipos_anvisa'] as bool? ?? true;
           _newPrescriptionAlerts = pref['tipos_novas_receitas'] as bool? ?? true;
+          _iaAnamnese = pref['ia_preenchimento_anamnese'] as bool? ?? true;
+          _iaEvolucaoClinica =
+              pref['ia_preenchimento_evolucao_clinica'] as bool? ?? false;
           _isLoading = false;
         });
         return id;
@@ -147,6 +159,9 @@ class _SettingsPageState extends State<SettingsPage> {
           _deliveryAlerts = pref['tipos_entregas'] as bool? ?? true;
           _anvisaAlerts = pref['tipos_anvisa'] as bool? ?? true;
           _newPrescriptionAlerts = pref['tipos_novas_receitas'] as bool? ?? true;
+          _iaAnamnese = pref['ia_preenchimento_anamnese'] as bool? ?? true;
+          _iaEvolucaoClinica =
+              pref['ia_preenchimento_evolucao_clinica'] as bool? ?? false;
           _isLoading = false;
         });
         return id;
@@ -202,6 +217,8 @@ class _SettingsPageState extends State<SettingsPage> {
           'tipos_entregas': _deliveryAlerts,
           'tipos_anvisa': _anvisaAlerts,
           'tipos_novas_receitas': _newPrescriptionAlerts,
+          'ia_preenchimento_anamnese': _iaAnamnese,
+          'ia_preenchimento_evolucao_clinica': _iaEvolucaoClinica,
         },
       );
 
@@ -411,6 +428,46 @@ class _SettingsPageState extends State<SettingsPage> {
                     _newPrescriptionAlerts,
                     (value) {
                       setState(() => _newPrescriptionAlerts = value);
+                      _savePreferences();
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Pré preenchimento pela IA
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F7F5),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Pré preenchimento pela IA',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSwitchRow(
+                    'Bloco 3 do prontuário da consulta (anamnese)',
+                    _iaAnamnese,
+                    (value) {
+                      setState(() => _iaAnamnese = value);
+                      _savePreferences();
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSwitchRow(
+                    'Bloco 4 do prontuário da consulta (evolução clínica)',
+                    _iaEvolucaoClinica,
+                    (value) {
+                      setState(() => _iaEvolucaoClinica = value);
                       _savePreferences();
                     },
                   ),

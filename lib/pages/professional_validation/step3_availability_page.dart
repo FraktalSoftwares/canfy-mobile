@@ -450,7 +450,7 @@ class _Step3AvailabilityPageState extends State<Step3AvailabilityPage> {
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 12),
                                 child: Text(
-                                  'Autorizo o compartilhamento de dados com médicos e associações, quando necessário para meu tratamento.',
+                                  'Declaro que as informações e documentos fornecidos são verdadeiros.',
                                   style: AppTextStyles.arimo(
                                     fontSize: 12,
                                     color:

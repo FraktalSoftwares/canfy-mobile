@@ -43,6 +43,11 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
   bool _pixGenerating = false;
   int _pixResendCountdown = 0;
 
+  // Boleto
+  String? _boletoUrl;
+  String? _boletoDueDateLabel;
+  bool _boletoGenerating = false;
+
   NewConsultationFormData get _formData =>
       widget.formData ?? NewConsultationFormData();
 
@@ -157,9 +162,25 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
       dataConsultaIso: iso,
       queixaPrincipal:
           queixaPrincipal.isEmpty ? 'Consulta agendada' : queixaPrincipal,
+      sintomas: _formData.symptoms,
     );
     if (result['success'] != true || result['data'] == null) return null;
     final data = result['data'] as Map<String, dynamic>?;
+
+    await _patientService.upsertAnamnese(
+      pacienteId: pacienteId,
+      nenhumExameRecente:
+          _formData.examesRecentes.contains('Não fiz nenhum exame recentemente'),
+      examesRecentes: _formData.examesRecentes,
+      nuncaUtilizouProdutos:
+          _formData.produtosUtilizados.contains('Nunca utilizei'),
+      produtosUtilizados: _formData.produtosUtilizados,
+      reacoesAdversas: _formData.reacoesAdversas,
+      prefereProdutosNacionais: _formData.prefereProdutosNacionais,
+      peso: _formData.peso,
+      altura: _formData.altura,
+    );
+
     return data?['id'] as String?;
   }
 
@@ -421,6 +442,119 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
     }
   }
 
+  Future<void> _generateBoleto() async {
+    if (_selectedPaymentMethod != 'boleto') return;
+    setState(() => _boletoGenerating = true);
+
+    try {
+      final patientResult = await _patientService.getCurrentPatient();
+      if (patientResult['success'] != true || patientResult['data'] == null) {
+        if (mounted) {
+          setState(() => _boletoGenerating = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro ao carregar dados do paciente')),
+          );
+        }
+        return;
+      }
+
+      final data = patientResult['data'] as Map<String, dynamic>;
+      final profile = data['profile'] as Map<String, dynamic>?;
+      final paciente = data['paciente'] as Map<String, dynamic>?;
+      if (profile == null) {
+        if (mounted) {
+          setState(() => _boletoGenerating = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Perfil não encontrado')),
+          );
+        }
+        return;
+      }
+
+      final asaasCustomerId =
+          await _getOrCreateAsaasCustomerId(profile, paciente);
+      if (asaasCustomerId == null) {
+        if (mounted) {
+          setState(() => _boletoGenerating = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content:
+                    Text('Erro ao obter dados de pagamento. Tente novamente.')),
+          );
+        }
+        return;
+      }
+
+      if (paciente == null) {
+        if (mounted) {
+          setState(() => _boletoGenerating = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Paciente não encontrado')),
+          );
+        }
+        return;
+      }
+
+      final dataConsultaIso = _buildDataConsultaIso();
+      final queixaPrincipal =
+          (_formData.description ?? _formData.symptoms.join(', ')).trim();
+      final consultationId = await _createConsultationAndGetId(
+          paciente, dataConsultaIso, queixaPrincipal);
+      if (consultationId == null) {
+        if (mounted) {
+          setState(() => _boletoGenerating = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Erro ao criar a consulta. Tente novamente.')),
+          );
+        }
+        return;
+      }
+
+      final dueDate = DateTime.now().add(const Duration(days: 3));
+      final dueDateStr =
+          '${dueDate.year}-${dueDate.month.toString().padLeft(2, '0')}-${dueDate.day.toString().padLeft(2, '0')}';
+
+      final paymentResult = await _asaasService.createPayment(
+        asaasCustomerId: asaasCustomerId,
+        value: _formData.consultationValue,
+        billingType: 'boleto',
+        dueDate: dueDateStr,
+        description: 'Consulta médica - Canfy',
+        referenceType: 'consultation',
+        referenceId: consultationId,
+      );
+
+      if (!mounted) return;
+      setState(() => _boletoGenerating = false);
+
+      if (paymentResult['success'] != true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(paymentResult['message'] as String? ??
+                  'Erro ao gerar boleto')),
+        );
+        return;
+      }
+
+      final paymentData = paymentResult['data'] as Map<String, dynamic>?;
+      final bankSlipUrl = paymentData?['bankSlipUrl'] as String?;
+
+      setState(() {
+        _boletoUrl = bankSlipUrl;
+        _boletoDueDateLabel =
+            '${dueDate.day.toString().padLeft(2, '0')}/${dueDate.month.toString().padLeft(2, '0')}/${dueDate.year}';
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _boletoGenerating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   void _copyPixKey() {
     if (_pixCopyPasteKey == null || _pixCopyPasteKey!.isEmpty) return;
     Clipboard.setData(ClipboardData(text: _pixCopyPasteKey!));
@@ -463,6 +597,7 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
             if (_selectedPaymentMethod == 'credit_card') _buildCreditCardForm(),
             if (_selectedPaymentMethod == 'debit_card') _buildDebitCardForm(),
             if (_selectedPaymentMethod == 'pix') _buildPixForm(),
+            if (_selectedPaymentMethod == 'boleto') _buildBoletoForm(),
             if (isCardSelected) ...[
               const SizedBox(height: 24),
               _buildCancellationPolicy(),
@@ -561,7 +696,115 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
           isSelected: _selectedPaymentMethod == 'pix',
           onTap: () => _selectPaymentMethod('pix'),
         ),
+        _PaymentOptionTile(
+          method: 'boleto',
+          label: 'Boleto',
+          icon: Icons.receipt_long_rounded,
+          isSelected: _selectedPaymentMethod == 'boleto',
+          onTap: () => _selectPaymentMethod('boleto'),
+        ),
       ],
+    );
+  }
+
+  Widget _buildBoletoForm() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 8),
+      child: ConsultationSectionCard(
+        title: null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Pague com boleto bancário',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.neutral900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'O boleto pode levar até 2 dias úteis para ser compensado após o pagamento.',
+              style: TextStyle(fontSize: 13, color: AppColors.neutral600),
+            ),
+            const SizedBox(height: 20),
+            if (_boletoUrl == null || _boletoUrl!.isEmpty)
+              Center(
+                child: ConsultationPrimaryButton(
+                  text: 'Gerar boleto',
+                  onPressed: _boletoGenerating ? null : _generateBoleto,
+                  isLoading: _boletoGenerating,
+                ),
+              )
+            else ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.neutral100,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.canfyGreen.withOpacity(0.5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.receipt_long_rounded,
+                        color: AppColors.canfyGreen),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _boletoDueDateLabel != null
+                            ? 'Vencimento: $_boletoDueDateLabel'
+                            : 'Boleto gerado',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.neutral800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: () async {
+                        final uri = Uri.tryParse(_boletoUrl!);
+                        if (uri != null && await canLaunchUrl(uri)) {
+                          await launchUrl(uri,
+                              mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      icon: const Icon(Icons.download_rounded, size: 18),
+                      label: const Text('Baixar arquivo'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.canfyGreen,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: () async {
+                        final uri = Uri.tryParse(_boletoUrl!);
+                        if (uri != null && await canLaunchUrl(uri)) {
+                          await launchUrl(uri,
+                              mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      icon: const Icon(Icons.print_rounded, size: 18),
+                      label: const Text('Imprimir boleto'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.canfyGreen,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 

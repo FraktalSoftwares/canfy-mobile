@@ -186,7 +186,29 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
                           style:
                               AppTextStyles.bodySm(color: AppTokens.neutral600)),
                     ),
+                    const SizedBox(height: 16),
                   ],
+                  if (_consulta?['id'] != null)
+                    OutlinedButton.icon(
+                      onPressed: () => context
+                          .go('/appointment/prontuario/${_consulta!['id']}'),
+                      icon: const Icon(Icons.description_outlined,
+                          color: AppTokens.primary),
+                      label: Text(
+                        'Ver prontuário',
+                        style: AppTextStyles.bodySm(
+                          color: AppTokens.primary,
+                          weight: AppTokens.weightSemibold,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        side: const BorderSide(color: AppTokens.primary),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppTokens.radius16),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -227,7 +249,7 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
       case 'finalizada':
         bg = AppTokens.green100;
         fg = AppTokens.green900;
-        label = 'Concluída';
+        label = 'Realizada';
         break;
       case 'cancelada':
         bg = AppTokens.neutral200;

@@ -61,6 +61,8 @@ class AppTokens {
   static const Color primary = green800;
   static const Color primaryDark = green900;
   static const Color error = orange900;
+  static const Color errorFieldBorder = Color(0xFFD32F2F); // brand/error/error-700
+  static const Color errorFieldFill = Color(0xFFFDEAEA); // brand/error/error-100
   static const Color success = green800;
   static const Color warning = yellow700;
 

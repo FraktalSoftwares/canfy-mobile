@@ -315,9 +315,9 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                     const SizedBox(height: 8),
                     const Divider(color: Color(0xFFE6E6E3)),
                     const SizedBox(height: 8),
-                    const Row(
+                    Row(
                       children: [
-                        Text(
+                        const Text(
                           'Associação: ',
                           style: TextStyle(
                             fontSize: 14,
@@ -325,8 +325,8 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                           ),
                         ),
                         Text(
-                          'ABC',
-                          style: TextStyle(
+                          _canalNome?.isNotEmpty == true ? _canalNome! : '—',
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF3F3F3D),

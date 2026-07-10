@@ -35,9 +35,19 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
   String _consultationDate = '--';
   String _status = 'agendada';
   String _mainComplaint = '';
+  DateTime? _scheduledDateTime;
+  Timer? _delayTimer;
 
   // Mensagens
   List<Map<String, dynamic>> _messages = [];
+
+  /// Paciente é considerado em atraso se a consulta ainda não começou
+  /// (status 'agendada') e já passaram mais de 10 minutos do horário agendado.
+  bool get _isPatientDelayed {
+    if (_status != 'agendada' || _scheduledDateTime == null) return false;
+    return DateTime.now()
+        .isAfter(_scheduledDateTime!.add(const Duration(minutes: 10)));
+  }
 
   @override
   void initState() {
@@ -48,6 +58,7 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
   @override
   void dispose() {
     _messagesSubscription?.cancel();
+    _delayTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -105,8 +116,14 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
             : '--';
         _status = (response['status'] as String?)?.toLowerCase() ?? 'agendada';
         _mainComplaint = response['queixa_principal'] as String? ?? '';
+        _scheduledDateTime = dt;
         _isConsultationEnded = _status == 'finalizada';
         _isLoading = false;
+      });
+
+      _delayTimer?.cancel();
+      _delayTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (mounted) setState(() {});
       });
 
       // Iniciar stream de mensagens em tempo real
@@ -262,6 +279,48 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
     }
   }
 
+  Future<void> _cancelDelayedConsultation() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancelar atendimento?'),
+        content: const Text(
+            'O paciente não iniciou a consulta no horário agendado. Deseja cancelar este atendimento?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Voltar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Cancelar atendimento',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await _supabase
+          .from('consultas')
+          .update({'status': 'cancelada'}).eq('id', widget.consultationId);
+
+      if (mounted) context.go('/appointment');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao cancelar: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -320,6 +379,7 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
           children: [
             // Header
             _buildHeader(),
+            if (_isPatientDelayed) _buildDelayedBanner(),
             // Área de mensagens
             Expanded(
               child: _buildMessagesList(),
@@ -331,6 +391,60 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
               _buildInputArea(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDelayedBanner() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF9E68C)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.access_time_filled,
+              color: Color(0xFF654C01), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Atendimento pendente',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF654C01),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'O paciente ainda não iniciou a consulta. Você pode aguardar mais um pouco ou cancelar o atendimento.',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF654C01)),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: _cancelDelayedConsultation,
+                  child: const Text(
+                    'Cancelar atendimento',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF654C01),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
