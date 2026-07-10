@@ -287,6 +287,7 @@ class _LoginPageState extends State<LoginPage>
                     const SizedBox(height: AppTokens.spacingL),
                     if (_isLoginTab) ...[
                       _inputField(
+                        key: const ValueKey('pac_login_email'),
                         controller: _emailController,
                         label: 'E-mail ou telefone',
                         hint: 'Insira seu e-mail ou telefone',
@@ -297,6 +298,7 @@ class _LoginPageState extends State<LoginPage>
                       ),
                       const SizedBox(height: AppTokens.spacingM),
                       _inputField(
+                        key: const ValueKey('pac_login_senha'),
                         controller: _passwordController,
                         label: 'Senha',
                         hint: 'Insira sua senha',
@@ -391,6 +393,7 @@ class _LoginPageState extends State<LoginPage>
         mainAxisSize: MainAxisSize.min,
         children: [
           AppButton(
+            key: const ValueKey('pac_login_submit'),
             text: 'Entrar',
             isLoading: _isLoading,
             onPressed: _submit,
@@ -424,6 +427,7 @@ class _LoginPageState extends State<LoginPage>
 
   /// Campo de texto no estilo do protótipo: contorno "pill", ícone à esquerda.
   Widget _inputField({
+    Key? key,
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -441,6 +445,7 @@ class _LoginPageState extends State<LoginPage>
         );
 
     return Column(
+      key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
