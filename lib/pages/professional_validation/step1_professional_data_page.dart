@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -25,7 +24,7 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
   final ConfiguracoesService _configuracoesService = ConfiguracoesService();
   final ImageStorageService _imageStorageService = ImageStorageService();
   final ImagePicker _imagePicker = ImagePicker();
-  File? _pickedImageFile;
+  Uint8List? _pickedImageBytes;
   String? _profileFotoUrl;
   String? _userId;
   String _valorConsultaText = 'Valor: R\$ --';
@@ -253,10 +252,10 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
 
     try {
       // Se o usuário escolheu uma nova foto, tentar upload e salvar em profiles (não bloqueia ir para etapa 2)
-      if (_pickedImageFile != null && _userId != null) {
+      if (_pickedImageBytes != null && _userId != null) {
         try {
           final uploadResult =
-              await _imageStorageService.uploadImage(_pickedImageFile!);
+              await _imageStorageService.uploadImageBytes(_pickedImageBytes!);
           if (uploadResult['success'] == true && uploadResult['url'] != null) {
             final imageUrl = uploadResult['url'] as String;
             final updateResult = await _apiService.put(
@@ -267,7 +266,7 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
             if (updateResult['success'] == true && mounted) {
               setState(() {
                 _profileFotoUrl = imageUrl;
-                _pickedImageFile = null;
+                _pickedImageBytes = null;
               });
             } else if (updateResult['success'] != true && mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -407,7 +406,7 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
                 _pickImage(ImageSource.gallery);
               },
             ),
-            if (_pickedImageFile != null ||
+            if (_pickedImageBytes != null ||
                 (_profileFotoUrl != null && _profileFotoUrl!.isNotEmpty))
               ListTile(
                 leading:
@@ -438,7 +437,8 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
         maxHeight: 800,
       );
       if (pickedFile != null && mounted) {
-        _showImageAdjustmentSheet(File(pickedFile.path));
+        final bytes = await pickedFile.readAsBytes();
+        if (mounted) _showImageAdjustmentSheet(bytes);
       }
     } catch (e) {
       if (mounted) {
@@ -453,7 +453,7 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
   }
 
   /// Modal de ajuste de foto (Figma: preview circular, zoom -, Q, +, Cancelar, Adicionar)
-  void _showImageAdjustmentSheet(File imageFile) {
+  void _showImageAdjustmentSheet(Uint8List imageBytes) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -496,8 +496,8 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
               child: SizedBox(
                 width: 263,
                 height: 263,
-                child: Image.file(
-                  imageFile,
+                child: Image.memory(
+                  imageBytes,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -567,7 +567,7 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (mounted) {
-                        setState(() => _pickedImageFile = imageFile);
+                        setState(() => _pickedImageBytes = imageBytes);
                         Navigator.pop(context);
                       }
                     },
@@ -597,7 +597,7 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
 
   void _removePhoto() {
     setState(() {
-      _pickedImageFile = null;
+      _pickedImageBytes = null;
     });
   }
 
@@ -799,9 +799,9 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
                                         ),
                                       ),
                                       clipBehavior: Clip.antiAlias,
-                                      child: _pickedImageFile != null
-                                          ? Image.file(
-                                              _pickedImageFile!,
+                                      child: _pickedImageBytes != null
+                                          ? Image.memory(
+                                              _pickedImageBytes!,
                                               fit: BoxFit.cover,
                                               width: 80,
                                               height: 80,

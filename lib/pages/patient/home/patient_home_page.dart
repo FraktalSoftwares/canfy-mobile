@@ -4,6 +4,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/text_styles.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
+import '../../../widgets/common/notifications_bell_button.dart';
 import '../../../widgets/patient/order_status_tag.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
 
@@ -42,8 +43,13 @@ class _PatientHomePageState extends State<PatientHomePage> {
     try {
       // Buscar dados do paciente
       final patientResult = await _patientService.getCurrentPatient();
-      if (patientResult['success'] == true) {
-        final data = patientResult['data'] as Map<String, dynamic>?;
+      final patientData = patientResult['data'] as Map<String, dynamic>?;
+      if (patientResult['success'] != true || patientData?['paciente'] == null) {
+        if (mounted) context.go('/home');
+        return;
+      }
+      {
+        final data = patientData;
         final profile = data?['profile'] as Map<String, dynamic>?;
         if (profile != null) {
           setState(() {
@@ -171,6 +177,7 @@ class _PatientHomePageState extends State<PatientHomePage> {
         title: 'Home',
         showLeading: false,
         avatarUrl: _patientAvatar,
+        actions: const [NotificationsBellButton()],
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,

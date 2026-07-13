@@ -5,6 +5,7 @@ import '../../services/api/api_service.dart';
 import '../../services/api/medico_service.dart';
 import '../../utils/product_image_utils.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
+import '../../widgets/common/notifications_bell_button.dart';
 import '../../widgets/common/safe_image_asset.dart';
 
 class HomePage extends StatefulWidget {
@@ -83,6 +84,13 @@ class _HomePageState extends State<HomePage> {
       final medicoResult = await medicoFuture;
 
       if (!mounted) return;
+
+      final isMedico =
+          medicoResult['success'] == true && medicoResult['data'] != null;
+      if (!isMedico) {
+        context.go('/patient/home');
+        return;
+      }
 
       String? nome;
       String? avatarUrl;
@@ -578,6 +586,7 @@ class _HomePageState extends State<HomePage> {
         ),
         centerTitle: true,
         actions: [
+          const NotificationsBellButton(),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: _buildAppBarAvatar(),

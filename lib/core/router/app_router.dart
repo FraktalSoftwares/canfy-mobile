@@ -59,8 +59,15 @@ import '../../models/consultation/consultation_model.dart';
 import '../../models/order/new_order_form_data.dart';
 import '../../pages/patient/prescriptions/prescriptions_page.dart';
 import '../../pages/patient/home/patient_home_page.dart';
+import '../../pages/notifications/notifications_page.dart';
 import '../../pages/patient/home/catalog_page.dart' as patient_catalog;
 import '../../pages/patient/home/product_details_page.dart' as patient_product;
+
+/// Observer de navegação global — usado por telas que precisam recarregar
+/// dados ao voltar a ficar visíveis (ex.: lista de atendimentos após
+/// finalizar uma consulta em outra tela empilhada por cima).
+final RouteObserver<PageRoute<void>> routeObserver =
+    RouteObserver<PageRoute<void>>();
 
 /// Cria uma página sem transição de animação
 CustomTransitionPage<void> _noTransitionPage({
@@ -81,6 +88,7 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/splash',
     debugLogDiagnostics: true,
+    observers: [routeObserver],
     routes: [
       GoRoute(
         path: '/splash',
@@ -200,6 +208,14 @@ class AppRouter {
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/notifications',
+        name: 'notifications',
+        pageBuilder: (context, state) => _noTransitionPage(
+          state: state,
+          child: const NotificationsPage(),
+        ),
       ),
       GoRoute(
         path: '/profile',

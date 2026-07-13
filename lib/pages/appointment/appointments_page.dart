@@ -6,6 +6,7 @@ import '../../services/api/medico_service.dart';
 import '../../services/api/configuracoes_service.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
+import '../../core/router/app_router.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
@@ -15,7 +16,7 @@ class AppointmentsPage extends StatefulWidget {
 }
 
 class _AppointmentsPageState extends State<AppointmentsPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   late TabController _tabController;
   final MedicoService _medicoService = MedicoService();
   final ConfiguracoesService _configuracoesService = ConfiguracoesService();
@@ -48,9 +49,21 @@ class _AppointmentsPageState extends State<AppointmentsPage>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute<void>);
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    _load();
   }
 
   Future<void> _load() async {
