@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class ShareProductModal extends StatefulWidget {
-  const ShareProductModal({super.key});
+  final String productId;
+
+  const ShareProductModal({super.key, required this.productId});
 
   @override
   State<ShareProductModal> createState() => _ShareProductModalState();
 }
 
 class _ShareProductModalState extends State<ShareProductModal> {
-  final TextEditingController _linkController = TextEditingController(
-    text: 'https://canfy.com/produto/oleo-canabidiol-20mg',
+  late final TextEditingController _linkController = TextEditingController(
+    text: 'https://canfy.app/produto/${widget.productId}',
   );
 
   @override

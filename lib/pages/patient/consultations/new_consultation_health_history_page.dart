@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../models/consultation/consultation_model.dart';
 import '../../../widgets/consultation/consultation_widgets.dart';
+import '../../../services/api/configuracoes_service.dart';
 
 const _naoFizExameRecentemente = 'Não fiz nenhum exame recentemente';
 const _nuncaUtilizeiProdutos = 'Nunca utilizei';
@@ -22,10 +23,30 @@ class NewConsultationHealthHistoryPage extends StatefulWidget {
 class _NewConsultationHealthHistoryPageState
     extends State<NewConsultationHealthHistoryPage> {
   final TextEditingController _reacoesController = TextEditingController();
+  final ConfiguracoesService _configuracoesService = ConfiguracoesService();
 
   final List<String> _exames = [];
   final List<String> _produtos = [];
   bool? _prefereNacionais;
+  String? _valorConsultaText;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadValorConsulta();
+  }
+
+  Future<void> _loadValorConsulta() async {
+    final result = await _configuracoesService.getValorConsultaPadrao();
+    if (!mounted) return;
+    if (result['success'] == true && result['data'] != null) {
+      final valor = result['data'] as double;
+      setState(() {
+        _valorConsultaText =
+            'Valor: R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+      });
+    }
+  }
 
   static const _examesOptions = [
     'Exame de sangue',
@@ -110,10 +131,10 @@ class _NewConsultationHealthHistoryPageState
                 children: [
                   const ConsultationStepIndicator(currentStep: 1),
                   const SizedBox(height: 20),
-                  const ConsultationStepHeader(
+                  ConsultationStepHeader(
                     stepNumber: 1,
                     stepTitle: 'Motivo da consulta',
-                    valueText: 'Valor: R\$ 200,00',
+                    valueText: _valorConsultaText,
                   ),
                   const SizedBox(height: 24),
                   ConsultationSectionCard(

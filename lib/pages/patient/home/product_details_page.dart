@@ -174,7 +174,7 @@ class _PatientProductDetailsPageState extends State<PatientProductDetailsPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const ShareProductModal(),
+      builder: (context) => ShareProductModal(productId: widget.productId),
     );
   }
 

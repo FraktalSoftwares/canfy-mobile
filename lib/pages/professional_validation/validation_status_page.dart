@@ -17,6 +17,8 @@ class _ValidationStatusPageState extends State<ValidationStatusPage> {
   final ApiService _apiService = ApiService();
   bool _loading = true;
   String _status = 'pendente_aprovacao';
+  String _statusValidacao = 'em_analise';
+  String? _motivoRecusa;
 
   @override
   void initState() {
@@ -29,14 +31,17 @@ class _ValidationStatusPageState extends State<ValidationStatusPage> {
     if (!mounted) return;
     setState(() {
       if (result['success'] == true && result['data'] != null) {
-        _status = (result['data'] as Map<String, dynamic>)['status'] as String? ??
-            'pendente_aprovacao';
+        final data = result['data'] as Map<String, dynamic>;
+        _status = data['status'] as String? ?? 'pendente_aprovacao';
+        _statusValidacao = data['status_validacao'] as String? ?? 'em_analise';
+        _motivoRecusa = data['motivo_recusa'] as String?;
       }
       _loading = false;
     });
   }
 
   bool get _isAprovado => _status == 'ativo';
+  bool get _isRecusado => _statusValidacao == 'recusado';
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +77,9 @@ class _ValidationStatusPageState extends State<ValidationStatusPage> {
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE6F8EF),
+                          color: _isRecusado
+                              ? const Color(0xFFFBE6E6)
+                              : const Color(0xFFE6F8EF),
                           borderRadius: BorderRadius.circular(117.647),
                         ),
                         child: Stack(
@@ -82,11 +89,13 @@ class _ValidationStatusPageState extends State<ValidationStatusPage> {
                               height: 80,
                               margin: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF66DDA2),
+                                color: _isRecusado
+                                    ? const Color(0xFFE05C5C)
+                                    : const Color(0xFF66DDA2),
                                 borderRadius: BorderRadius.circular(999),
                               ),
-                              child: const Icon(
-                                Icons.check,
+                              child: Icon(
+                                _isRecusado ? Icons.close : Icons.check,
                                 size: 36,
                                 color: Colors.white,
                               ),
@@ -98,7 +107,9 @@ class _ValidationStatusPageState extends State<ValidationStatusPage> {
                       Text(
                         _isAprovado
                             ? 'Boas notícias!'
-                            : 'Sua documentação foi enviada com sucesso!',
+                            : _isRecusado
+                                ? 'Sua validação não foi aprovada'
+                                : 'Sua documentação foi enviada com sucesso!',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.truculenta(
                           fontSize: 32,
@@ -113,17 +124,25 @@ class _ValidationStatusPageState extends State<ValidationStatusPage> {
                         decoration: BoxDecoration(
                           color: _isAprovado
                               ? const Color(0xFFE6F8EF)
-                              : const Color(0xFFF9E68C),
+                              : _isRecusado
+                                  ? const Color(0xFFFBE6E6)
+                                  : const Color(0xFFF9E68C),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          _isAprovado ? 'Aprovado' : 'Em análise',
+                          _isAprovado
+                              ? 'Aprovado'
+                              : _isRecusado
+                                  ? 'Recusado'
+                                  : 'Em análise',
                           style: AppTextStyles.arimo(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: _isAprovado
                                 ? AppTheme.canfyGreen
-                                : const Color(0xFF654C01),
+                                : _isRecusado
+                                    ? const Color(0xFFB42318)
+                                    : const Color(0xFF654C01),
                           ),
                         ),
                       ),
@@ -135,6 +154,37 @@ class _ValidationStatusPageState extends State<ValidationStatusPage> {
                           style: AppTextStyles.arimo(
                             fontSize: 14,
                             color: const Color(0xFF5E5E5B),
+                          ),
+                        )
+                      else if (_isRecusado)
+                        RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: AppTextStyles.arimo(
+                              fontSize: 14,
+                              color: const Color(0xFF5E5E5B),
+                            ),
+                            children: [
+                              const TextSpan(
+                                text:
+                                    'Analisamos suas informações e documentos e, infelizmente, não foi possível aprovar seu cadastro neste momento.\n\n',
+                              ),
+                              if (_motivoRecusa != null &&
+                                  _motivoRecusa!.isNotEmpty) ...[
+                                const TextSpan(
+                                  text: 'Motivo: ',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                TextSpan(text: '$_motivoRecusa\n\n'),
+                              ],
+                              const TextSpan(
+                                text:
+                                    'Se acredita que houve um engano, entre em contato com nosso suporte.',
+                              ),
+                            ],
                           ),
                         )
                       else

@@ -61,6 +61,11 @@ class _SplashPageState extends State<SplashPage> {
                 final medico =
                     (medicoResult['data'] as List)[0] as Map<String, dynamic>;
                 final status = medico['status'] as String?;
+                final statusValidacao = medico['status_validacao'] as String?;
+                if (statusValidacao == 'recusado') {
+                  context.go('/professional-validation/status');
+                  return;
+                }
                 if (status == 'pendente_aprovacao') {
                   context
                       .go('/professional-validation/step1-professional-data');

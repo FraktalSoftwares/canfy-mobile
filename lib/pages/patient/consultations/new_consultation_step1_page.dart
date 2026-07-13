@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../constants/app_colors.dart';
 import '../../../services/api/patient_service.dart';
+import '../../../services/api/configuracoes_service.dart';
 import '../../../models/consultation/consultation_model.dart';
 import '../../../widgets/consultation/consultation_widgets.dart';
 
@@ -15,11 +16,14 @@ class NewConsultationStep1Page extends StatefulWidget {
 
 class _NewConsultationStep1PageState extends State<NewConsultationStep1Page> {
   final PatientService _patientService = PatientService();
+  final ConfiguracoesService _configuracoesService = ConfiguracoesService();
   final TextEditingController _descriptionController = TextEditingController();
   final List<String> _selectedSymptoms = [];
 
   String? _patientAvatar;
   bool _isLoadingAvatar = true;
+  String? _valorConsultaText;
+  double _valorConsulta = 200.0;
 
   final List<String> _symptoms = [
     'Ansiedade',
@@ -41,6 +45,20 @@ class _NewConsultationStep1PageState extends State<NewConsultationStep1Page> {
   void initState() {
     super.initState();
     _loadPatientAvatar();
+    _loadValorConsulta();
+  }
+
+  Future<void> _loadValorConsulta() async {
+    final result = await _configuracoesService.getValorConsultaPadrao();
+    if (!mounted) return;
+    if (result['success'] == true && result['data'] != null) {
+      final valor = result['data'] as double;
+      setState(() {
+        _valorConsulta = valor;
+        _valorConsultaText =
+            'Valor: R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+      });
+    }
   }
 
   @override
@@ -99,6 +117,7 @@ class _NewConsultationStep1PageState extends State<NewConsultationStep1Page> {
           : null,
       peso: double.tryParse(_pesoController.text.replaceAll(',', '.')),
       altura: double.tryParse(_alturaController.text.replaceAll(',', '.')),
+      consultationValue: _valorConsulta,
     );
     context.push(
       '/patient/consultations/new/health-history',
@@ -129,10 +148,10 @@ class _NewConsultationStep1PageState extends State<NewConsultationStep1Page> {
                   const SizedBox(height: 20),
 
                   // Step header
-                  const ConsultationStepHeader(
+                  ConsultationStepHeader(
                     stepNumber: 1,
                     stepTitle: 'Motivo da consulta',
-                    valueText: 'Valor: R\$ 200,00',
+                    valueText: _valorConsultaText,
                   ),
                   const SizedBox(height: 24),
 

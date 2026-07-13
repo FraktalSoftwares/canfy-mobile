@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/api/medico_service.dart';
+import '../../services/api/configuracoes_service.dart';
 
 class Step3AvailabilityPage extends StatefulWidget {
   const Step3AvailabilityPage({super.key});
@@ -13,11 +14,13 @@ class Step3AvailabilityPage extends StatefulWidget {
 
 class _Step3AvailabilityPageState extends State<Step3AvailabilityPage> {
   final MedicoService _medicoService = MedicoService();
+  final ConfiguracoesService _configuracoesService = ConfiguracoesService();
 
   String? _medicoId;
   bool _isLoading = true;
   String? _loadError;
   bool _isSaving = false;
+  String _valorConsultaText = 'Valor: R\$ --';
 
   // Dias da semana selecionados
   final Set<String> _selectedDays = {};
@@ -47,6 +50,19 @@ class _Step3AvailabilityPageState extends State<Step3AvailabilityPage> {
   void initState() {
     super.initState();
     _loadData();
+    _loadValorConsulta();
+  }
+
+  Future<void> _loadValorConsulta() async {
+    final result = await _configuracoesService.getValorConsultaPadrao();
+    if (!mounted) return;
+    if (result['success'] == true && result['data'] != null) {
+      final valor = result['data'] as double;
+      setState(() {
+        _valorConsultaText =
+            'Valor: R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -278,7 +294,7 @@ class _Step3AvailabilityPageState extends State<Step3AvailabilityPage> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    'Valor: R\$ 89,90',
+                                    _valorConsultaText,
                                     style: AppTextStyles.arimo(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,

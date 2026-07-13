@@ -173,7 +173,8 @@ class _LoginPageState extends State<LoginPage>
                   (medicoResult['data'] as List).isNotEmpty) {
                 final medico =
                     (medicoResult['data'] as List)[0] as Map<String, dynamic>;
-                if (medico['status'] == 'pendente_aprovacao') {
+                if (medico['status'] == 'pendente_aprovacao' ||
+                    medico['status_validacao'] == 'recusado') {
                   targetRoute = '/professional-validation/status';
                 }
               }

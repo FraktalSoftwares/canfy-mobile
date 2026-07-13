@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_tokens.dart';
 import '../../core/theme/text_styles.dart';
 import '../../services/api/medico_service.dart';
+import '../../services/api/configuracoes_service.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
 
@@ -15,7 +16,8 @@ class AppointmentDetailsPage extends StatefulWidget {
 
 class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
   final MedicoService _medicoService = MedicoService();
-  static const String _valorConsulta = r'R$ 200,00';
+  final ConfiguracoesService _configuracoesService = ConfiguracoesService();
+  String _valorConsulta = 'R\$ --';
 
   Map<String, dynamic>? _consulta;
   Map<String, dynamic>? _detalhe;
@@ -30,6 +32,18 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
     final extra = GoRouterState.of(context).extra;
     if (extra is Map<String, dynamic>) _consulta = extra;
     _load();
+    _loadValorConsulta();
+  }
+
+  Future<void> _loadValorConsulta() async {
+    final result = await _configuracoesService.getValorConsultaPadrao();
+    if (!mounted) return;
+    if (result['success'] == true && result['data'] != null) {
+      final valor = result['data'] as double;
+      setState(() {
+        _valorConsulta = 'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+      });
+    }
   }
 
   Future<void> _load() async {

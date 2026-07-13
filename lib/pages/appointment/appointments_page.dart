@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_tokens.dart';
 import '../../core/theme/text_styles.dart';
 import '../../services/api/medico_service.dart';
+import '../../services/api/configuracoes_service.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
 
@@ -17,6 +18,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final MedicoService _medicoService = MedicoService();
+  final ConfiguracoesService _configuracoesService = ConfiguracoesService();
 
   bool _loading = true;
   String? _error;
@@ -24,13 +26,25 @@ class _AppointmentsPageState extends State<AppointmentsPage>
   String? _assumindoId;
 
   // Valor padrão da consulta na plataforma (consulta não tem valor por linha).
-  static const String _valorConsulta = r'R$ 200,00';
+  String _valorConsulta = 'R\$ --';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _load();
+    _loadValorConsulta();
+  }
+
+  Future<void> _loadValorConsulta() async {
+    final result = await _configuracoesService.getValorConsultaPadrao();
+    if (!mounted) return;
+    if (result['success'] == true && result['data'] != null) {
+      final valor = result['data'] as double;
+      setState(() {
+        _valorConsulta = 'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+      });
+    }
   }
 
   @override

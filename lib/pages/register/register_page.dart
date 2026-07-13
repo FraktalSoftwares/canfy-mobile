@@ -475,6 +475,7 @@ class _RegisterPageState extends State<RegisterPage>
               // Campos do formulário
               if (_isRegisterTab) ...[
                 _buildTextField(
+                  key: const ValueKey('pac_cadastro_nome'),
                   controller: _nameController,
                   label: 'Nome Completo *',
                   hint: 'Digite seu nome completo',
@@ -482,6 +483,7 @@ class _RegisterPageState extends State<RegisterPage>
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
+                  key: const ValueKey('pac_cadastro_data_nascimento'),
                   controller: _birthDateController,
                   label: 'Data de nascimento *',
                   hint: 'DD/MM/AAAA',
@@ -518,6 +520,7 @@ class _RegisterPageState extends State<RegisterPage>
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
+                  key: const ValueKey('pac_cadastro_email_telefone'),
                   controller: _emailOrPhoneController,
                   label: 'E-mail ou telefone *',
                   hint: 'Digite seu e-mail ou telefone',
@@ -526,6 +529,7 @@ class _RegisterPageState extends State<RegisterPage>
                 ),
                 const SizedBox(height: 16),
                 _buildPasswordField(
+                  key: const ValueKey('pac_cadastro_senha'),
                   controller: _passwordController,
                   label: 'Criar senha *',
                   hint: 'Crie uma senha segura',
@@ -539,6 +543,7 @@ class _RegisterPageState extends State<RegisterPage>
                 ),
                 const SizedBox(height: 16),
                 _buildPasswordField(
+                  key: const ValueKey('pac_cadastro_confirmar_senha'),
                   controller: _confirmPasswordController,
                   label: 'Confirmar senha *',
                   hint: 'Repita sua senha',
@@ -553,6 +558,7 @@ class _RegisterPageState extends State<RegisterPage>
                 const SizedBox(height: 24),
                 // Checkboxes
                 _buildCheckbox(
+                  key: const ValueKey('pac_cadastro_aceitar_termos'),
                   value: _agreeTerms,
                   onChanged: (value) {
                     setState(() {
@@ -569,6 +575,7 @@ class _RegisterPageState extends State<RegisterPage>
                 ),
                 const SizedBox(height: 16),
                 _buildCheckbox(
+                  key: const ValueKey('pac_cadastro_autorizar_compartilhamento'),
                   value: _authorizeDataSharing,
                   onChanged: (value) {
                     setState(() {
@@ -581,6 +588,7 @@ class _RegisterPageState extends State<RegisterPage>
                 const SizedBox(height: 32),
                 // Botão Criar conta
                 AppButton(
+                  key: const ValueKey('pac_cadastro_submit'),
                   text: 'Criar conta',
                   isLoading: _isLoading,
                   onPressed: (_agreeTerms &&
@@ -696,6 +704,7 @@ class _RegisterPageState extends State<RegisterPage>
   }
 
   Widget _buildTextField({
+    Key? key,
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -704,6 +713,7 @@ class _RegisterPageState extends State<RegisterPage>
     String? errorText,
   }) {
     return Column(
+      key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -769,6 +779,7 @@ class _RegisterPageState extends State<RegisterPage>
   }
 
   Widget _buildPasswordField({
+    Key? key,
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -777,6 +788,7 @@ class _RegisterPageState extends State<RegisterPage>
     String? errorText,
   }) {
     return Column(
+      key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -848,6 +860,7 @@ class _RegisterPageState extends State<RegisterPage>
   }
 
   Widget _buildCheckbox({
+    Key? key,
     required bool value,
     required ValueChanged<bool?> onChanged,
     required String text,
@@ -857,6 +870,7 @@ class _RegisterPageState extends State<RegisterPage>
     VoidCallback? onLinkTap,
   }) {
     return Row(
+      key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Checkbox(

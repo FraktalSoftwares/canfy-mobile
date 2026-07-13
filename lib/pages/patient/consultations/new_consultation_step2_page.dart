@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../constants/app_colors.dart';
 import '../../../services/api/patient_service.dart';
+import '../../../services/api/configuracoes_service.dart';
 import '../../../models/consultation/consultation_model.dart';
 import '../../../widgets/consultation/consultation_widgets.dart';
 
@@ -17,6 +18,7 @@ class NewConsultationStep2Page extends StatefulWidget {
 
 class _NewConsultationStep2PageState extends State<NewConsultationStep2Page> {
   final PatientService _patientService = PatientService();
+  final ConfiguracoesService _configuracoesService = ConfiguracoesService();
   DateTime? _selectedDate;
   String? _selectedTime;
   DateTime _focusedMonth = DateTime.now();
@@ -26,6 +28,7 @@ class _NewConsultationStep2PageState extends State<NewConsultationStep2Page> {
 
   String? _patientAvatar;
   bool _isLoadingAvatar = true;
+  String? _valorConsultaText;
 
   // Simular dias disponíveis (em produção, viria da API)
   final Set<int> _availableDays = {
@@ -75,6 +78,19 @@ class _NewConsultationStep2PageState extends State<NewConsultationStep2Page> {
   void initState() {
     super.initState();
     _loadPatientAvatar();
+    _loadValorConsulta();
+  }
+
+  Future<void> _loadValorConsulta() async {
+    final result = await _configuracoesService.getValorConsultaPadrao();
+    if (!mounted) return;
+    if (result['success'] == true && result['data'] != null) {
+      final valor = result['data'] as double;
+      setState(() {
+        _valorConsultaText =
+            'Valor: R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+      });
+    }
   }
 
   Future<void> _loadPatientAvatar() async {
@@ -223,10 +239,10 @@ class _NewConsultationStep2PageState extends State<NewConsultationStep2Page> {
                   const SizedBox(height: 20),
 
                   // Step header
-                  const ConsultationStepHeader(
+                  ConsultationStepHeader(
                     stepNumber: 2,
                     stepTitle: 'Selecione dia e horário',
-                    valueText: 'Valor: R\$ 200,00',
+                    valueText: _valorConsultaText,
                   ),
                   const SizedBox(height: 24),
 

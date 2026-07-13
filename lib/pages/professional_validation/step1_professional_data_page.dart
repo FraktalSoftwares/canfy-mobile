@@ -7,6 +7,7 @@ import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/api/api_service.dart';
 import '../../services/api/medico_service.dart';
+import '../../services/api/configuracoes_service.dart';
 import '../../services/storage/image_storage_service.dart';
 import '../../utils/input_masks.dart';
 
@@ -21,11 +22,13 @@ class Step1ProfessionalDataPage extends StatefulWidget {
 class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
   final MedicoService _medicoService = MedicoService();
   final ApiService _apiService = ApiService();
+  final ConfiguracoesService _configuracoesService = ConfiguracoesService();
   final ImageStorageService _imageStorageService = ImageStorageService();
   final ImagePicker _imagePicker = ImagePicker();
   File? _pickedImageFile;
   String? _profileFotoUrl;
   String? _userId;
+  String _valorConsultaText = 'Valor: R\$ --';
 
   final _cpfController = TextEditingController();
   final _crmController = TextEditingController();
@@ -73,6 +76,19 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
   void initState() {
     super.initState();
     _loadData();
+    _loadValorConsulta();
+  }
+
+  Future<void> _loadValorConsulta() async {
+    final result = await _configuracoesService.getValorConsultaPadrao();
+    if (!mounted) return;
+    if (result['success'] == true && result['data'] != null) {
+      final valor = result['data'] as double;
+      setState(() {
+        _valorConsultaText =
+            'Valor: R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -743,7 +759,7 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    'Valor: R\$ 89,90',
+                                    _valorConsultaText,
                                     style: AppTextStyles.arimo(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,

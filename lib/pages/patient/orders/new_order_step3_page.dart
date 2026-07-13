@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
@@ -9,6 +9,20 @@ import '../../../widgets/patient/new_order_step_progress.dart';
 import '../../../models/order/new_order_form_data.dart';
 import '../../../services/storage/image_storage_service.dart';
 import '../../../services/api/patient_service.dart';
+
+class _PickedDoc {
+  final Uint8List bytes;
+  final String fileName;
+
+  const _PickedDoc(this.bytes, this.fileName);
+
+  String get contentType {
+    final ext = fileName.toLowerCase();
+    if (ext.endsWith('.pdf')) return 'application/pdf';
+    if (ext.endsWith('.png')) return 'image/png';
+    return 'image/jpeg';
+  }
+}
 
 class NewOrderStep3Page extends StatefulWidget {
   final NewOrderFormData? formData;
@@ -25,24 +39,24 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
   final ImagePicker _imagePicker = ImagePicker();
 
   // RG/CNH: novo arquivo local ou último anexo (pode trocar)
-  File? _rgFile;
+  _PickedDoc? _rgFile;
   String? _rgExistingUrl;
   String? _rgExistingFileName;
 
   // Comprovante: novo arquivo local ou último anexo (pode trocar)
-  File? _addressProofFile;
+  _PickedDoc? _addressProofFile;
   String? _addressProofExistingUrl;
   String? _addressProofExistingFileName;
 
   // Anvisa: sempre novo anexo
-  File? _anvisaFile;
+  _PickedDoc? _anvisaFile;
   bool _anvisaSolicitadaCanfy = false;
 
   // Documento complementar: sempre novo anexo
-  File? _complementarFile;
+  _PickedDoc? _complementarFile;
 
   // Laudo médico: sempre novo anexo
-  File? _laudoFile;
+  _PickedDoc? _laudoFile;
 
   bool _loadingExisting = true;
   bool _uploadingOnNext = false;
@@ -140,35 +154,34 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
     );
   }
 
-  Future<File?> _pickFromCamera() async {
+  Future<_PickedDoc?> _pickFromCamera() async {
     final xFile = await _imagePicker.pickImage(
       source: ImageSource.camera,
       imageQuality: 85,
     );
     if (xFile == null || !mounted) return null;
-    return File(xFile.path);
+    final bytes = await xFile.readAsBytes();
+    return _PickedDoc(bytes, xFile.name);
   }
 
-  Future<File?> _pickFromGallery() async {
+  Future<_PickedDoc?> _pickFromGallery() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
-      withData: false,
+      withData: true,
     );
     if (result == null ||
         result.files.isEmpty ||
-        result.files.single.path == null ||
+        result.files.single.bytes == null ||
         !mounted) {
       return null;
     }
-    return File(result.files.single.path!);
+    final picked = result.files.single;
+    return _PickedDoc(picked.bytes!, picked.name);
   }
 
-  String? _displayFileName(File? file, String? existingFileName) {
-    if (file != null) {
-      final segments = file.path.replaceAll('\\', '/').split('/');
-      return segments.isNotEmpty ? segments.last : 'Arquivo';
-    }
+  String? _displayFileName(_PickedDoc? file, String? existingFileName) {
+    if (file != null) return file.fileName;
     return existingFileName;
   }
 
@@ -204,12 +217,10 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
 
     try {
       if (_rgFile != null) {
-        final contentType = _rgFile!.path.toLowerCase().endsWith('.pdf')
-            ? 'application/pdf'
-            : 'image/jpeg';
-        final res = await _storageService.uploadDocument(
-          _rgFile!,
-          contentType: contentType,
+        final res = await _storageService.uploadDocumentBytes(
+          _rgFile!.bytes,
+          fileName: _rgFile!.fileName,
+          contentType: _rgFile!.contentType,
         );
         if (res['success'] != true || res['url'] == null) {
           throw Exception(res['message'] ?? 'Falha ao enviar RG/CNH');
@@ -220,13 +231,10 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
       }
 
       if (_addressProofFile != null) {
-        final contentType =
-            _addressProofFile!.path.toLowerCase().endsWith('.pdf')
-                ? 'application/pdf'
-                : 'image/jpeg';
-        final res = await _storageService.uploadDocument(
-          _addressProofFile!,
-          contentType: contentType,
+        final res = await _storageService.uploadDocumentBytes(
+          _addressProofFile!.bytes,
+          fileName: _addressProofFile!.fileName,
+          contentType: _addressProofFile!.contentType,
         );
         if (res['success'] != true || res['url'] == null) {
           throw Exception(res['message'] ?? 'Falha ao enviar comprovante');
@@ -240,13 +248,10 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
         throw Exception('Envie a autorização da Anvisa');
       }
       if (_anvisaFile != null) {
-        final contentTypeAnvisa =
-            _anvisaFile!.path.toLowerCase().endsWith('.pdf')
-                ? 'application/pdf'
-                : 'image/jpeg';
-        final resAnvisa = await _storageService.uploadDocument(
-          _anvisaFile!,
-          contentType: contentTypeAnvisa,
+        final resAnvisa = await _storageService.uploadDocumentBytes(
+          _anvisaFile!.bytes,
+          fileName: _anvisaFile!.fileName,
+          contentType: _anvisaFile!.contentType,
         );
         if (resAnvisa['success'] != true || resAnvisa['url'] == null) {
           throw Exception(
@@ -260,13 +265,10 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
       if (_complementarFile == null) {
         throw Exception('Envie o documento complementar');
       }
-      final contentTypeComplementar =
-          _complementarFile!.path.toLowerCase().endsWith('.pdf')
-              ? 'application/pdf'
-              : 'image/jpeg';
-      final resComplementar = await _storageService.uploadDocument(
-        _complementarFile!,
-        contentType: contentTypeComplementar,
+      final resComplementar = await _storageService.uploadDocumentBytes(
+        _complementarFile!.bytes,
+        fileName: _complementarFile!.fileName,
+        contentType: _complementarFile!.contentType,
       );
       if (resComplementar['success'] != true || resComplementar['url'] == null) {
         throw Exception(resComplementar['message'] ??
@@ -279,12 +281,10 @@ class _NewOrderStep3PageState extends State<NewOrderStep3Page> {
       if (_laudoFile == null) {
         throw Exception('Envie o laudo médico');
       }
-      final contentTypeLaudo = _laudoFile!.path.toLowerCase().endsWith('.pdf')
-          ? 'application/pdf'
-          : 'image/jpeg';
-      final resLaudo = await _storageService.uploadDocument(
-        _laudoFile!,
-        contentType: contentTypeLaudo,
+      final resLaudo = await _storageService.uploadDocumentBytes(
+        _laudoFile!.bytes,
+        fileName: _laudoFile!.fileName,
+        contentType: _laudoFile!.contentType,
       );
       if (resLaudo['success'] != true || resLaudo['url'] == null) {
         throw Exception(resLaudo['message'] ?? 'Falha ao enviar laudo médico');

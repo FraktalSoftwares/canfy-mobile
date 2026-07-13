@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../services/api/medico_service.dart';
 import '../../services/api/api_service.dart';
 import '../../services/storage/image_storage_service.dart';
+import '../../services/api/configuracoes_service.dart';
 
 class Step2DocumentsPage extends StatefulWidget {
   const Step2DocumentsPage({super.key});
@@ -19,18 +20,20 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
   final MedicoService _medicoService = MedicoService();
   final ApiService _apiService = ApiService();
   final ImageStorageService _storageService = ImageStorageService();
+  final ConfiguracoesService _configuracoesService = ConfiguracoesService();
 
   String? _medicoId;
   bool _isLoading = true;
   String? _loadError;
   bool _isSaving = false;
   String? _saveError;
+  String _valorConsultaText = 'Valor: R\$ --';
 
-  /// Por tipo: id do registro, url e nome do arquivo (quando já salvo) ou arquivo local (quando acabou de escolher)
+  /// Por tipo: id do registro, url e nome do arquivo (quando já salvo) ou bytes locais (quando acabou de escolher)
   final Map<String, String?> _docIds = {};
   final Map<String, String?> _docUrls = {};
   final Map<String, String?> _docFileNames = {};
-  final Map<String, File?> _docLocalFiles = {};
+  final Map<String, Uint8List?> _docLocalBytes = {};
   final TextEditingController _observacoesController = TextEditingController();
 
   static const List<Map<String, dynamic>> _documentTypes = [
@@ -67,6 +70,19 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
   void initState() {
     super.initState();
     _loadData();
+    _loadValorConsulta();
+  }
+
+  Future<void> _loadValorConsulta() async {
+    final result = await _configuracoesService.getValorConsultaPadrao();
+    if (!mounted) return;
+    if (result['success'] == true && result['data'] != null) {
+      final valor = result['data'] as double;
+      setState(() {
+        _valorConsultaText =
+            'Valor: R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -112,17 +128,12 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
   }
 
   bool _hasDoc(String key) {
-    if (_docLocalFiles[key] != null) return true;
+    if (_docLocalBytes[key] != null) return true;
     final url = _docUrls[key];
     return url != null && url.isNotEmpty;
   }
 
   String? _displayFileName(String key) {
-    if (_docLocalFiles[key] != null) {
-      final p = _docLocalFiles[key]!.path.replaceAll('\\', '/');
-      final segments = p.split('/');
-      return segments.isNotEmpty ? segments.last : 'documento';
-    }
     return _docFileNames[key];
   }
 
@@ -139,16 +150,18 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
-      withData: false,
+      withData: true,
     );
     if (result == null ||
         result.files.isEmpty ||
-        result.files.single.path == null ||
+        result.files.single.bytes == null ||
         !mounted) {
       return;
     }
-    final file = File(result.files.single.path!);
-    final ext = file.path.toLowerCase().split('.').last;
+    final picked = result.files.single;
+    final bytes = picked.bytes!;
+    final name = picked.name;
+    final ext = name.toLowerCase().split('.').last;
     final contentType = ext == 'pdf'
         ? 'application/pdf'
         : (ext == 'png' ? 'image/png' : 'image/jpeg');
@@ -164,16 +177,18 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
       return;
     }
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final name = file.path.replaceAll('\\', '/').split('/').last;
     final safeName = name.replaceAll(RegExp(r'[^\w\.\-]'), '_');
     final path = 'medico_docs/${user.id}/${timestamp}_$safeName';
     setState(() {
+      _docLocalBytes[tipo] = bytes;
+      _docFileNames[tipo] = safeName;
       _isSaving = true;
       _saveError = null;
     });
     try {
-      final uploadResult = await _storageService.uploadDocument(
-        file,
+      final uploadResult = await _storageService.uploadDocumentBytes(
+        bytes,
+        fileName: safeName,
         path: path,
         contentType: contentType,
       );
@@ -202,7 +217,7 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
       if (!mounted) return;
       if (saveResult['success'] == true) {
         setState(() {
-          _docLocalFiles[tipo] = null;
+          _docLocalBytes[tipo] = null;
           _docUrls[tipo] = url;
           _docFileNames[tipo] = fileName;
           final resData = saveResult['data'];
@@ -248,7 +263,7 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
     if (_medicoId == null) return;
     final id = _docIds[tipo];
     setState(() {
-      _docLocalFiles[tipo] = null;
+      _docLocalBytes[tipo] = null;
       _docUrls[tipo] = null;
       _docFileNames[tipo] = null;
       _docIds[tipo] = null;
@@ -429,7 +444,7 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    'Valor: R\$ 89,90',
+                                    _valorConsultaText,
                                     style: AppTextStyles.arimo(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,

@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -313,8 +312,9 @@ class _BasicDataPageState extends State<BasicDataPage> {
         const SnackBar(content: Text('Enviando foto...')),
       );
     }
-    final up = await ImageStorageService()
-        .uploadImage(File(picked.path), bucket: 'avatars');
+    final bytes = await picked.readAsBytes();
+    final up =
+        await ImageStorageService().uploadImageBytes(bytes, bucket: 'avatars');
     if (!mounted) return;
     if (up['success'] != true || up['url'] == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -340,11 +340,13 @@ class _BasicDataPageState extends State<BasicDataPage> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      withData: false,
+      withData: true,
     );
-    final path = result?.files.single.path;
-    if (path == null) return;
-    final ext = path.split('.').last.toLowerCase();
+    if (result == null || result.files.isEmpty || result.files.single.bytes == null) {
+      return;
+    }
+    final picked = result.files.single;
+    final ext = picked.name.split('.').last.toLowerCase();
     final contentType = ext == 'pdf'
         ? 'application/pdf'
         : (ext == 'png' ? 'image/png' : 'image/jpeg');
@@ -353,8 +355,9 @@ class _BasicDataPageState extends State<BasicDataPage> {
         const SnackBar(content: Text('Enviando documento...')),
       );
     }
-    final up = await ImageStorageService().uploadDocument(
-      File(path),
+    final up = await ImageStorageService().uploadDocumentBytes(
+      picked.bytes!,
+      fileName: picked.name,
       contentType: contentType,
     );
     if (!mounted) return;
