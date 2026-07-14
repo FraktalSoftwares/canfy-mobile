@@ -187,11 +187,10 @@ class _RegisterPageState extends State<RegisterPage>
     }
   }
 
-  /// CPF é opcional no cadastro inicial: só valida formato se algo foi digitado.
   void _validateCPF() {
     final cpf = _cpfMask.getUnmaskedText();
     if (cpf.isEmpty) {
-      setState(() => _cpfError = null);
+      setState(() => _cpfError = 'CPF é obrigatório');
     } else if (!InputMasks.isValidCPF(cpf)) {
       setState(() => _cpfError = 'CPF inválido');
     } else {
@@ -506,7 +505,7 @@ class _RegisterPageState extends State<RegisterPage>
                 const SizedBox(height: 16),
                 _buildTextField(
                   controller: _cpfController,
-                  label: 'CPF',
+                  label: 'CPF *',
                   hint: '000.000.000-00',
                   keyboardType: TextInputType.number,
                   inputFormatters: [_cpfMask],
@@ -699,6 +698,7 @@ class _RegisterPageState extends State<RegisterPage>
         _emailOrPhoneController.text.trim().isNotEmpty &&
         _passwordController.text.isNotEmpty &&
         _confirmPasswordController.text.isNotEmpty &&
+        _cpfMask.getUnmaskedText().isNotEmpty &&
         _birthDateController.text.trim().isNotEmpty &&
         _selectedGender != null;
   }

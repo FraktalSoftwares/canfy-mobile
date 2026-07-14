@@ -7,7 +7,9 @@ import '../../../models/consultation/consultation_model.dart';
 import '../../../widgets/consultation/consultation_widgets.dart';
 
 class NewConsultationStep1Page extends StatefulWidget {
-  const NewConsultationStep1Page({super.key});
+  final NewConsultationFormData? formData;
+
+  const NewConsultationStep1Page({super.key, this.formData});
 
   @override
   State<NewConsultationStep1Page> createState() =>
@@ -118,6 +120,7 @@ class _NewConsultationStep1PageState extends State<NewConsultationStep1Page> {
       peso: double.tryParse(_pesoController.text.replaceAll(',', '.')),
       altura: double.tryParse(_alturaController.text.replaceAll(',', '.')),
       consultationValue: _valorConsulta,
+      medicoId: widget.formData?.medicoId,
     );
     context.push(
       '/patient/consultations/new/health-history',

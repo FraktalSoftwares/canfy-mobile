@@ -582,10 +582,13 @@ class AppRouter {
               GoRoute(
                 path: 'step1',
                 name: 'patient-new-consultation-step1',
-                pageBuilder: (context, state) => _noTransitionPage(
-                  state: state,
-                  child: const NewConsultationStep1Page(),
-                ),
+                pageBuilder: (context, state) {
+                  final formData = state.extra as NewConsultationFormData?;
+                  return _noTransitionPage(
+                    state: state,
+                    child: NewConsultationStep1Page(formData: formData),
+                  );
+                },
               ),
               GoRoute(
                 path: 'health-history',

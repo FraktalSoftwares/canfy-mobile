@@ -163,6 +163,7 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
       queixaPrincipal:
           queixaPrincipal.isEmpty ? 'Consulta agendada' : queixaPrincipal,
       sintomas: _formData.symptoms,
+      medicoId: _formData.medicoId,
     );
     if (result['success'] != true || result['data'] == null) return null;
     final data = result['data'] as Map<String, dynamic>?;

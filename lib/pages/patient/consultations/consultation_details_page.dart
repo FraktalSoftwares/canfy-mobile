@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../constants/app_colors.dart';
 import '../../../services/api/patient_service.dart';
+import '../../../models/consultation/consultation_model.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
 
@@ -646,7 +647,13 @@ class _ConsultationDetailsPageState extends State<ConsultationDetailsPage> {
                     height: 52,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        context.push('/patient/consultations/new/step1');
+                        final medicoId = consultation['medicoId'] as String?;
+                        context.push(
+                          '/patient/consultations/new/step1',
+                          extra: medicoId != null
+                              ? NewConsultationFormData(medicoId: medicoId)
+                              : null,
+                        );
                       },
                       icon: const Icon(Icons.calendar_today,
                           color: Colors.white, size: 22),

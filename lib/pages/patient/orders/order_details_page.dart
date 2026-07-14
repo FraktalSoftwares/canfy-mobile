@@ -1,15 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 import '../../../widgets/patient/order_status_tag.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
 import '../../../services/api/patient_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class OrderDetailsPage extends StatelessWidget {
+class OrderDetailsPage extends StatefulWidget {
   final String orderId;
 
   const OrderDetailsPage({super.key, required this.orderId});
+
+  @override
+  State<OrderDetailsPage> createState() => _OrderDetailsPageState();
+}
+
+class _OrderDetailsPageState extends State<OrderDetailsPage> {
+  String get orderId => widget.orderId;
+  late Future<Map<String, dynamic>> _orderFuture;
+  RealtimeChannel? _channel;
+
+  @override
+  void initState() {
+    super.initState();
+    _orderFuture = PatientService().getOrderDetails(orderId);
+    _channel = Supabase.instance.client
+        .channel('pedido-$orderId-changes')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'pedidos',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id',
+            value: orderId,
+          ),
+          callback: (payload) {
+            if (!mounted) return;
+            setState(() {
+              _orderFuture = PatientService().getOrderDetails(orderId);
+            });
+          },
+        )
+        .subscribe();
+  }
+
+  @override
+  void dispose() {
+    if (_channel != null) {
+      Supabase.instance.client.removeChannel(_channel!);
+    }
+    super.dispose();
+  }
 
   Widget _buildTimelineStep({
     required bool isCompleted,
@@ -287,8 +330,6 @@ class OrderDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final patientService = PatientService();
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const PatientAppBar(
@@ -296,7 +337,7 @@ class OrderDetailsPage extends StatelessWidget {
         fallbackRoute: '/patient/orders',
       ),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: patientService.getOrderDetails(orderId),
+        future: _orderFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(

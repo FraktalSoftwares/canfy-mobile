@@ -174,6 +174,9 @@ class NewConsultationFormData {
   final String? reacoesAdversas;
   final bool? prefereProdutosNacionais;
 
+  // Retorno com médico específico (via "Agendar retorno" numa consulta finalizada)
+  final String? medicoId;
+
   NewConsultationFormData({
     this.symptoms = const [],
     this.description,
@@ -189,6 +192,7 @@ class NewConsultationFormData {
     this.produtosUtilizados = const [],
     this.reacoesAdversas,
     this.prefereProdutosNacionais,
+    this.medicoId,
   });
 
   /// Cria uma cópia com os campos atualizados
@@ -207,6 +211,7 @@ class NewConsultationFormData {
     List<String>? produtosUtilizados,
     String? reacoesAdversas,
     bool? prefereProdutosNacionais,
+    String? medicoId,
   }) {
     return NewConsultationFormData(
       symptoms: symptoms ?? this.symptoms,
@@ -224,6 +229,7 @@ class NewConsultationFormData {
       reacoesAdversas: reacoesAdversas ?? this.reacoesAdversas,
       prefereProdutosNacionais:
           prefereProdutosNacionais ?? this.prefereProdutosNacionais,
+      medicoId: medicoId ?? this.medicoId,
     );
   }
 
@@ -269,6 +275,7 @@ class NewConsultationFormData {
       'produtosUtilizados': produtosUtilizados,
       'reacoesAdversas': reacoesAdversas,
       'prefereProdutosNacionais': prefereProdutosNacionais,
+      'medicoId': medicoId,
     };
   }
 
@@ -297,6 +304,7 @@ class NewConsultationFormData {
               [],
       reacoesAdversas: json['reacoesAdversas'] as String?,
       prefereProdutosNacionais: json['prefereProdutosNacionais'] as bool?,
+      medicoId: json['medicoId'] as String?,
     );
   }
 }

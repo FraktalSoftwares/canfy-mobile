@@ -66,16 +66,16 @@ class ImageStorageService {
     }
   }
 
-  /// Faz upload de uma imagem a partir de bytes já lidos em memória.
+  /// Faz upload de uma imagem a partir de bytes já lidos em memória (necessário
+  /// no Flutter Web, onde `XFile`/`PlatformFile` não expõem um `File` real).
   ///
-  /// Use este método (em vez de [uploadImage]) quando a imagem vier do
-  /// `image_picker` no Flutter Web, onde `XFile.path` é uma blob URL (não um
-  /// caminho de filesystem) e `dart:io File` não é utilizável.
+  /// [bytes] - conteúdo da imagem
+  /// [bucket] - nome do bucket (padrão: 'avatars')
+  /// [path] - caminho opcional; se null, usa profiles/{userId}_{timestamp}.jpg
   Future<Map<String, dynamic>> uploadImageBytes(
     Uint8List bytes, {
     String bucket = 'avatars',
     String? path,
-    String contentType = 'image/jpeg',
   }) async {
     try {
       final user = _apiService.currentUser;
@@ -94,8 +94,8 @@ class ImageStorageService {
       await Supabase.instance.client.storage.from(bucket).uploadBinary(
             filePath,
             bytes,
-            fileOptions: FileOptions(
-              contentType: contentType,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
               upsert: true,
             ),
           );

@@ -80,13 +80,45 @@ class PatientService {
   Future<Map<String, dynamic>> cancelarConsulta(
     String consultaId, {
     String? motivo,
-  }) {
-    return _apiService.put('consultas', {'id': consultaId}, {
+  }) async {
+    final result = await _apiService.put('consultas', {'id': consultaId}, {
       'status': 'cancelada',
       'cancelada_por': 'paciente',
       'motivo_cancelamento': motivo,
       'cancelada_em': DateTime.now().toUtc().toIso8601String(),
     });
+    if (result['success'] == true) {
+      await _reembolsarPagamentoDaReferencia('consultation', consultaId);
+    }
+    return result;
+  }
+
+  /// Reembolsa (ou cancela, se ainda pendente) o pagamento Asaas vinculado a um
+  /// pedido/consulta, via edge function `asaas-refund-payment`. Silencioso em
+  /// caso de erro/ausência de pagamento — não deve bloquear o cancelamento em si.
+  Future<void> _reembolsarPagamentoDaReferencia(
+    String referenceType,
+    String referenceId,
+  ) async {
+    try {
+      final result = await _apiService.getFiltered(
+        'asaas_payments',
+        filters: {'reference_type': referenceType, 'reference_id': referenceId},
+        limit: 1,
+      );
+      if (result['success'] != true) return;
+      final list = result['data'] as List? ?? [];
+      if (list.isEmpty) return;
+      final asaasPaymentId = (list.first as Map)['asaas_payment_id'] as String?;
+      if (asaasPaymentId == null) return;
+      await Supabase.instance.client.functions.invoke(
+        'asaas-refund-payment',
+        body: {'asaas_payment_id': asaasPaymentId},
+      );
+    } catch (_) {
+      // Reembolso é uma ação complementar; falha aqui não deve impedir o
+      // cancelamento já confirmado da consulta.
+    }
   }
 
   /// Obter dados do paciente atual (profile + dados do paciente)
@@ -786,7 +818,7 @@ class PatientService {
         'status': 'agendada',
         'queixa_principal':
             queixaPrincipal.isNotEmpty ? queixaPrincipal : 'Consulta agendada',
-        'eh_retorno': false,
+        'eh_retorno': medicoId != null && medicoId.isNotEmpty,
         if (medicoId != null && medicoId.isNotEmpty) 'medico_id': medicoId,
         if (sintomas != null && sintomas.isNotEmpty) 'sintomas': sintomas,
       };
@@ -1470,6 +1502,13 @@ class PatientService {
   /// Retorna receita + itens com produto_id, quantidade_prescrita, preco_unitario
   Future<Map<String, dynamic>> getPrescriptionDetails(String receitaId) async {
     try {
+      if (receitaId.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Receita não informada',
+          'data': null,
+        };
+      }
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
         return {
@@ -1664,6 +1703,13 @@ class PatientService {
     int? prazoEntregaDias,
   }) async {
     try {
+      if (receitaId.isEmpty || pacienteId.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Dados do pedido incompletos',
+          'data': null,
+        };
+      }
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
         return {
