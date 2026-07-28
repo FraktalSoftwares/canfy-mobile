@@ -6,6 +6,7 @@ import '../../services/api/medico_service.dart';
 import '../../services/api/configuracoes_service.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
+import '../../widgets/common/circle_icon_button.dart';
 
 class AppointmentDetailsPage extends StatefulWidget {
   const AppointmentDetailsPage({super.key});
@@ -74,15 +75,17 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
       appBar: AppBar(
         backgroundColor: AppTokens.neutral000,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTokens.neutral900),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/appointment');
-            }
-          },
+        leading: Center(
+          child: CircleIconButton(
+            icon: Icons.arrow_back,
+            onTap: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/appointment');
+              }
+            },
+          ),
         ),
         title: Text('Detalhes da consulta',
             style: AppTextStyles.bodySm(

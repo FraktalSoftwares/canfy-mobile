@@ -302,6 +302,19 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
                           orElse: () => <String, dynamic>{},
                         );
                         if (p.isNotEmpty) {
+                          final valorSelecionado =
+                              (p['valorTotal'] as num?)?.toDouble() ?? 0.0;
+                          if (valorSelecionado <= 0) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Não foi possível calcular o valor deste produto. Por favor, contate o suporte.',
+                                ),
+                                backgroundColor: Color(0xFFD32F2F),
+                              ),
+                            );
+                            return;
+                          }
                           final formData = NewOrderFormData(
                             prescriptionId: p['id'] as String,
                             productName: p['product'] as String? ?? 'Produto',

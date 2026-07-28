@@ -5,6 +5,7 @@ import '../../services/api/medico_service.dart';
 import '../../utils/product_image_utils.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
+import '../../widgets/common/circle_icon_button.dart';
 
 class CatalogPage extends StatefulWidget {
   const CatalogPage({super.key});
@@ -225,18 +226,17 @@ class _CatalogPageState extends State<CatalogPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: Transform.rotate(
-            angle: 1.5708,
-            child: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
+        leading: Center(
+          child: CircleIconButton(
+            icon: Icons.chevron_left,
+            onTap: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
           ),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/home');
-            }
-          },
         ),
         title: const Text(
           'Catálogo',

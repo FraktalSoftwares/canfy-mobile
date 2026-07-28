@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'share_product_modal.dart';
 import '../../widgets/common/safe_image_asset.dart';
+import '../../widgets/common/circle_icon_button.dart';
 
 class ProductDetailsPage extends StatelessWidget {
   const ProductDetailsPage({super.key});
@@ -67,40 +68,31 @@ class ProductDetailsPage extends StatelessWidget {
             expandedHeight: 324,
             pinned: true,
             backgroundColor: const Color(0xFFC3A6F9),
-            leading: IconButton(
-              icon: Transform.rotate(
-                angle: 1.5708,
-                child:
-                    const Icon(Icons.keyboard_arrow_down, color: Colors.black),
+            leading: Center(
+              child: CircleIconButton(
+                icon: Icons.chevron_left,
+                onTap: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/catalog');
+                  }
+                },
               ),
-              onPressed: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go('/catalog');
-                }
-              },
             ),
             actions: [
-              IconButton(
-                icon: Transform.rotate(
-                  angle: 1.5708,
-                  child: Transform.rotate(
-                    angle: 4.7124,
-                    child: const Icon(Icons.share, color: Colors.black),
-                  ),
-                ),
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (context) => const ShareProductModal(),
-                  );
-                },
-                style: IconButton.styleFrom(
-                  backgroundColor: const Color(0xFFE6F8EF),
-                  shape: const CircleBorder(),
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: CircleIconButton(
+                  icon: Icons.share,
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => const ShareProductModal(),
+                    );
+                  },
                 ),
               ),
             ],

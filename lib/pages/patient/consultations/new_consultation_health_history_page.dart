@@ -23,11 +23,21 @@ class NewConsultationHealthHistoryPage extends StatefulWidget {
 class _NewConsultationHealthHistoryPageState
     extends State<NewConsultationHealthHistoryPage> {
   final TextEditingController _reacoesController = TextEditingController();
+  final TextEditingController _alergiasController = TextEditingController();
+  final TextEditingController _comorbidadesController =
+      TextEditingController();
+  final TextEditingController _tratamentosController =
+      TextEditingController();
+  final TextEditingController _medicacoesController = TextEditingController();
   final ConfiguracoesService _configuracoesService = ConfiguracoesService();
 
   final List<String> _exames = [];
   final List<String> _produtos = [];
   bool? _prefereNacionais;
+  bool? _temAlergias;
+  bool? _temComorbidades;
+  bool? _temTratamentosAnteriores;
+  bool? _temMedicacoesAtuais;
   String? _valorConsultaText;
 
   @override
@@ -74,6 +84,10 @@ class _NewConsultationHealthHistoryPageState
   @override
   void dispose() {
     _reacoesController.dispose();
+    _alergiasController.dispose();
+    _comorbidadesController.dispose();
+    _tratamentosController.dispose();
+    _medicacoesController.dispose();
     super.dispose();
   }
 
@@ -109,10 +123,71 @@ class _NewConsultationHealthHistoryPageState
           ? null
           : _reacoesController.text.trim(),
       prefereProdutosNacionais: _prefereNacionais,
+      temAlergias: _temAlergias,
+      alergiasDetalhes: _alergiasController.text.trim().isEmpty
+          ? null
+          : _alergiasController.text.trim(),
+      temComorbidades: _temComorbidades,
+      comorbidadesDetalhes: _comorbidadesController.text.trim().isEmpty
+          ? null
+          : _comorbidadesController.text.trim(),
+      temTratamentosAnteriores: _temTratamentosAnteriores,
+      tratamentosAnterioresDetalhes: _tratamentosController.text.trim().isEmpty
+          ? null
+          : _tratamentosController.text.trim(),
+      temMedicacoesAtuais: _temMedicacoesAtuais,
+      medicacoesAtuaisDetalhes: _medicacoesController.text.trim().isEmpty
+          ? null
+          : _medicacoesController.text.trim(),
     );
     context.push(
       '/patient/consultations/new/step2',
       extra: updatedFormData,
+    );
+  }
+
+  /// Card padrão "Sim/Não" + campo de detalhes condicional, usado pelas
+  /// seções de anamnese (Alergias, Comorbidades, Tratamentos, Medicações).
+  Widget _buildYesNoSection({
+    required String title,
+    required String subtitle,
+    required bool? value,
+    required ValueChanged<bool> onChanged,
+    required TextEditingController controller,
+    required String detailsHint,
+  }) {
+    return ConsultationSectionCard(
+      title: title,
+      subtitle: subtitle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ConsultationSymptomTag(
+                symptom: 'Sim',
+                isSelected: value == true,
+                onTap: () => onChanged(true),
+              ),
+              const SizedBox(width: 12),
+              ConsultationSymptomTag(
+                symptom: 'Não',
+                isSelected: value == false,
+                onTap: () => onChanged(false),
+              ),
+            ],
+          ),
+          if (value == true) ...[
+            const SizedBox(height: 12),
+            ConsultationTextField(
+              label: '',
+              controller: controller,
+              hintText: detailsHint,
+              maxLines: 3,
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -160,6 +235,43 @@ class _NewConsultationHealthHistoryPageState
                           ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildYesNoSection(
+                    title: 'Alergias',
+                    subtitle: 'Você possui alguma alergia conhecida?',
+                    value: _temAlergias,
+                    onChanged: (v) => setState(() => _temAlergias = v),
+                    controller: _alergiasController,
+                    detailsHint: 'Quais alergias?',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildYesNoSection(
+                    title: 'Comorbidades',
+                    subtitle: 'Você possui alguma comorbidade (ex.: diabetes, hipertensão)?',
+                    value: _temComorbidades,
+                    onChanged: (v) => setState(() => _temComorbidades = v),
+                    controller: _comorbidadesController,
+                    detailsHint: 'Quais comorbidades?',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildYesNoSection(
+                    title: 'Tratamentos anteriores',
+                    subtitle: 'Você já fez outros tratamentos para essa condição?',
+                    value: _temTratamentosAnteriores,
+                    onChanged: (v) =>
+                        setState(() => _temTratamentosAnteriores = v),
+                    controller: _tratamentosController,
+                    detailsHint: 'Quais tratamentos?',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildYesNoSection(
+                    title: 'Medicações em uso',
+                    subtitle: 'Você faz uso de algum medicamento atualmente?',
+                    value: _temMedicacoesAtuais,
+                    onChanged: (v) => setState(() => _temMedicacoesAtuais = v),
+                    controller: _medicacoesController,
+                    detailsHint: 'Quais medicações e dosagens?',
                   ),
                   const SizedBox(height: 16),
                   ConsultationSectionCard(

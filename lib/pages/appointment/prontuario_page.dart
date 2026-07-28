@@ -29,6 +29,12 @@ class _ProntuarioPageState extends State<ProntuarioPage> {
   String _status = 'rascunho';
 
   final _alergiasController = TextEditingController();
+  final _comorbidadesController = TextEditingController();
+  final _tratamentosController = TextEditingController();
+  final _medicacoesController = TextEditingController();
+  final _examesController = TextEditingController();
+  final _produtosUtilizadosController = TextEditingController();
+  final _reacoesController = TextEditingController();
   final _evolucaoController = TextEditingController();
   final _posologiaController = TextEditingController();
   final _instrucoesController = TextEditingController();
@@ -45,6 +51,12 @@ class _ProntuarioPageState extends State<ProntuarioPage> {
   @override
   void dispose() {
     _alergiasController.dispose();
+    _comorbidadesController.dispose();
+    _tratamentosController.dispose();
+    _medicacoesController.dispose();
+    _examesController.dispose();
+    _produtosUtilizadosController.dispose();
+    _reacoesController.dispose();
     _evolucaoController.dispose();
     _posologiaController.dispose();
     _instrucoesController.dispose();
@@ -92,6 +104,40 @@ class _ProntuarioPageState extends State<ProntuarioPage> {
 
       _alergiasController.text = conteudo?['alergias_registro'] as String? ??
           _defaultAlergiasText(anamnese);
+      _comorbidadesController.text =
+          conteudo?['comorbidades_registro'] as String? ??
+              _defaultBooleanText(anamnese, 'tem_comorbidades',
+                  'comorbidades_detalhes', 'Paciente não relatou comorbidades.');
+      _tratamentosController.text =
+          conteudo?['tratamentos_anteriores_registro'] as String? ??
+              _defaultBooleanText(
+                  anamnese,
+                  'tem_tratamentos_anteriores',
+                  'tratamentos_anteriores_detalhes',
+                  'Paciente não relatou tratamentos anteriores.');
+      _medicacoesController.text =
+          conteudo?['medicacoes_atuais_registro'] as String? ??
+              _defaultBooleanText(
+                  anamnese,
+                  'tem_medicacoes_atuais',
+                  'medicacoes_atuais_detalhes',
+                  'Paciente não relatou uso de medicações.');
+      _examesController.text = conteudo?['exames_recentes_registro']
+              as String? ??
+          _defaultBooleanText(anamnese, 'tem_exames_recentes',
+              'exames_recentes_detalhes', 'Paciente não relatou exames recentes.');
+      _produtosUtilizadosController.text =
+          conteudo?['produtos_utilizados_registro'] as String? ??
+              ((anamnese?['produtos_cannabis_utilizados'] as String?)
+                          ?.trim()
+                          .isNotEmpty ==
+                      true
+                  ? anamnese!['produtos_cannabis_utilizados'] as String
+                  : 'Paciente não relatou uso prévio de produtos de cannabis.');
+      _reacoesController.text = conteudo?['reacoes_adversas_registro']
+              as String? ??
+          _defaultBooleanText(anamnese, 'tem_reacoes_adversas',
+              'reacoes_adversas_detalhes', 'Paciente não relatou reações adversas.');
       _evolucaoController.text = conteudo?['evolucao_clinica'] as String? ?? '';
       _posologiaController.text = conteudo?['posologia_geral'] as String? ?? '';
       _instrucoesController.text =
@@ -114,9 +160,26 @@ class _ProntuarioPageState extends State<ProntuarioPage> {
     return anamnese['alergias_detalhes'] as String? ?? '';
   }
 
+  /// Helper genérico para as seções de anamnese no formato `tem_<x>` (bool) +
+  /// `<x>_detalhes` (String) — mesmo padrão de [_defaultAlergiasText].
+  String _defaultBooleanText(Map<String, dynamic>? anamnese, String temKey,
+      String detalhesKey, String textoSeNao) {
+    if (anamnese == null) return '';
+    final tem = anamnese[temKey] as bool? ?? false;
+    if (!tem) return textoSeNao;
+    return anamnese[detalhesKey] as String? ?? '';
+  }
+
   Map<String, dynamic> _buildConteudo() {
     return {
       'alergias_registro': _alergiasController.text.trim(),
+      'comorbidades_registro': _comorbidadesController.text.trim(),
+      'tratamentos_anteriores_registro': _tratamentosController.text.trim(),
+      'medicacoes_atuais_registro': _medicacoesController.text.trim(),
+      'exames_recentes_registro': _examesController.text.trim(),
+      'produtos_utilizados_registro':
+          _produtosUtilizadosController.text.trim(),
+      'reacoes_adversas_registro': _reacoesController.text.trim(),
       'evolucao_clinica': _evolucaoController.text.trim(),
       'posologia_geral': _posologiaController.text.trim(),
       'instrucoes_complementares': _instrucoesController.text.trim(),
@@ -534,35 +597,65 @@ class _ProntuarioPageState extends State<ProntuarioPage> {
           _aiBanner(),
         ]),
         const SizedBox(height: 24),
-        _sectionCard(children: [
-          const Text('Alergias',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF3F3F3D))),
-          const SizedBox(height: 12),
-          const Text('Registro de alergias para este atendimento',
-              style: TextStyle(fontSize: 14, color: Color(0xFF7C7C79))),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _alergiasController,
-            maxLines: 4,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Color(0xFFD6D6D3)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _aiBanner(
-              text:
-                  'Conteúdo pré-preenchido a partir da anamnese do paciente. Edite conforme necessário.'),
-        ]),
+        _anamneseCard('Alergias', 'Registro de alergias para este atendimento',
+            _alergiasController),
+        const SizedBox(height: 24),
+        _anamneseCard('Comorbidades',
+            'Registro de comorbidades para este atendimento',
+            _comorbidadesController),
+        const SizedBox(height: 24),
+        _anamneseCard('Tratamentos anteriores',
+            'Registro de tratamentos anteriores para este atendimento',
+            _tratamentosController),
+        const SizedBox(height: 24),
+        _anamneseCard('Medicações em uso',
+            'Registro de medicações em uso para este atendimento',
+            _medicacoesController),
+        const SizedBox(height: 24),
+        _anamneseCard('Exames recentes',
+            'Registro de exames recentes para este atendimento',
+            _examesController),
+        const SizedBox(height: 24),
+        _anamneseCard('Produtos de cannabis já utilizados',
+            'Registro de produtos já utilizados pelo paciente',
+            _produtosUtilizadosController),
+        const SizedBox(height: 24),
+        _anamneseCard('Reações adversas',
+            'Registro de reações adversas para este atendimento',
+            _reacoesController),
       ],
     );
+  }
+
+  Widget _anamneseCard(
+      String titulo, String subtitulo, TextEditingController controller) {
+    return _sectionCard(children: [
+      Text(titulo,
+          style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF3F3F3D))),
+      const SizedBox(height: 12),
+      Text(subtitulo,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF7C7C79))),
+      const SizedBox(height: 8),
+      TextField(
+        controller: controller,
+        maxLines: 4,
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFD6D6D3)),
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      _aiBanner(
+          text:
+              'Conteúdo pré-preenchido a partir da anamnese do paciente. Edite conforme necessário.'),
+    ]);
   }
 
   Widget _buildBlock4() {

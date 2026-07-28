@@ -237,6 +237,11 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
       setState(() => _submitError = 'Paciente não identificado.');
       return;
     }
+    if (_totalComFrete <= 0) {
+      setState(() => _submitError =
+          'Não foi possível calcular o valor deste pedido. Por favor, contate o suporte.');
+      return;
+    }
 
     setState(() {
       _submitting = true;

@@ -173,6 +173,14 @@ class NewConsultationFormData {
   final List<String> produtosUtilizados;
   final String? reacoesAdversas;
   final bool? prefereProdutosNacionais;
+  final bool? temAlergias;
+  final String? alergiasDetalhes;
+  final bool? temComorbidades;
+  final String? comorbidadesDetalhes;
+  final bool? temTratamentosAnteriores;
+  final String? tratamentosAnterioresDetalhes;
+  final bool? temMedicacoesAtuais;
+  final String? medicacoesAtuaisDetalhes;
 
   // Retorno com médico específico (via "Agendar retorno" numa consulta finalizada)
   final String? medicoId;
@@ -192,6 +200,14 @@ class NewConsultationFormData {
     this.produtosUtilizados = const [],
     this.reacoesAdversas,
     this.prefereProdutosNacionais,
+    this.temAlergias,
+    this.alergiasDetalhes,
+    this.temComorbidades,
+    this.comorbidadesDetalhes,
+    this.temTratamentosAnteriores,
+    this.tratamentosAnterioresDetalhes,
+    this.temMedicacoesAtuais,
+    this.medicacoesAtuaisDetalhes,
     this.medicoId,
   });
 
@@ -211,6 +227,14 @@ class NewConsultationFormData {
     List<String>? produtosUtilizados,
     String? reacoesAdversas,
     bool? prefereProdutosNacionais,
+    bool? temAlergias,
+    String? alergiasDetalhes,
+    bool? temComorbidades,
+    String? comorbidadesDetalhes,
+    bool? temTratamentosAnteriores,
+    String? tratamentosAnterioresDetalhes,
+    bool? temMedicacoesAtuais,
+    String? medicacoesAtuaisDetalhes,
     String? medicoId,
   }) {
     return NewConsultationFormData(
@@ -229,6 +253,17 @@ class NewConsultationFormData {
       reacoesAdversas: reacoesAdversas ?? this.reacoesAdversas,
       prefereProdutosNacionais:
           prefereProdutosNacionais ?? this.prefereProdutosNacionais,
+      temAlergias: temAlergias ?? this.temAlergias,
+      alergiasDetalhes: alergiasDetalhes ?? this.alergiasDetalhes,
+      temComorbidades: temComorbidades ?? this.temComorbidades,
+      comorbidadesDetalhes: comorbidadesDetalhes ?? this.comorbidadesDetalhes,
+      temTratamentosAnteriores:
+          temTratamentosAnteriores ?? this.temTratamentosAnteriores,
+      tratamentosAnterioresDetalhes: tratamentosAnterioresDetalhes ??
+          this.tratamentosAnterioresDetalhes,
+      temMedicacoesAtuais: temMedicacoesAtuais ?? this.temMedicacoesAtuais,
+      medicacoesAtuaisDetalhes:
+          medicacoesAtuaisDetalhes ?? this.medicacoesAtuaisDetalhes,
       medicoId: medicoId ?? this.medicoId,
     );
   }
@@ -275,6 +310,14 @@ class NewConsultationFormData {
       'produtosUtilizados': produtosUtilizados,
       'reacoesAdversas': reacoesAdversas,
       'prefereProdutosNacionais': prefereProdutosNacionais,
+      'temAlergias': temAlergias,
+      'alergiasDetalhes': alergiasDetalhes,
+      'temComorbidades': temComorbidades,
+      'comorbidadesDetalhes': comorbidadesDetalhes,
+      'temTratamentosAnteriores': temTratamentosAnteriores,
+      'tratamentosAnterioresDetalhes': tratamentosAnterioresDetalhes,
+      'temMedicacoesAtuais': temMedicacoesAtuais,
+      'medicacoesAtuaisDetalhes': medicacoesAtuaisDetalhes,
       'medicoId': medicoId,
     };
   }
@@ -304,6 +347,15 @@ class NewConsultationFormData {
               [],
       reacoesAdversas: json['reacoesAdversas'] as String?,
       prefereProdutosNacionais: json['prefereProdutosNacionais'] as bool?,
+      temAlergias: json['temAlergias'] as bool?,
+      alergiasDetalhes: json['alergiasDetalhes'] as String?,
+      temComorbidades: json['temComorbidades'] as bool?,
+      comorbidadesDetalhes: json['comorbidadesDetalhes'] as String?,
+      temTratamentosAnteriores: json['temTratamentosAnteriores'] as bool?,
+      tratamentosAnterioresDetalhes:
+          json['tratamentosAnterioresDetalhes'] as String?,
+      temMedicacoesAtuais: json['temMedicacoesAtuais'] as bool?,
+      medicacoesAtuaisDetalhes: json['medicacoesAtuaisDetalhes'] as String?,
       medicoId: json['medicoId'] as String?,
     );
   }

@@ -193,14 +193,6 @@ class _LoginPageState extends State<LoginPage>
             _emailError = 'E-mail incorreto';
             _passwordError = 'Senha incorreta';
           });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Erro ao fazer login'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4),
-            ),
-          );
         }
       }
     } catch (e) {
@@ -208,14 +200,14 @@ class _LoginPageState extends State<LoginPage>
         setState(() {
           _isLoading = false;
           _hasError = true;
-          _passwordError = 'Erro ao fazer login: ${e.toString()}';
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro: ${e.toString()}'),
+          const SnackBar(
+            content: Text(
+                'Não foi possível fazer login. Verifique sua conexão e tente novamente.'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
+            duration: Duration(seconds: 4),
           ),
         );
       }
@@ -479,16 +471,31 @@ class _LoginPageState extends State<LoginPage>
                 hasError ? AppTokens.errorFieldBorder : AppTokens.neutral300),
             focusedBorder: border(
                 hasError ? AppTokens.errorFieldBorder : AppTokens.primary, 2),
-            errorText: errorText,
-            errorStyle: AppTextStyles.bodyXs(
-                color: AppTokens.errorFieldBorder,
-                weight: AppTokens.weightSemibold),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppTokens.spacingM,
               vertical: 14,
             ),
           ),
         ),
+        if (hasError) ...[
+          const SizedBox(height: 6),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline,
+                  size: 14, color: AppTokens.errorFieldBorder),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  errorText,
+                  style: AppTextStyles.bodyXs(
+                      color: AppTokens.errorFieldBorder,
+                      weight: AppTokens.weightSemibold),
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

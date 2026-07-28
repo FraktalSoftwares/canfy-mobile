@@ -180,6 +180,14 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
       prefereProdutosNacionais: _formData.prefereProdutosNacionais,
       peso: _formData.peso,
       altura: _formData.altura,
+      temAlergias: _formData.temAlergias,
+      alergiasDetalhes: _formData.alergiasDetalhes,
+      temComorbidades: _formData.temComorbidades,
+      comorbidadesDetalhes: _formData.comorbidadesDetalhes,
+      temTratamentosAnteriores: _formData.temTratamentosAnteriores,
+      tratamentosAnterioresDetalhes: _formData.tratamentosAnterioresDetalhes,
+      temMedicacoesAtuais: _formData.temMedicacoesAtuais,
+      medicacoesAtuaisDetalhes: _formData.medicacoesAtuaisDetalhes,
     );
 
     return data?['id'] as String?;

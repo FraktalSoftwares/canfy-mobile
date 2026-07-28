@@ -272,6 +272,16 @@ class _ConsultationsPageState extends State<ConsultationsPage>
                           color: AppColors.neutral600,
                         ),
                       ),
+                      if (consultation['doctorCrm'] != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          consultation['doctorCrm'] as String,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.neutral600,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

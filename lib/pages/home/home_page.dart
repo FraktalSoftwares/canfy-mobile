@@ -7,6 +7,7 @@ import '../../utils/product_image_utils.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/notifications_bell_button.dart';
 import '../../widgets/common/safe_image_asset.dart';
+import '../../widgets/common/circle_icon_button.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -389,22 +390,11 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ),
-                Transform.rotate(
-                  angle: 1.5708, // 90 graus
-                  child: IconButton(
-                    icon: Transform.rotate(
-                      angle: 4.7124, // 270 graus
-                      child:
-                          const Icon(Icons.chevron_right, color: Colors.black),
-                    ),
-                    onPressed: () {
-                      context.push('/appointment/pre-consultation');
-                    },
-                    style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFFE6F8EF),
-                      shape: const CircleBorder(),
-                    ),
-                  ),
+                CircleIconButton(
+                  icon: Icons.chevron_right,
+                  onTap: () {
+                    context.push('/appointment/pre-consultation');
+                  },
                 ),
               ],
             ),
@@ -659,22 +649,11 @@ class _HomePageState extends State<HomePage> {
                                 ],
                               ),
                             ),
-                            Transform.rotate(
-                              angle: 1.5708,
-                              child: IconButton(
-                                icon: Transform.rotate(
-                                  angle: 4.7124,
-                                  child: const Icon(Icons.chevron_right,
-                                      color: Colors.black),
-                                ),
-                                onPressed: () {
-                                  context.push('/financial');
-                                },
-                                style: IconButton.styleFrom(
-                                  backgroundColor: const Color(0xFFE6F8EF),
-                                  shape: const CircleBorder(),
-                                ),
-                              ),
+                            CircleIconButton(
+                              icon: Icons.chevron_right,
+                              onTap: () {
+                                context.push('/financial');
+                              },
                             ),
                           ],
                         ),

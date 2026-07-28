@@ -29,6 +29,21 @@ class AuthService {
     bool authorizeDataSharing = false,
   }) async {
     try {
+      // 0. Checar CPF duplicado ANTES de criar o usuário no Auth — evita conta
+      // órfã (auth.users criado, mas dados de paciente rejeitados por CPF já
+      // existir, sem forma de tentar de novo com o mesmo e-mail).
+      if (cpf != null && cpf.isNotEmpty) {
+        final cpfDisponivel = await ApiService.client
+            .rpc('check_cpf_disponivel', params: {'p_cpf': cpf}) as bool?;
+        if (cpfDisponivel == false) {
+          return {
+            'success': false,
+            'message': 'CPF já cadastrado',
+            'data': null,
+          };
+        }
+      }
+
       // 1. Criar usuário no Supabase Auth
       // O trigger on_auth_user_created já cria o profile e paciente automaticamente
       // IMPORTANTE: O metadata deve ter os campos que o trigger espera

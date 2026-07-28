@@ -6,6 +6,7 @@ import '../../core/theme/text_styles.dart';
 import '../../services/api/medico_service.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
+import '../../widgets/common/circle_icon_button.dart';
 
 class FinancialHistoryPage extends StatefulWidget {
   const FinancialHistoryPage({super.key});
@@ -51,15 +52,17 @@ class _FinancialHistoryPageState extends State<FinancialHistoryPage> {
       appBar: AppBar(
         backgroundColor: AppTokens.neutral000,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTokens.neutral900),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/financial');
-            }
-          },
+        leading: Center(
+          child: CircleIconButton(
+            icon: Icons.arrow_back,
+            onTap: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/financial');
+              }
+            },
+          ),
         ),
         title: Text('Financeiro',
             style: AppTextStyles.bodySm(

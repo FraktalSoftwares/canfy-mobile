@@ -32,6 +32,7 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
   String _doctorName = 'Médico';
   String _doctorSpecialty = 'Especialidade';
   String? _doctorAvatar;
+  String? _doctorCrm;
   String _consultationStartTime = '--:--';
   String _consultationDate = '--';
   String _status = 'agendada';
@@ -83,6 +84,7 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
           _doctorSpecialty =
               data['doctorSpecialty'] as String? ?? 'Especialidade';
           _doctorAvatar = data['doctorAvatar'] as String?;
+          _doctorCrm = data['doctorCrm'] as String?;
           _consultationStartTime = data['time'] as String? ?? '--:--';
           _consultationDate = data['date'] as String? ?? '--';
           _status =
@@ -442,7 +444,9 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
                         ),
                       ),
                       Text(
-                        _doctorSpecialty,
+                        _doctorCrm != null
+                            ? '$_doctorSpecialty • $_doctorCrm'
+                            : _doctorSpecialty,
                         style: const TextStyle(
                           fontSize: 10,
                           color: Color(0xFF7C7C79),

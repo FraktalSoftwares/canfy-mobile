@@ -671,6 +671,7 @@ class PatientService {
         String doctorName = 'Médico não informado';
         String doctorSpecialty = 'Especialidade não informada';
         String? doctorAvatar;
+        String? doctorCrm;
 
         final medicoId = c['medico_id'] as String?;
         if (medicoId != null) {
@@ -684,6 +685,13 @@ class PatientService {
             if (medicos.isNotEmpty) {
               final medico = medicos[0];
               doctorName = medico['nome'] as String? ?? doctorName;
+              final crm = medico['crm'] as String?;
+              final ufCrm = medico['uf_crm'] as String?;
+              if (crm != null && crm.isNotEmpty) {
+                doctorCrm = ufCrm != null && ufCrm.isNotEmpty
+                    ? 'CRM $crm-$ufCrm'
+                    : 'CRM $crm';
+              }
               final espId = medico['especialidade_id'] as String?;
               if (espId != null) {
                 final espResult = await _apiService.getFiltered(
@@ -727,6 +735,7 @@ class PatientService {
           'doctorSpecialty': doctorSpecialty,
           'specialty': doctorSpecialty,
           'doctorAvatar': doctorAvatar,
+          'doctorCrm': doctorCrm,
           'mainComplaint': c['queixa_principal'] as String?,
           'isReturn': c['eh_retorno'] == true,
           'data_consulta_raw': dataConsulta,
@@ -872,6 +881,14 @@ class PatientService {
     bool? prefereProdutosNacionais,
     double? peso,
     double? altura,
+    bool? temAlergias,
+    String? alergiasDetalhes,
+    bool? temComorbidades,
+    String? comorbidadesDetalhes,
+    bool? temTratamentosAnteriores,
+    String? tratamentosAnterioresDetalhes,
+    bool? temMedicacoesAtuais,
+    String? medicacoesAtuaisDetalhes,
   }) async {
     try {
       final existing = await _apiService.getFiltered(
@@ -893,6 +910,24 @@ class PatientService {
         'preferencia_produto_nacional': prefereProdutosNacionais,
         if (peso != null) 'peso': peso,
         if (altura != null) 'altura': altura,
+        if (temAlergias != null) 'tem_alergias': temAlergias,
+        if (temAlergias != null)
+          'alergias_detalhes': temAlergias ? alergiasDetalhes : null,
+        if (temComorbidades != null) 'tem_comorbidades': temComorbidades,
+        if (temComorbidades != null)
+          'comorbidades_detalhes':
+              temComorbidades ? comorbidadesDetalhes : null,
+        if (temTratamentosAnteriores != null)
+          'tem_tratamentos_anteriores': temTratamentosAnteriores,
+        if (temTratamentosAnteriores != null)
+          'tratamentos_anteriores_detalhes': temTratamentosAnteriores
+              ? tratamentosAnterioresDetalhes
+              : null,
+        if (temMedicacoesAtuais != null)
+          'tem_medicacoes_atuais': temMedicacoesAtuais,
+        if (temMedicacoesAtuais != null)
+          'medicacoes_atuais_detalhes':
+              temMedicacoesAtuais ? medicacoesAtuaisDetalhes : null,
       };
 
       final existingRows = existing['success'] == true
@@ -968,6 +1003,7 @@ class PatientService {
       String doctorName = 'Médico não informado';
       String doctorSpecialty = 'Especialidade não informada';
       String? doctorAvatar;
+      String? doctorCrm;
 
       final medicoId = c['medico_id'] as String?;
       if (medicoId != null) {
@@ -981,6 +1017,13 @@ class PatientService {
           if (medicos.isNotEmpty) {
             final medico = medicos[0];
             doctorName = medico['nome'] as String? ?? doctorName;
+            final crm = medico['crm'] as String?;
+            final ufCrm = medico['uf_crm'] as String?;
+            if (crm != null && crm.isNotEmpty) {
+              doctorCrm = ufCrm != null && ufCrm.isNotEmpty
+                  ? 'CRM $crm-$ufCrm'
+                  : 'CRM $crm';
+            }
             final espId = medico['especialidade_id'] as String?;
             if (espId != null) {
               final espResult = await _apiService.getFiltered(
@@ -1102,6 +1145,7 @@ class PatientService {
           'doctorName': doctorName,
           'doctorSpecialty': doctorSpecialty,
           'doctorAvatar': doctorAvatar,
+          'doctorCrm': doctorCrm,
           'mainComplaint': c['queixa_principal'] as String? ?? '',
           'resumoAtendimento': c['resumo_atendimento'] as String?,
           'prescription': prescription,

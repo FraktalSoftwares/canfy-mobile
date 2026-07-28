@@ -6,6 +6,7 @@ import '../../services/api/medico_service.dart';
 import '../../services/api/configuracoes_service.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
+import '../../widgets/common/circle_icon_button.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
@@ -270,9 +271,9 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                 ),
               ),
               if (!naFila)
-                IconButton(
-                  icon: const Icon(Icons.chevron_right, color: AppTokens.primary),
-                  onPressed: () {
+                CircleIconButton(
+                  icon: Icons.chevron_right,
+                  onTap: () {
                     if (isHistory) {
                       context.go('/appointment/details', extra: c);
                     } else {
