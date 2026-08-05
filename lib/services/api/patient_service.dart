@@ -801,6 +801,41 @@ class PatientService {
     }
   }
 
+  /// Lista as combinações (dia, horário) com disponibilidade real de pelo
+  /// menos um médico ativo (fora de modo férias), a partir de hoje.
+  /// Retorna `{success, data: Map<DateTime, List<String>>}`.
+  Future<Map<String, dynamic>> getAvailableSlots({int diasAFrente = 45}) async {
+    try {
+      final result = await ApiService.client.rpc(
+        'consultas_slots_disponiveis',
+        params: {'p_dias_a_frente': diasAFrente},
+      ) as List;
+
+      final Map<DateTime, List<String>> slotsByDate = {};
+      for (final row in result) {
+        final map = row as Map<String, dynamic>;
+        final dateStr = map['data'] as String?;
+        final horario = map['horario'] as String?;
+        if (dateStr == null || horario == null) continue;
+        final parts = dateStr.split('-');
+        final date = DateTime(
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          int.parse(parts[2]),
+        );
+        slotsByDate.putIfAbsent(date, () => []).add(horario);
+      }
+
+      return {'success': true, 'data': slotsByDate};
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Erro ao buscar horários disponíveis: ${e.toString()}',
+        'data': null,
+      };
+    }
+  }
+
   /// Cria uma nova consulta (registro na tabela consultas) e retorna o id.
   /// Deve ser chamado antes de criar o pagamento no Asaas, para vincular
   /// reference_id ao id da consulta.
@@ -850,6 +885,22 @@ class PatientService {
           'message': 'Resposta inválida ao criar consulta',
           'data': null,
         };
+      }
+
+      // Consulta nova (não é retorno com médico já escolhido): atribui
+      // automaticamente ao médico disponível naquele dia/horário que
+      // atendeu menos até agora. Se ninguém corresponder, a consulta
+      // permanece na fila manual (trigger existente já notifica os médicos).
+      if (medicoId == null || medicoId.isEmpty) {
+        try {
+          await ApiService.client.rpc(
+            'atribuir_medico_automatico',
+            params: {'p_consulta_id': id},
+          );
+        } catch (_) {
+          // Falha na atribuição automática não deve bloquear a criação da
+          // consulta — ela segue disponível na fila manual como fallback.
+        }
       }
 
       return {

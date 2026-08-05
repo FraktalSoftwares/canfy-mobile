@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
+import '../../core/theme/app_tokens.dart';
 
 /// Indicador de progresso padronizado do fluxo de novo pedido (6 segmentos).
 /// [currentStep] deve ser entre 1 e 6.
@@ -38,5 +39,5 @@ class NewOrderStepProgress extends StatelessWidget {
     );
   }
 
-  static const Color _progressGreen = Color(0xFF00BB5A);
+  static const Color _progressGreen = AppTokens.green700;
 }

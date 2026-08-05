@@ -61,18 +61,32 @@ class _ConsultationsPageState extends State<ConsultationsPage>
     } catch (_) {}
   }
 
-  /// Consulta para o CTA fixo: apenas consultas "Agendada" ou "Em andamento".
+  /// Janela máxima para considerar uma consulta "agendada" como iminente.
+  static const _imminentWindow = Duration(hours: 2);
+
+  /// Consulta para o CTA fixo: "Em andamento" sempre é iminente; "Agendada"
+  /// só é iminente dentro de [_imminentWindow] do horário marcado — evita o
+  /// banner mostrar "vai iniciar em 4270 min" para consultas distantes.
   /// Consultas canceladas ou finalizadas não devem mostrar o banner de "vai iniciar".
   void _computeImminentConsultation() {
-    // Busca apenas consultas que vão realmente acontecer
-    final validStatuses = ['Agendada', 'Em andamento'];
-
-    // Primeiro, verifica nas consultas futuras (upcoming)
     for (final consultation in _upcomingConsultations) {
       final status = consultation['status'] as String?;
-      if (status != null && validStatuses.contains(status)) {
+      if (status == 'Em andamento') {
         _imminentConsultation = consultation;
         return;
+      }
+      if (status == 'Agendada') {
+        final raw = consultation['data_consulta_raw'];
+        if (raw == null) continue;
+        try {
+          DateTime dt = raw is String ? DateTime.parse(raw) : raw as DateTime;
+          if (dt.isUtc) dt = dt.toLocal();
+          final diff = dt.difference(DateTime.now());
+          if (diff <= _imminentWindow && diff.inMinutes > -60) {
+            _imminentConsultation = consultation;
+            return;
+          }
+        } catch (_) {}
       }
     }
 
@@ -429,6 +443,14 @@ class _ConsultationsPageState extends State<ConsultationsPage>
   // --- CTA fixo Figma node 2175-1547 ---
   // Especificações: cápsula verde, ícone video_call 40x40, texto branco, chevron 22px
 
+  /// Formata a contagem regressiva em min, ou "Xh Ymin" quando >= 60 minutos.
+  String _formatImminentDuration(int minutes) {
+    if (minutes < 60) return '$minutes min';
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    return m == 0 ? '${h}h' : '${h}h ${m}min';
+  }
+
   /// CTA "Sua próxima consulta vai iniciar em X min" (Figma 2175-1547).
   /// Sempre usa o ícone de video_call e o texto conforme Figma quando há consulta.
   Widget _buildImminentBanner(BuildContext context) {
@@ -485,7 +507,7 @@ class _ConsultationsPageState extends State<ConsultationsPage>
                           const TextSpan(
                               text: 'Sua próxima consulta vai iniciar em '),
                           TextSpan(
-                            text: '$minutes min',
+                            text: _formatImminentDuration(minutes),
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ],

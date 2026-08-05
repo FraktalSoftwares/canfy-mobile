@@ -129,7 +129,7 @@ class _SchedulePageState extends State<SchedulePage> {
         !_intervals.contains(_selectedInterval)) {
       _customIntervals.add(_selectedInterval!);
     }
-    _modoFerias = medico['autoriza_compartilhamento_dados'] == true;
+    _modoFerias = medico['modo_ferias'] == true;
     if (!mounted) return;
     setState(() => _isLoading = false);
   }
@@ -199,7 +199,7 @@ class _SchedulePageState extends State<SchedulePage> {
         disponibilidadeHorarios:
             _selectedTimes.isEmpty ? null : _selectedTimes.join(','),
         disponibilidadeIntervalo: _selectedInterval,
-        autorizaCompartilhamentoDados: _modoFerias,
+        modoFerias: _modoFerias,
       );
       if (!mounted) return;
       if (result['success'] != true) {

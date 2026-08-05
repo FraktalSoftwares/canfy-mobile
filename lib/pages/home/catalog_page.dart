@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'catalog_filters_modal.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../services/api/medico_service.dart';
 import '../../utils/product_image_utils.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
@@ -84,11 +85,12 @@ class _CatalogPageState extends State<CatalogPage> {
     final imageUrl = product['imageUrl'] as String?;
     final indications = product['indications'] as List<dynamic>? ?? [];
     final indicationsStr = indications.map((e) => e.toString()).toList();
+    final productId = product['id']?.toString() ?? '';
 
     return GestureDetector(
-      onTap: () {
-        context.push('/catalog/product-details');
-      },
+      onTap: productId.isEmpty
+          ? null
+          : () => context.push('/catalog/product-details/$productId'),
       child: Container(
         width: 171,
         padding: const EdgeInsets.all(24),
@@ -197,9 +199,10 @@ class _CatalogPageState extends State<CatalogPage> {
                 const SizedBox(height: 32),
                 Builder(
                   builder: (context) => GestureDetector(
-                    onTap: () {
-                      context.push('/catalog/product-details');
-                    },
+                    onTap: productId.isEmpty
+                        ? null
+                        : () =>
+                            context.push('/catalog/product-details/$productId'),
                     child: const Text(
                       'detalhes',
                       style: TextStyle(
@@ -265,7 +268,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 );
               },
               style: IconButton.styleFrom(
-                backgroundColor: const Color(0xFF00BB5A),
+                backgroundColor: AppTokens.green700,
                 shape: const CircleBorder(),
               ),
             ),

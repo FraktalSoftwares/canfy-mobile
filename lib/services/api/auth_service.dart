@@ -194,8 +194,12 @@ class AuthService {
     required String password,
   }) async {
     try {
+      // Normaliza o e-mail (o Supabase Auth trata e-mail como case-sensitive
+      // na comparação de credenciais em alguns fluxos; telefone não é afetado).
+      final normalizedEmail =
+          email.contains('@') ? email.trim().toLowerCase() : email.trim();
       final result = await _apiService.signIn(
-        email: email,
+        email: normalizedEmail,
         password: password,
       );
 

@@ -18,6 +18,22 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
   bool _isLoading = true;
   String? _errorMessage;
   String? _patientAvatarUrl;
+  String? _statusFilter;
+
+  static const _statusOptions = [
+    'Em análise',
+    'Aprovado',
+    'Em separação',
+    'Enviado',
+    'Entregue',
+    'Cancelado',
+    'Recusado',
+  ];
+
+  List<Map<String, dynamic>> get _filteredOrders {
+    if (_statusFilter == null) return _orders;
+    return _orders.where((o) => o['status'] == _statusFilter).toList();
+  }
 
   @override
   void initState() {
@@ -69,6 +85,52 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
         _isLoading = false;
       });
     }
+  }
+
+  Widget _buildStatusFilterRow() {
+    final presentStatuses =
+        _orders.map((o) => o['status'] as String).toSet();
+    final options =
+        _statusOptions.where((s) => presentStatuses.contains(s)).toList();
+    if (options.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 36,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _buildStatusChip('Todos', _statusFilter == null,
+              () => setState(() => _statusFilter = null)),
+          const SizedBox(width: 8),
+          for (final status in options) ...[
+            _buildStatusChip(status, _statusFilter == status,
+                () => setState(() => _statusFilter = status)),
+            const SizedBox(width: 8),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String label, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF00994B) : const Color(0xFFF1F1EF),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : const Color(0xFF212121),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildOrderCard(BuildContext context, Map<String, dynamic> order) {
@@ -283,9 +345,20 @@ class _OrdersHistoryPageState extends State<OrdersHistoryPage> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 24),
-                            ..._orders.map(
-                                (order) => _buildOrderCard(context, order)),
+                            const SizedBox(height: 16),
+                            _buildStatusFilterRow(),
+                            const SizedBox(height: 16),
+                            if (_filteredOrders.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 24),
+                                child: Text(
+                                  'Nenhum pedido com esse status.',
+                                  style: TextStyle(color: Color(0xFF7C7C79)),
+                                ),
+                              )
+                            else
+                              ..._filteredOrders.map(
+                                  (order) => _buildOrderCard(context, order)),
                           ],
                         ),
                       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/api/api_service.dart';
+import '../../services/api/configuracoes_service.dart';
 import '../../services/api/medico_service.dart';
 import '../../utils/product_image_utils.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
@@ -19,6 +20,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ApiService _api = ApiService();
   final MedicoService _medicoService = MedicoService();
+  final ConfiguracoesService _configuracoesService = ConfiguracoesService();
   String? _nomeCompleto;
   String? _avatarUrl;
   bool _loading = true;
@@ -218,6 +220,13 @@ class _HomePageState extends State<HomePage> {
         return da.compareTo(db);
       });
 
+      String valorConsulta = 'R\$ —';
+      final valorResult = await _configuracoesService.getValorConsultaPadrao();
+      if (valorResult['success'] == true && valorResult['data'] != null) {
+        final valor = valorResult['data'] as double;
+        valorConsulta = 'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+      }
+
       final withNames = <Map<String, dynamic>>[];
       for (final a in upcoming.take(5)) {
         final pacienteId = a['paciente_id'] as String?;
@@ -228,7 +237,7 @@ class _HomePageState extends State<HomePage> {
         withNames.add({
           'dateTime': _formatDateTime(a['dt'] as DateTime),
           'patient': patientName,
-          'value': 'R\$ —',
+          'value': valorConsulta,
           'consultaId': a['id'],
         });
       }
@@ -299,8 +308,11 @@ class _HomePageState extends State<HomePage> {
 
   String _buildGreeting() {
     if (_nomeCompleto != null && _nomeCompleto!.trim().isNotEmpty) {
-      final nome = _nomeCompleto!.trim();
-      final primeiroNome = nome.contains(' ') ? nome.split(' ').first : nome;
+      final semTitulo = _nomeCompleto!
+          .trim()
+          .replaceFirst(RegExp(r'^dra?\.?\s+', caseSensitive: false), '');
+      final primeiroNome =
+          semTitulo.contains(' ') ? semTitulo.split(' ').first : semTitulo;
       return 'Boas vindas, Dr(a). $primeiroNome!';
     }
     return 'Boas vindas!';
@@ -484,8 +496,11 @@ class _HomePageState extends State<HomePage> {
     final url = imageUrl != null && imageUrl.toString().trim().isNotEmpty
         ? imageUrl.toString().trim()
         : null;
+    final productId = product['id']?.toString() ?? '';
     return GestureDetector(
-      onTap: () => context.push('/catalog/product-details'),
+      onTap: productId.isEmpty
+          ? null
+          : () => context.push('/catalog/product-details/$productId'),
       child: Container(
         width: 144,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),

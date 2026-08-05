@@ -5,6 +5,7 @@ import '../../core/theme/app_tokens.dart';
 import '../../services/api/api_service.dart';
 import '../../services/api/auth_service.dart';
 import '../../utils/input_masks.dart';
+import '../../utils/error_messages.dart';
 import '../../widgets/common/app_button.dart';
 
 class LoginPage extends StatefulWidget {
@@ -193,6 +194,11 @@ class _LoginPageState extends State<LoginPage>
             _emailError = 'E-mail incorreto';
             _passwordError = 'Senha incorreta';
           });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(ErrorMessages.extractErrorMessage(result)),
+            ),
+          );
         }
       }
     } catch (e) {

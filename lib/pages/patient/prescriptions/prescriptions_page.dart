@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
 
@@ -17,6 +18,15 @@ class _PrescriptionsPageState extends State<PrescriptionsPage>
   List<Map<String, dynamic>> _pastPrescriptions = [];
   bool _loading = true;
   String? _errorMessage;
+  String? _selectedDoctor;
+
+  List<Map<String, dynamic>> _applyDoctorFilter(
+      List<Map<String, dynamic>> prescriptions) {
+    if (_selectedDoctor == null) return prescriptions;
+    return prescriptions
+        .where((p) => _getPrescribedBy(p) == _selectedDoctor)
+        .toList();
+  }
 
   @override
   void initState() {
@@ -276,7 +286,7 @@ class _PrescriptionsPageState extends State<PrescriptionsPage>
                 // Download prescription
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00BB5A),
+                backgroundColor: AppTokens.green700,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -361,21 +371,11 @@ class _PrescriptionsPageState extends State<PrescriptionsPage>
         ),
       );
     }
-    if (prescriptions.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            emptyMessage,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF7C7C79),
-            ),
-          ),
-        ),
-      );
-    }
+    final doctors = {
+      ..._activePrescriptions.map(_getPrescribedBy),
+      ..._pastPrescriptions.map(_getPrescribedBy),
+    }..removeWhere((d) => d == '--');
+    final filtered = _applyDoctorFilter(prescriptions);
     return RefreshIndicator(
       onRefresh: _loadPrescriptions,
       color: const Color(0xFF7048C3),
@@ -384,10 +384,70 @@ class _PrescriptionsPageState extends State<PrescriptionsPage>
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: prescriptions
-              .map((prescription) =>
-                  _buildPrescriptionCard(context, prescription))
-              .toList(),
+          children: [
+            if (doctors.isNotEmpty) ...[
+              _buildDoctorFilterRow(doctors),
+              const SizedBox(height: 16),
+            ],
+            if (filtered.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  prescriptions.isEmpty
+                      ? emptyMessage
+                      : 'Nenhuma receita desse médico.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF7C7C79),
+                  ),
+                ),
+              )
+            else
+              ...filtered.map(
+                  (prescription) => _buildPrescriptionCard(context, prescription)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDoctorFilterRow(Set<String> doctors) {
+    return SizedBox(
+      height: 36,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _buildDoctorChip('Todos', _selectedDoctor == null,
+              () => setState(() => _selectedDoctor = null)),
+          const SizedBox(width: 8),
+          for (final doctor in doctors) ...[
+            _buildDoctorChip(doctor, _selectedDoctor == doctor,
+                () => setState(() => _selectedDoctor = doctor)),
+            const SizedBox(width: 8),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDoctorChip(String label, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF7048C3) : const Color(0xFFF1F1EF),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : const Color(0xFF212121),
+          ),
         ),
       ),
     );

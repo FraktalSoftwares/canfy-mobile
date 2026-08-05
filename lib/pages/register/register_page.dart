@@ -426,7 +426,7 @@ class _RegisterPageState extends State<RegisterPage>
             children: [
               // Título
               Text(
-                'Vamos começar?',
+                _isRegisterTab ? 'Vamos começar?' : 'Bem-vindo de volta!',
                 style: AppTextStyles.truculenta(
                   fontSize: 40,
                   fontWeight: FontWeight.w600,
@@ -435,7 +435,9 @@ class _RegisterPageState extends State<RegisterPage>
               ),
               const SizedBox(height: 8),
               Text(
-                'Leva só alguns minutos.\nVocê pode atualizar seus dados depois.',
+                _isRegisterTab
+                    ? 'Leva só alguns minutos.\nVocê pode atualizar seus dados depois.'
+                    : 'Entre para continuar sua jornada.',
                 style: AppTextStyles.arimo(
                   fontSize: 14,
                   color: const Color(0xFF5E5E5B),

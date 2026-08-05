@@ -20,6 +20,7 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
   List<Map<String, dynamic>> _products = [];
   bool _loading = true;
   String? _error;
+  CatalogFilters _filters = const CatalogFilters();
 
   @override
   void initState() {
@@ -58,12 +59,49 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
         'indications': indList,
         'imageUrl': ProductImageUtils.resolveProductImageUrl(
             ProductImageUtils.getProductImageValue(p)),
+        'formaFarmaceutica': (p['forma_farmaceutica'] as String? ?? ''),
+        'concentracaoCbd': (p['concentracao_cbd'] as String? ?? ''),
+        'concentracaoThc': (p['concentracao_thc'] as String? ?? ''),
       });
     }
     setState(() {
       _products = products;
       _loading = false;
     });
+  }
+
+  List<Map<String, dynamic>> get _filteredProducts {
+    if (_filters.isEmpty) return _products;
+    return _products.where((p) {
+      if (_filters.indications.isNotEmpty) {
+        final indications = (p['indications'] as List).cast<String>();
+        if (!indications.any((i) => _filters.indications.contains(i))) {
+          return false;
+        }
+      }
+      if (_filters.usageForms.isNotEmpty) {
+        final forma = (p['formaFarmaceutica'] as String).toLowerCase();
+        final match = _filters.usageForms
+            .any((f) => forma.contains(f.toLowerCase()));
+        if (!match) return false;
+      }
+      final cbd = p['concentracaoCbd'] as String;
+      final thc = p['concentracaoThc'] as String;
+      if (_filters.concentrations.isNotEmpty) {
+        final match = _filters.concentrations
+            .any((c) => cbd.contains(c) || thc.contains(c));
+        if (!match) return false;
+      }
+      if (_filters.cannabinoids.isNotEmpty) {
+        final match = _filters.cannabinoids.any((c) {
+          if (c == 'CBD') return cbd.isNotEmpty;
+          if (c == 'THC') return thc.isNotEmpty;
+          return false;
+        });
+        if (!match) return false;
+      }
+      return true;
+    }).toList();
   }
 
   @override
@@ -84,13 +122,17 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
               ),
               child: const Icon(Icons.tune, color: Colors.white, size: 20),
             ),
-            onPressed: () {
-              showModalBottomSheet(
+            onPressed: () async {
+              final result = await showModalBottomSheet<CatalogFilters>(
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
-                builder: (context) => const CatalogFiltersModal(),
+                builder: (context) =>
+                    CatalogFiltersModal(initialFilters: _filters),
               );
+              if (result != null && mounted) {
+                setState(() => _filters = result);
+              }
             },
           ),
         ],
@@ -99,9 +141,13 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? _buildError()
-              : _products.isEmpty
+              : _filteredProducts.isEmpty
                   ? Center(
-                      child: Text('Nenhum produto disponível.',
+                      child: Text(
+                          _products.isEmpty
+                              ? 'Nenhum produto disponível.'
+                              : 'Nenhum produto encontrado para os filtros selecionados.',
+                          textAlign: TextAlign.center,
                           style: AppTextStyles.bodyMd(
                               color: AppTokens.neutral600)),
                     )
@@ -116,9 +162,9 @@ class _PatientCatalogPageState extends State<PatientCatalogPage> {
                           mainAxisSpacing: 16,
                           childAspectRatio: 0.56,
                         ),
-                        itemCount: _products.length,
+                        itemCount: _filteredProducts.length,
                         itemBuilder: (context, index) =>
-                            _buildProductCard(_products[index]),
+                            _buildProductCard(_filteredProducts[index]),
                       ),
                     ),
       bottomNavigationBar: const PatientBottomNavigationBar(currentIndex: 0),

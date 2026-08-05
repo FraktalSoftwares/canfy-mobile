@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../services/api/medico_service.dart';
 import '../../services/api/api_service.dart';
 import '../../services/storage/image_storage_service.dart';
@@ -377,7 +378,7 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
                               child: Container(
                                 height: 6,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF00BB5A),
+                                  color: AppTokens.green700,
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                               ),
@@ -387,7 +388,7 @@ class _Step2DocumentsPageState extends State<Step2DocumentsPage> {
                               child: Container(
                                 height: 6,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF00BB5A),
+                                  color: AppTokens.green700,
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                               ),

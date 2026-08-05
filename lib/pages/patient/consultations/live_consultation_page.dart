@@ -1,9 +1,17 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../constants/app_colors.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../services/api/chat_service.dart';
+import '../../../services/storage/image_storage_service.dart';
 
 class LiveConsultationPage extends StatefulWidget {
   final String consultationId;
@@ -18,6 +26,8 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
   final ScrollController _scrollController = ScrollController();
   final PatientService _patientService = PatientService();
   final ChatService _chatService = ChatService();
+  final ImageStorageService _imageStorageService = ImageStorageService();
+  bool _isSendingAttachment = false;
 
   // Stream subscription para mensagens em tempo real
   StreamSubscription<List<Map<String, dynamic>>>? _messagesSubscription;
@@ -138,6 +148,8 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
                 'senderId': msg['remetente_id'],
                 'time': _formatTime(msg['created_at']),
                 'read': msg['lida'] == true,
+                'anexoUrl': msg['anexo_url'],
+                'anexoTipo': msg['anexo_tipo'],
               };
             }).toList();
           });
@@ -211,6 +223,134 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
 
     if (mounted) {
       setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _sendAttachment({
+    required Uint8List bytes,
+    required String fileName,
+    required String anexoTipo,
+    required String contentType,
+  }) async {
+    if (_isSendingAttachment) return;
+    setState(() => _isSendingAttachment = true);
+
+    final user = Supabase.instance.client.auth.currentUser;
+    final uploadResult = await _imageStorageService.uploadDocumentBytes(
+      bytes,
+      fileName: fileName,
+      path: user != null
+          ? 'chat_anexos/${user.id}/${DateTime.now().millisecondsSinceEpoch}_$fileName'
+          : null,
+      contentType: contentType,
+    );
+
+    if (uploadResult['success'] != true) {
+      if (mounted) {
+        setState(() => _isSendingAttachment = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                uploadResult['message'] as String? ?? 'Erro ao enviar anexo'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    final result = await _chatService.sendMessage(
+      consultaId: widget.consultationId,
+      mensagem: anexoTipo == 'imagem' ? 'Foto' : fileName,
+      remetenteTipo: 'paciente',
+      anexoUrl: uploadResult['url'] as String,
+      anexoTipo: anexoTipo,
+    );
+
+    if (mounted) {
+      setState(() => _isSendingAttachment = false);
+      if (result['success'] != true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Erro ao enviar anexo'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// O bucket 'documents' (compartilhado com outros uploads de documentos,
+  /// como RG e comprovante) só aceita estes tipos — mantido restrito aqui
+  /// para não precisar alterar a política do bucket.
+  static const _allowedFileExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
+
+  String? _contentTypeForExtension(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'png':
+        return 'image/png';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      default:
+        return null;
+    }
+  }
+
+  Future<void> _pickAndSendFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: _allowedFileExtensions,
+      withData: true,
+    );
+    final file = result?.files.firstOrNull;
+    if (file == null) return;
+    final contentType = _contentTypeForExtension(file.name);
+    if (contentType == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Formato não suportado. Envie PDF, PNG ou JPG.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+    final bytes = file.bytes ??
+        (file.path != null ? await File(file.path!).readAsBytes() : null);
+    if (bytes == null) return;
+    await _sendAttachment(
+      bytes: bytes,
+      fileName: file.name,
+      anexoTipo: 'arquivo',
+      contentType: contentType,
+    );
+  }
+
+  Future<void> _pickAndSendPhoto() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1600,
+    );
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    await _sendAttachment(
+      bytes: bytes,
+      fileName: picked.name,
+      anexoTipo: 'imagem',
+      contentType: 'image/jpeg',
+    );
+  }
+
+  Future<void> _openAttachment(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -609,6 +749,52 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
     );
   }
 
+  /// Anexo (imagem ou arquivo) dentro do balão de mensagem.
+  Widget _buildAttachmentPreview(Map<String, dynamic> message) {
+    final url = message['anexoUrl'] as String;
+    final tipo = message['anexoTipo'] as String?;
+    if (tipo == 'imagem') {
+      return GestureDetector(
+        onTap: () => _openAttachment(url),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            url,
+            width: 200,
+            height: 200,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              width: 200,
+              height: 120,
+              color: AppColors.neutral200,
+              child: const Icon(Icons.broken_image, color: AppColors.neutral600),
+            ),
+          ),
+        ),
+      );
+    }
+    return GestureDetector(
+      onTap: () => _openAttachment(url),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.insert_drive_file, size: 20),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              message['text'] as String? ?? 'Arquivo',
+              style: const TextStyle(
+                fontSize: 14,
+                decoration: TextDecoration.underline,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Balão de mensagem conforme Figma
   Widget _buildMessageBubble(Map<String, dynamic> message) {
     final isDoctor = message['sender'] == 'doctor';
@@ -657,14 +843,18 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              message['text'] as String? ?? '',
-              style: TextStyle(
-                fontSize: 14,
-                color: textColor,
-                height: 1.5,
+            if (message['anexoUrl'] != null) ...[
+              _buildAttachmentPreview(message),
+              const SizedBox(height: 8),
+            ] else
+              Text(
+                message['text'] as String? ?? '',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: textColor,
+                  height: 1.5,
+                ),
               ),
-            ),
             const SizedBox(height: 10),
             // Hora + check (para paciente)
             if (isDoctor)
@@ -714,7 +904,7 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
       bottom: 8,
       child: Material(
         color:
-            const Color(0xFF00BB5A), // buttoncolors/primary/filled/background
+            AppTokens.green700, // buttoncolors/primary/filled/background
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           onTap: () {
@@ -761,11 +951,9 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
         children: [
           // Botão "+" verde
           GestureDetector(
-            onTap: _isConsultationEnded
+            onTap: _isConsultationEnded || _isSendingAttachment
                 ? null
-                : () {
-                    // TODO: Anexar arquivo
-                  },
+                : _pickAndSendFile,
             child: Container(
               width: 40,
               height: 40,
@@ -841,11 +1029,9 @@ class _LiveConsultationPageState extends State<LiveConsultationPage> {
           const SizedBox(width: 8),
           // Botão de foto verde
           GestureDetector(
-            onTap: _isConsultationEnded
+            onTap: _isConsultationEnded || _isSendingAttachment
                 ? null
-                : () {
-                    // TODO: Enviar foto
-                  },
+                : _pickAndSendPhoto,
             child: Container(
               width: 40,
               height: 40,

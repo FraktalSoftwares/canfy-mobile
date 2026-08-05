@@ -1,17 +1,46 @@
 import 'package:flutter/material.dart';
 
+class CatalogFilters {
+  final Set<String> concentrations;
+  final Set<String> indications;
+  final Set<String> usageForms;
+  final Set<String> cannabinoids;
+
+  const CatalogFilters({
+    this.concentrations = const {},
+    this.indications = const {},
+    this.usageForms = const {},
+    this.cannabinoids = const {},
+  });
+
+  bool get isEmpty =>
+      concentrations.isEmpty &&
+      indications.isEmpty &&
+      usageForms.isEmpty &&
+      cannabinoids.isEmpty;
+}
+
 class CatalogFiltersModal extends StatefulWidget {
-  const CatalogFiltersModal({super.key});
+  final CatalogFilters initialFilters;
+
+  const CatalogFiltersModal({
+    super.key,
+    this.initialFilters = const CatalogFilters(),
+  });
 
   @override
   State<CatalogFiltersModal> createState() => _CatalogFiltersModalState();
 }
 
 class _CatalogFiltersModalState extends State<CatalogFiltersModal> {
-  final Set<String> _selectedConcentrations = {};
-  final Set<String> _selectedIndications = {};
-  final Set<String> _selectedUsageForms = {};
-  final Set<String> _selectedCannabinoids = {};
+  late final Set<String> _selectedConcentrations =
+      {...widget.initialFilters.concentrations};
+  late final Set<String> _selectedIndications =
+      {...widget.initialFilters.indications};
+  late final Set<String> _selectedUsageForms =
+      {...widget.initialFilters.usageForms};
+  late final Set<String> _selectedCannabinoids =
+      {...widget.initialFilters.cannabinoids};
 
   final List<String> _concentrations = ['10mg', '20mg', '30mg', '40mg', '50mg', '60mg'];
   final List<String> _indications = ['Ansiedade', 'Dor', 'Insônia', 'Epilepsia', 'Náusea'];
@@ -85,8 +114,15 @@ class _CatalogFiltersModalState extends State<CatalogFiltersModal> {
                   // Action buttons
                   ElevatedButton(
                     onPressed: () {
-                      // Apply filters
-                      Navigator.pop(context);
+                      Navigator.pop(
+                        context,
+                        CatalogFilters(
+                          concentrations: _selectedConcentrations,
+                          indications: _selectedIndications,
+                          usageForms: _selectedUsageForms,
+                          cannabinoids: _selectedCannabinoids,
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF9067F1),

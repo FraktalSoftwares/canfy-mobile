@@ -376,12 +376,15 @@ class AppRouter {
         ),
         routes: [
           GoRoute(
-            path: 'product-details',
+            path: 'product-details/:id',
             name: 'product-details',
-            pageBuilder: (context, state) => _noTransitionPage(
-              state: state,
-              child: const ProductDetailsPage(),
-            ),
+            pageBuilder: (context, state) {
+              final productId = state.pathParameters['id'] ?? '';
+              return _noTransitionPage(
+                state: state,
+                child: ProductDetailsPage(productId: productId),
+              );
+            },
           ),
         ],
       ),

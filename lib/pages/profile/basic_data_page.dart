@@ -8,6 +8,7 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../constants/app_colors.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../core/theme/text_styles.dart';
 import '../../services/api/api_service.dart';
 import '../../services/api/auth_service.dart';
@@ -30,7 +31,7 @@ class _BasicDataColors {
   static const Color linkRed = Color(0xFFD32F2F);
   static const Color docBorder = Color(0xFF33CC80);
   static const Color docIconBg = Color(0xFFE6F8EF);
-  static const Color buttonPrimary = Color(0xFF00BB5A);
+  static const Color buttonPrimary = AppTokens.green700;
   static const Color buttonContent = Color(0xFFE6F8EF);
   static const Color avatarEditBg = Color(0xFF2B338A);
   static const Color avatarEditBorder = Color(0xFFF3F4F6);

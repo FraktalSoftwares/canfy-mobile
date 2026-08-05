@@ -44,6 +44,8 @@ class ChatService {
           'read': msg['lida'] == true,
           'createdAt': msg['created_at'],
           'time': _formatTime(msg['created_at']),
+          'anexoUrl': msg['anexo_url'],
+          'anexoTipo': msg['anexo_tipo'],
         };
       }).toList();
 
@@ -60,11 +62,14 @@ class ChatService {
     }
   }
 
-  /// Enviar uma mensagem
+  /// Enviar uma mensagem, opcionalmente com um anexo (arquivo ou foto) já
+  /// enviado ao Storage (ver [anexoUrl]/[anexoTipo]).
   Future<Map<String, dynamic>> sendMessage({
     required String consultaId,
     required String mensagem,
     required String remetenteTipo, // 'paciente' ou 'medico'
+    String? anexoUrl,
+    String? anexoTipo, // 'imagem' | 'arquivo'
   }) async {
     try {
       final user = _supabase.auth.currentUser;
@@ -83,6 +88,8 @@ class ChatService {
             'remetente_id': user.id,
             'mensagem': mensagem,
             'lida': false,
+            if (anexoUrl != null) 'anexo_url': anexoUrl,
+            if (anexoTipo != null) 'anexo_tipo': anexoTipo,
           })
           .select()
           .single();
@@ -98,6 +105,8 @@ class ChatService {
           'read': response['lida'] == true,
           'createdAt': response['created_at'],
           'time': _formatTime(response['created_at']),
+          'anexoUrl': response['anexo_url'],
+          'anexoTipo': response['anexo_tipo'],
         },
       };
     } catch (e) {

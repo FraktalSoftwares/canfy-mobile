@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../services/api/patient_service.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
 
@@ -289,7 +290,7 @@ class _FinishConsultationPageState extends State<FinishConsultationPage> {
                     child: ElevatedButton(
                       onPressed: _submitting ? null : _finalizar,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00BB5A),
+                        backgroundColor: AppTokens.green700,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),

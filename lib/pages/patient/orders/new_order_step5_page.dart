@@ -193,6 +193,14 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
             _deliveryAddress =
                 'Endereço não cadastrado. Edite em Conta > Dados básicos.';
           }
+          _logradouroController.text =
+              paciente['endereco_logradouro'] as String? ?? '';
+          _numeroController.text =
+              paciente['endereco_numero'] as String? ?? '';
+          _bairroController.text = paciente['bairro'] as String? ?? '';
+          _cidadeController.text = paciente['cidade'] as String? ?? '';
+          _estadoController.text = paciente['estado'] as String? ?? '';
+          _cepController.text = paciente['cep'] as String? ?? '';
         } else {
           _deliveryAddress = 'Paciente não encontrado.';
         }
@@ -206,6 +214,22 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
       _errorPatient = 'Erro: ${e.toString()}';
     }
     if (mounted) setState(() => _loadingPatient = false);
+  }
+
+  /// Retorna uma mensagem de validação se os dados obrigatórios para o
+  /// pagamento (CPF válido) estiverem ausentes/incorretos, ou null se ok.
+  Future<String?> _validateDadosPagamento() async {
+    final result = await _patientService.getCurrentPatient();
+    if (result['success'] != true || result['data'] == null) {
+      return 'Não foi possível verificar seus dados. Tente novamente.';
+    }
+    final data = result['data'] as Map<String, dynamic>;
+    final paciente = data['paciente'] as Map<String, dynamic>?;
+    final cpf = (paciente?['cpf'] as String?) ?? '';
+    if (cpf.isEmpty || !InputMasks.isValidCPF(cpf)) {
+      return 'CPF inválido ou não cadastrado. Atualize em Conta > Dados básicos antes de continuar.';
+    }
+    return null;
   }
 
   Future<void> _ensureAsaasCustomer() async {
@@ -248,6 +272,16 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
       _submitError = null;
     });
 
+    final validationError = await _validateDadosPagamento();
+    if (!mounted) return;
+    if (validationError != null) {
+      setState(() {
+        _submitting = false;
+        _submitError = validationError;
+      });
+      return;
+    }
+
     try {
       await _ensureAsaasCustomer();
       if (!mounted) return;
@@ -255,7 +289,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
         setState(() {
           _submitting = false;
           _submitError =
-              'Não foi possível vincular pagamento. Tente novamente.';
+              'Não foi possível vincular o pagamento à sua conta. Verifique seus dados cadastrais (CPF, nome, e-mail) em Conta > Dados básicos e tente novamente.';
         });
         return;
       }

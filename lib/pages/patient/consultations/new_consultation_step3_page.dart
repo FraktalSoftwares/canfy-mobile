@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'dart:convert';
 import '../../../constants/app_colors.dart';
 import '../../../services/api/patient_service.dart';
+import '../../../services/api/cep_service.dart';
 import '../../../models/consultation/consultation_model.dart';
 import '../../../widgets/consultation/consultation_widgets.dart';
 
@@ -20,6 +19,7 @@ class NewConsultationStep3Page extends StatefulWidget {
 
 class _NewConsultationStep3PageState extends State<NewConsultationStep3Page> {
   final PatientService _patientService = PatientService();
+  final CepService _cepService = CepService();
   final TextEditingController _streetController = TextEditingController();
   final TextEditingController _numberController = TextEditingController();
   final TextEditingController _neighborhoodController = TextEditingController();
@@ -145,21 +145,15 @@ class _NewConsultationStep3PageState extends State<NewConsultationStep3Page> {
     });
 
     try {
-      final response = await http.get(
-        Uri.parse('https://viacep.com.br/ws/$cleanCep/json/'),
-      );
-
-      if (response.statusCode == 200 && mounted) {
-        final data = json.decode(response.body) as Map<String, dynamic>;
-
-        if (data['erro'] != true) {
-          setState(() {
-            _streetController.text = data['logradouro'] ?? '';
-            _neighborhoodController.text = data['bairro'] ?? '';
-            _cityController.text = data['localidade'] ?? '';
-            _stateController.text = data['uf'] ?? '';
-          });
-        }
+      final result = await _cepService.getAddressByCep(cleanCep);
+      if (mounted && result['success'] == true) {
+        final data = result['data'] as Map<String, dynamic>;
+        setState(() {
+          _streetController.text = data['logradouro'] ?? '';
+          _neighborhoodController.text = data['bairro'] ?? '';
+          _cityController.text = data['localidade'] ?? '';
+          _stateController.text = data['uf'] ?? '';
+        });
       }
     } catch (e) {
       // Silently fail - user can fill manually

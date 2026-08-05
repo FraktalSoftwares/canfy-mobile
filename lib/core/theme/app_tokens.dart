@@ -14,6 +14,7 @@ class AppTokens {
   // Cores — Brand/green (cor primária da marca)
   // ---------------------------------------------------------------------------
   static const Color green100 = Color(0xFFE6F8EF);
+  static const Color green700 = Color(0xFF00BB5A); // variante usada em CTAs (ex.: "Emitir receita")
   static const Color green800 = Color(0xFF00994B); // primária
   static const Color green900 = Color(0xFF007A3B);
 

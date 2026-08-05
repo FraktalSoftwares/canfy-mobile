@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/theme/text_styles.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../services/api/api_service.dart';
 import '../../services/api/medico_service.dart';
 import '../../services/api/configuracoes_service.dart';
@@ -689,7 +690,7 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
                               child: Container(
                                 height: 6,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF00BB5A), // green-700
+                                  color: AppTokens.green700,
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                               ),

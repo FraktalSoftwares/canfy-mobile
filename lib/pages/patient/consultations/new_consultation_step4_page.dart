@@ -143,7 +143,8 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
     final date = _formData.selectedDate;
     final timeStr = _formData.selectedTime;
     if (date == null || timeStr == null || timeStr.isEmpty) return null;
-    final parts = timeStr.split(RegExp(r'[:\s]'));
+    // Formato vindo do step2: "10h00" (horário real de disponibilidade do médico).
+    final parts = timeStr.split(RegExp(r'[h:\s]'));
     final hour = parts.isNotEmpty ? int.tryParse(parts[0]) ?? 10 : 10;
     final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
     final dt = DateTime(date.year, date.month, date.day, hour, minute);

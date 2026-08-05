@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../widgets/common/bottom_navigation_bar_patient.dart';
 
 /// Tela exibida quando o pagamento do pedido é confirmado (design Figma: Pagamento concluído).
@@ -87,7 +88,7 @@ class OrderPaymentSuccessPage extends StatelessWidget {
                     width: 64,
                     height: 64,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF00BB5A),
+                      color: AppTokens.green700,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(

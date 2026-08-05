@@ -75,6 +75,7 @@ class MedicoService {
     String? disponibilidadeHorarios,
     String? disponibilidadeIntervalo,
     bool? autorizaCompartilhamentoDados,
+    bool? modoFerias,
   }) async {
     final Map<String, dynamic> data = {};
     if (disponibilidadeDias != null) {
@@ -91,6 +92,9 @@ class MedicoService {
     }
     if (autorizaCompartilhamentoDados != null) {
       data['autoriza_compartilhamento_dados'] = autorizaCompartilhamentoDados;
+    }
+    if (modoFerias != null) {
+      data['modo_ferias'] = modoFerias;
     }
     if (data.isEmpty) {
       return {'success': true, 'data': null, 'message': 'Nada a atualizar'};
@@ -206,6 +210,70 @@ class MedicoService {
       'produtos',
       limit: limit,
     );
+  }
+
+  /// Busca um produto pelo id, para a tela de detalhes do produto.
+  Future<Map<String, dynamic>?> getProdutoById(String id) async {
+    final res = await _api.getFiltered(
+      'produtos',
+      filters: {'id': id},
+      limit: 1,
+    );
+    if (res['success'] == true &&
+        res['data'] is List &&
+        (res['data'] as List).isNotEmpty) {
+      return (res['data'] as List).first as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  /// Nome da associação/marca de um produto (para exibir em "Marca/Fornecedor").
+  Future<String?> getAssociacaoMarcaNome(String associacaoMarcaId) async {
+    try {
+      final res = await ApiService.client
+          .from('associacoes_marcas')
+          .select('nome')
+          .eq('id', associacaoMarcaId)
+          .maybeSingle();
+      return (res as Map?)?['nome'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Indicações clínicas associadas a um produto.
+  Future<List<String>> getProdutoIndicacoes(String produtoId) async {
+    try {
+      final res = await ApiService.client
+          .from('produto_indicacoes')
+          .select('indicacoes_clinicas(nome)')
+          .eq('produto_id', produtoId);
+      return (res as List)
+          .map((e) =>
+              ((e as Map)['indicacoes_clinicas']?['nome'] ?? '').toString())
+          .where((s) => s.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Produtos relacionados a [produtoId] (mesma forma farmacêutica).
+  Future<List<Map<String, dynamic>>> getRelatedProdutos(
+    String produtoId, {
+    String? formaFarmaceutica,
+    int limit = 6,
+  }) async {
+    try {
+      var query = ApiService.client.from('produtos').select();
+      if (formaFarmaceutica != null && formaFarmaceutica.isNotEmpty) {
+        query = query.eq('forma_farmaceutica', formaFarmaceutica);
+      }
+      final res = await query.neq('id', produtoId).limit(limit);
+      return (res as List).cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
+    }
   }
 
   // ---------------------------------------------------------------------------

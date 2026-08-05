@@ -30,48 +30,22 @@ class _NewConsultationStep2PageState extends State<NewConsultationStep2Page> {
   bool _isLoadingAvatar = true;
   String? _valorConsultaText;
 
-  // Simular dias disponíveis (em produção, viria da API)
-  final Set<int> _availableDays = {
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    8,
-    10,
-    12,
-    15,
-    16,
-    18,
-    19,
-    20,
-    22,
-    23,
-    24,
-    26,
-    30
-  };
+  // Disponibilidade real: combinações (dia, horário) com pelo menos um
+  // médico ativo disponível, vindas de consultas_slots_disponiveis (RPC).
+  Map<DateTime, List<String>> _slotsByDate = {};
+  bool _isLoadingSlots = true;
+  String? _slotsError;
 
-  // Horários disponíveis (10h às 18h, slots de 15 min) gerados dinamicamente.
-  // Quando a data escolhida é hoje, exclui horários que já passaram.
+  bool _isDayAvailable(int day) {
+    final date = DateTime(_focusedMonth.year, _focusedMonth.month, day);
+    return _slotsByDate.containsKey(date);
+  }
+
   List<String> get _availableTimes {
-    final slots = <String>[];
-    final now = DateTime.now();
-    final isToday = _selectedDate != null &&
-        _selectedDate!.year == now.year &&
-        _selectedDate!.month == now.month &&
-        _selectedDate!.day == now.day;
-    for (int h = 10; h <= 17; h++) {
-      for (int m = 0; m < 60; m += 15) {
-        if (isToday && (h < now.hour || (h == now.hour && m <= now.minute))) {
-          continue;
-        }
-        slots.add(
-            '${h.toString().padLeft(2, '0')}h${m.toString().padLeft(2, '0')}');
-      }
-    }
-    return slots;
+    if (_selectedDate == null) return [];
+    final date =
+        DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day);
+    return _slotsByDate[date] ?? [];
   }
 
   @override
@@ -79,6 +53,27 @@ class _NewConsultationStep2PageState extends State<NewConsultationStep2Page> {
     super.initState();
     _loadPatientAvatar();
     _loadValorConsulta();
+    _loadAvailableSlots();
+  }
+
+  Future<void> _loadAvailableSlots() async {
+    setState(() {
+      _isLoadingSlots = true;
+      _slotsError = null;
+    });
+    final result = await _patientService.getAvailableSlots();
+    if (!mounted) return;
+    if (result['success'] == true) {
+      setState(() {
+        _slotsByDate = result['data'] as Map<DateTime, List<String>>;
+        _isLoadingSlots = false;
+      });
+    } else {
+      setState(() {
+        _slotsError = 'Não foi possível carregar os horários disponíveis.';
+        _isLoadingSlots = false;
+      });
+    }
   }
 
   Future<void> _loadValorConsulta() async {
@@ -119,10 +114,6 @@ class _NewConsultationStep2PageState extends State<NewConsultationStep2Page> {
         _isLoadingAvatar = false;
       });
     }
-  }
-
-  bool _isDayAvailable(int day) {
-    return _availableDays.contains(day);
   }
 
   bool _isDayInPast(DateTime date) {
@@ -283,6 +274,31 @@ class _NewConsultationStep2PageState extends State<NewConsultationStep2Page> {
   }
 
   Widget _buildCalendar() {
+    if (_isLoadingSlots) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_slotsError != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          children: [
+            Text(
+              _slotsError!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.neutral800),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: _loadAvailableSlots,
+              child: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
