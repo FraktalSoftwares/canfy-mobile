@@ -956,6 +956,8 @@ class _RegisterPageState extends State<RegisterPage>
           ),
           child: DropdownButtonFormField<String>(
             value: value,
+            dropdownColor: Colors.white,
+            style: AppTextStyles.arimo(fontSize: 16, color: Colors.black),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: AppTextStyles.arimo(

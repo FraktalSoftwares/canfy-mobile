@@ -167,6 +167,16 @@ class ApiService {
       // Usar .select() para retornar os dados atualizados e confirmar sucesso
       final response = await query.select();
 
+      // Nenhuma linha afetada (ex.: bloqueio de RLS) não deve ser reportado
+      // como sucesso — o PostgREST não gera erro nesse caso, só devolve [].
+      if (response.isEmpty) {
+        return {
+          'success': false,
+          'data': null,
+          'message': 'Nenhum registro foi atualizado',
+        };
+      }
+
       return {
         'success': true,
         'data': response,

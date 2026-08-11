@@ -41,6 +41,15 @@ class AppTheme {
           color: Colors.white,
         ),
       ),
+      checkboxTheme: CheckboxThemeData(
+        checkColor: WidgetStateProperty.all(Colors.white),
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return canfyGreen;
+          return Colors.transparent;
+        }),
+        side: const BorderSide(color: Color(0xFF57636C), width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
       textTheme: TextTheme(
         displayLarge: GoogleFonts.truculenta(
           fontSize: 64,
@@ -145,6 +154,15 @@ class AppTheme {
           color: Colors.white,
         ),
       ),
+      checkboxTheme: CheckboxThemeData(
+        checkColor: WidgetStateProperty.all(Colors.white),
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return canfyGreen;
+          return Colors.transparent;
+        }),
+        side: const BorderSide(color: Color(0xFF95A1AC), width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
       textTheme: TextTheme(
         displayLarge: GoogleFonts.truculenta(
           fontSize: 64,
@@ -228,7 +246,10 @@ class AppTheme {
 
 class ThemeNotifier extends ChangeNotifier {
   static const String _themeKey = '__theme_mode__';
-  ThemeMode _themeMode = ThemeMode.system;
+  // Telas do app ainda hardcodam fundo branco (Scaffold, cards) em vez de
+  // usar os tokens do tema, então o darkTheme fica ilegível (texto branco
+  // sobre fundo branco). Trava em light até essas telas ficarem theme-aware.
+  ThemeMode _themeMode = ThemeMode.light;
   SharedPreferences? _prefs;
 
   ThemeMode get themeMode => _themeMode;

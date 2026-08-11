@@ -57,6 +57,9 @@ class PatientAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: AppColors.neutral000,
+      foregroundColor: AppColors.neutral900,
+      iconTheme: const IconThemeData(color: AppColors.neutral900),
+      actionsIconTheme: const IconThemeData(color: AppColors.neutral900),
       elevation: 0,
       scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,

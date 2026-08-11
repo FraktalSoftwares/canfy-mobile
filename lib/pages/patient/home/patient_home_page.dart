@@ -21,6 +21,7 @@ class _PatientHomePageState extends State<PatientHomePage> {
   // Dados do paciente
   String _patientName = 'Usuário';
   String? _patientAvatar;
+  bool _dadosBasicosCompletos = true;
 
   // Dados das consultas e pedidos
   List<Map<String, dynamic>> _upcomingConsultations = [];
@@ -51,10 +52,12 @@ class _PatientHomePageState extends State<PatientHomePage> {
       {
         final data = patientData;
         final profile = data?['profile'] as Map<String, dynamic>?;
+        final paciente = data?['paciente'] as Map<String, dynamic>?;
         if (profile != null) {
           setState(() {
             _patientName = profile['nome_completo'] as String? ?? 'Usuário';
             _patientAvatar = profile['foto_perfil_url'] as String?;
+            _dadosBasicosCompletos = _isDadosBasicosCompletos(profile, paciente);
           });
         }
       }
@@ -152,6 +155,23 @@ class _PatientHomePageState extends State<PatientHomePage> {
     }
   }
 
+  bool _isDadosBasicosCompletos(
+    Map<String, dynamic> profile,
+    Map<String, dynamic>? paciente,
+  ) {
+    bool preenchido(dynamic v) => v != null && v.toString().trim().isNotEmpty;
+
+    if (!preenchido(profile['nome_completo'])) return false;
+    if (!preenchido(profile['telefone'])) return false;
+    if (paciente == null) return false;
+    if (!preenchido(paciente['cpf'])) return false;
+    if (!preenchido(paciente['data_nascimento'])) return false;
+    if (!preenchido(paciente['sexo'])) return false;
+    if (!preenchido(paciente['endereco_completo'])) return false;
+
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasConsultations = _upcomingConsultations.isNotEmpty;
@@ -164,6 +184,7 @@ class _PatientHomePageState extends State<PatientHomePage> {
           title: 'Home',
           showLeading: false,
           avatarTappable: false,
+          actions: [NotificationsBellButton()],
         ),
         body: Center(
           child: CircularProgressIndicator(),
@@ -198,34 +219,38 @@ class _PatientHomePageState extends State<PatientHomePage> {
                   color: AppTokens.neutral800,
                 ),
               ),
-              const SizedBox(height: 24),
+              if (!_dadosBasicosCompletos) const SizedBox(height: 24),
               // Banner "Complete seus dados"
-              GestureDetector(
-                onTap: () => context.push('/patient/account/basic-data'),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTokens.yellow100,
-                    borderRadius: BorderRadius.circular(AppTokens.radius16),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline,
-                          size: 20, color: AppTokens.yellow900),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Complete seus dados cadastrais para começar a agendar consultas e receber compras dentro da Canfy.',
-                          style:
-                              AppTextStyles.bodyXs(color: AppTokens.yellow900),
+              if (!_dadosBasicosCompletos)
+                GestureDetector(
+                  onTap: () async {
+                    await context.push('/patient/account/basic-data');
+                    _loadData();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTokens.yellow100,
+                      borderRadius: BorderRadius.circular(AppTokens.radius16),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            size: 20, color: AppTokens.yellow900),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Complete seus dados cadastrais para começar a agendar consultas e receber compras dentro da Canfy.',
+                            style: AppTextStyles.bodyXs(
+                                color: AppTokens.yellow900),
+                          ),
                         ),
-                      ),
-                      const Icon(Icons.chevron_right,
-                          size: 20, color: AppTokens.yellow900),
-                    ],
+                        const Icon(Icons.chevron_right,
+                            size: 20, color: AppTokens.yellow900),
+                      ],
+                    ),
                   ),
                 ),
-              ),
               const SizedBox(height: 32),
               // Próximas consultas section
               Row(

@@ -517,6 +517,7 @@ class PatientService {
       } else {
         date = DateTime.parse(dateValue.toString());
       }
+      if (date.isUtc) date = date.toLocal();
 
       // Formato DD/MM/YY
       final day = date.day.toString().padLeft(2, '0');
@@ -558,6 +559,7 @@ class PatientService {
       } else {
         return '--:--';
       }
+      if (dt.isUtc) dt = dt.toLocal();
       return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (e) {
       return '--:--';

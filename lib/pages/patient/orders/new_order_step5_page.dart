@@ -434,6 +434,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       hintStyle: TextStyle(color: Color(0xFF7C7C79), fontSize: 14),
     );
+    const inputTextStyle = TextStyle(color: Color(0xFF14181B), fontSize: 14);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -443,6 +444,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
               flex: 2,
               child: TextField(
                 controller: _logradouroController,
+                style: inputTextStyle,
                 decoration:
                     inputDecoration.copyWith(hintText: 'Ex: Rua rego freitas'),
               ),
@@ -451,6 +453,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
             Expanded(
               child: TextField(
                 controller: _numeroController,
+                style: inputTextStyle,
                 decoration: inputDecoration.copyWith(hintText: 'Ex: 452'),
                 keyboardType: TextInputType.number,
               ),
@@ -464,6 +467,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
               flex: 2,
               child: TextField(
                 controller: _cepController,
+                style: inputTextStyle,
                 decoration: inputDecoration.copyWith(hintText: 'Ex: 01240-001'),
                 keyboardType: TextInputType.number,
               ),
@@ -472,6 +476,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
             Expanded(
               child: TextField(
                 controller: _estadoController,
+                style: inputTextStyle,
                 decoration: inputDecoration.copyWith(hintText: 'Ex: SP'),
                 textCapitalization: TextCapitalization.characters,
               ),
@@ -481,16 +486,19 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
         const SizedBox(height: 12),
         TextField(
           controller: _cidadeController,
+          style: inputTextStyle,
           decoration: inputDecoration.copyWith(hintText: 'Ex: São Paulo'),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _bairroController,
+          style: inputTextStyle,
           decoration: inputDecoration.copyWith(hintText: 'Ex: Vila Madalena'),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _complementoController,
+          style: inputTextStyle,
           decoration: inputDecoration.copyWith(hintText: 'Ex: Apto 2006'),
         ),
       ],
@@ -753,6 +761,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
             const SizedBox(height: 8),
             TextField(
               controller: _couponController,
+              style: const TextStyle(color: Color(0xFF14181B)),
               decoration: InputDecoration(
                 hintText: 'Código do cupom',
                 hintStyle: const TextStyle(color: Color(0xFF00994B)),
@@ -1074,6 +1083,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
           const SizedBox(height: 6),
           TextField(
             controller: _cardNameController,
+            style: const TextStyle(color: Color(0xFF14181B)),
             decoration: _inputDecoration('Nome como no cartão'),
             textCapitalization: TextCapitalization.words,
           ),
@@ -1086,6 +1096,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
           const SizedBox(height: 6),
           TextField(
             controller: _cardNumberController,
+            style: const TextStyle(color: Color(0xFF14181B)),
             keyboardType: TextInputType.number,
             inputFormatters: [InputMasks.cardNumber],
             decoration: _inputDecoration('0000 0000 0000 0000'),
@@ -1105,6 +1116,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
                     const SizedBox(height: 6),
                     TextField(
                       controller: _validityController,
+                      style: const TextStyle(color: Color(0xFF14181B)),
                       keyboardType: TextInputType.number,
                       inputFormatters: [InputMasks.cardValidity],
                       decoration: _inputDecoration('MM/AA'),
@@ -1125,6 +1137,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
                     const SizedBox(height: 6),
                     TextField(
                       controller: _cvvController,
+                      style: const TextStyle(color: Color(0xFF14181B)),
                       keyboardType: TextInputType.number,
                       obscureText: true,
                       inputFormatters: [InputMasks.cvv],
@@ -1144,6 +1157,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
           const SizedBox(height: 6),
           TextField(
             controller: _cpfController,
+            style: const TextStyle(color: Color(0xFF14181B)),
             keyboardType: TextInputType.number,
             inputFormatters: [InputMasks.cpf],
             decoration: _inputDecoration('000.000.000-00'),
@@ -1158,6 +1172,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
             const SizedBox(height: 6),
             DropdownButtonFormField<int>(
               value: _installments,
+              dropdownColor: Colors.white,
               decoration: _inputDecoration(null),
               items: List.generate(12, (i) => i + 1)
                   .map((i) => DropdownMenuItem<int>(

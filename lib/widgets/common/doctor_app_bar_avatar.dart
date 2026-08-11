@@ -42,8 +42,7 @@ class _DoctorAppBarAvatarState extends State<DoctorAppBarAvatar> {
         final list = result['data'] as List;
         if (list.isNotEmpty) {
           final profile = list[0] as Map<String, dynamic>;
-          url = profile['avatar_url'] as String? ??
-              profile['foto_perfil_url'] as String?;
+          url = profile['foto_perfil_url'] as String?;
           if (url != null) {
             url = url.trim().isEmpty ? null : _resolveAvatarUrl(url);
           }

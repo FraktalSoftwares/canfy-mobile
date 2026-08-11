@@ -104,8 +104,7 @@ class _HomePageState extends State<HomePage> {
         if (list.isNotEmpty) {
           final profile = list[0] as Map<String, dynamic>;
           nome = profile['nome_completo'] as String?;
-          avatarUrl = profile['avatar_url'] as String? ??
-              profile['foto_perfil_url'] as String?;
+          avatarUrl = profile['foto_perfil_url'] as String?;
           if (avatarUrl != null) avatarUrl = _resolveAvatarUrl(avatarUrl);
         }
       }
@@ -220,11 +219,25 @@ class _HomePageState extends State<HomePage> {
         return da.compareTo(db);
       });
 
+      // Contadores já calculados: exibe já aqui, antes das chamadas de rede
+      // abaixo, para que uma falha nelas não zere números que já temos.
+      if (mounted) {
+        setState(() {
+          _consultasRealizadas = realizadas;
+          _atendimentosSemana = semana;
+        });
+      }
+
       String valorConsulta = 'R\$ —';
-      final valorResult = await _configuracoesService.getValorConsultaPadrao();
-      if (valorResult['success'] == true && valorResult['data'] != null) {
-        final valor = valorResult['data'] as double;
-        valorConsulta = 'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+      try {
+        final valorResult =
+            await _configuracoesService.getValorConsultaPadrao();
+        if (valorResult['success'] == true && valorResult['data'] != null) {
+          final valor = valorResult['data'] as double;
+          valorConsulta = 'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+        }
+      } catch (e) {
+        debugPrint('Erro ao carregar valor da consulta: $e');
       }
 
       final withNames = <Map<String, dynamic>>[];
@@ -232,7 +245,11 @@ class _HomePageState extends State<HomePage> {
         final pacienteId = a['paciente_id'] as String?;
         String patientName = 'Paciente';
         if (pacienteId != null) {
-          patientName = await _medicoService.getPacienteNome(pacienteId);
+          try {
+            patientName = await _medicoService.getPacienteNome(pacienteId);
+          } catch (e) {
+            debugPrint('Erro ao carregar nome do paciente: $e');
+          }
         }
         withNames.add({
           'dateTime': _formatDateTime(a['dt'] as DateTime),
@@ -244,13 +261,11 @@ class _HomePageState extends State<HomePage> {
 
       if (mounted) {
         setState(() {
-          _consultasRealizadas = realizadas;
-          _atendimentosSemana = semana;
           _upcomingAppointments = withNames;
         });
       }
-    } catch (_) {
-      // mantém valores padrão
+    } catch (e) {
+      debugPrint('Erro ao carregar estatísticas da home do médico: $e');
     }
   }
 
@@ -579,6 +594,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text(

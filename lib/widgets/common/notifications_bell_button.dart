@@ -33,7 +33,7 @@ class _NotificationsBellButtonState extends State<NotificationsBellButton> {
       icon: Stack(
         clipBehavior: Clip.none,
         children: [
-          const Icon(Icons.notifications_outlined),
+          const Icon(Icons.notifications_outlined, color: Color(0xFF14181B)),
           if (_unreadCount > 0)
             Positioned(
               right: -2,

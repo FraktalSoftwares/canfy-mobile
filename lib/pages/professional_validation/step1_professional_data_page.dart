@@ -1158,6 +1158,7 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
           ),
           child: DropdownButtonFormField<String>(
             value: currentNome,
+            dropdownColor: Colors.white,
             decoration: InputDecoration(
               hintText: 'Selecione sua especialidade',
               hintStyle: AppTextStyles.arimo(
@@ -1283,6 +1284,7 @@ class _Step1ProfessionalDataPageState extends State<Step1ProfessionalDataPage> {
           ),
           child: DropdownButtonFormField<String>(
             value: value,
+            dropdownColor: Colors.white,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: AppTextStyles.arimo(

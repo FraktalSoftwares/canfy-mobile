@@ -230,8 +230,7 @@ class _BasicDataPageState extends State<BasicDataPage> {
           _phoneController.text = _formatPhoneForDisplay(telefone);
 
           // Avatar URL
-          final avatarPath = profile['avatar_url'] as String? ??
-              profile['foto_perfil_url'] as String?;
+          final avatarPath = profile['foto_perfil_url'] as String?;
           if (avatarPath != null && avatarPath.trim().isNotEmpty) {
             if (avatarPath.startsWith('http')) {
               _avatarUrl = avatarPath;
@@ -326,8 +325,20 @@ class _BasicDataPageState extends State<BasicDataPage> {
     final url = up['url'] as String;
     final userId = _api.currentUser?.id;
     if (userId != null) {
-      await _api.put('profiles', {'id': userId}, {'avatar_url': url});
+      final result = await _api.put(
+        'profiles',
+        {'id': userId},
+        {'foto_perfil_url': url},
+      );
+      if (result['success'] != true) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível salvar a foto.')),
+        );
+        return;
+      }
     }
+    if (!mounted) return;
     setState(() => _avatarUrl = url);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Foto atualizada.')),

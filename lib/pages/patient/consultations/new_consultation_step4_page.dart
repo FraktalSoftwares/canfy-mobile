@@ -961,6 +961,7 @@ class _NewConsultationStep4PageState extends State<NewConsultationStep4Page> {
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int>(
               value: _installments.clamp(1, 12),
+              dropdownColor: Colors.white,
               isExpanded: true,
               items: options.entries
                   .map((e) => DropdownMenuItem(
