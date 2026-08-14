@@ -491,6 +491,7 @@ class _BasicDataPageState extends State<BasicDataPage> {
 
         // Atualizar diretamente via API para garantir que os dados são enviados
         final updateData = <String, dynamic>{};
+        if (telefoneRaw.isNotEmpty) updateData['telefone'] = telefoneRaw;
         if (cpfRaw.isNotEmpty) updateData['cpf'] = cpfRaw;
         if (crm.isNotEmpty) updateData['crm'] = crm;
         if (ufCrm != null && ufCrm.isNotEmpty) updateData['uf_crm'] = ufCrm;
