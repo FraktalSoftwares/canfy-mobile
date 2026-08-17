@@ -7,6 +7,7 @@ import '../../services/api/configuracoes_service.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
 import '../../widgets/common/circle_icon_button.dart';
+import '../../utils/date_formatter.dart';
 
 class AppointmentDetailsPage extends StatefulWidget {
   const AppointmentDetailsPage({super.key});
@@ -65,7 +66,7 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
   Widget build(BuildContext context) {
     final paciente = (_consulta?['paciente_nome'] as String?)?.trim();
     final queixa = (_consulta?['queixa_principal'] as String?)?.trim();
-    final dt = DateTime.tryParse(_consulta?['data_consulta']?.toString() ?? '');
+    final consultaDateTime = DateFormatter.parseConsulta(_consulta?['data_consulta']);
     final resumo = _detalhe?['resumo'] as String?;
     final receita = _detalhe?['receita'] as Map<String, dynamic>?;
     final itens = (_detalhe?['itens'] as List?)?.cast<Map<String, dynamic>>() ?? [];
@@ -112,7 +113,7 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
                           children: [
                             Expanded(
                               child: Text(
-                                dt != null ? _fmtDateTime(dt) : 'Consulta',
+                                consultaDateTime != null ? _fmtDateTime(consultaDateTime) : 'Consulta',
                                 style: AppTextStyles.bodySm(
                                   color: AppTokens.neutral900,
                                   weight: AppTokens.weightSemibold,
@@ -294,10 +295,7 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
     );
   }
 
-  String _fmtDateTime(DateTime d) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(d.day)}/${two(d.month)}/${two(d.year % 100)} • ${two(d.hour)}:${two(d.minute)}';
-  }
+  String _fmtDateTime(DateTime d) => DateFormatter.formatDateTime(d);
 
   String _fmtDateOnly(String? iso) {
     if (iso == null) return '--';

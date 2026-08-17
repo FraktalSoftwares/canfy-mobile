@@ -9,6 +9,7 @@ import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/notifications_bell_button.dart';
 import '../../widgets/common/safe_image_asset.dart';
 import '../../widgets/common/circle_icon_button.dart';
+import '../../utils/date_formatter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -53,15 +54,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  static String _formatDateTime(DateTime dt) {
-    final d = dt.toLocal();
-    final day = d.day.toString().padLeft(2, '0');
-    final month = d.month.toString().padLeft(2, '0');
-    final year = d.year.toString().substring(2);
-    final hour = d.hour.toString().padLeft(2, '0');
-    final min = d.minute.toString().padLeft(2, '0');
-    return '$day/$month/$year • $hour:$min';
-  }
+  static String _formatDateTime(DateTime dt) =>
+      DateFormatter.formatDateTime(dt.toLocal());
 
   /// Carrega profile, médico, consultas e catálogo.
   Future<void> _loadUserData() async {

@@ -7,6 +7,7 @@ import '../../services/api/medico_service.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
+import '../../utils/date_formatter.dart';
 
 class PreConsultationPage extends StatefulWidget {
   /// Consulta a ser atendida (mapa retornado por medico_listar_atendimentos),
@@ -451,7 +452,7 @@ class _PreConsultationPageState extends State<PreConsultationPage> {
   }
 
   Widget _consultaAnteriorCard(Map<String, dynamic> c) {
-    final dt = DateTime.tryParse(c['data_consulta']?.toString() ?? '');
+    final data = DateFormatter.formatConsultaDate(c['data_consulta']);
     final queixa = (c['queixa_principal'] as String?)?.trim();
     final documentoUrl = c['documento_url'] as String?;
     return Container(
@@ -464,7 +465,7 @@ class _PreConsultationPageState extends State<PreConsultationPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(dt != null ? _fmtDate(dt) : '--',
+          Text(data,
               style: AppTextStyles.bodySm(
                   color: AppTokens.neutral600,
                   weight: AppTokens.weightSemibold)),
@@ -532,8 +533,4 @@ class _PreConsultationPageState extends State<PreConsultationPage> {
     );
   }
 
-  String _fmtDate(DateTime d) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(d.day)}/${two(d.month)}/${d.year}';
-  }
 }

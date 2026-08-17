@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../constants/app_colors.dart';
 import '../../services/api/medico_service.dart';
+import '../../utils/date_formatter.dart';
 
 /// Prontuário do Paciente — wizard de 5 blocos (Figma 12.1.2.2).
 class ProntuarioPage extends StatefulWidget {
@@ -473,8 +474,7 @@ class _ProntuarioPageState extends State<ProntuarioPage> {
 
   Widget _buildBlock1() {
     final consulta = _consulta ?? {};
-    final dataConsulta = DateTime.tryParse(
-        consulta['data_consulta']?.toString() ?? '');
+    final dataConsulta = DateFormatter.parseConsulta(consulta['data_consulta']);
     final numero = widget.consultaId.substring(0, 5).toUpperCase();
 
     return Column(

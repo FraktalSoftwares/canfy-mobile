@@ -26,6 +26,35 @@ class DateFormatter {
     final dateFormat = DateFormat("dd 'de' MMMM 'de' yyyy", 'pt_BR');
     return dateFormat.format(date);
   }
+
+  /// Faz o parse de um timestamp de consulta (ex.: data_consulta, vindo do
+  /// Postgres como timestamptz/UTC) e converte para o horário local do
+  /// dispositivo. Usar sempre este helper para exibir data/hora de consulta
+  /// — parsear sem `.toLocal()` mostra o horário UTC (ex.: +3h em
+  /// America/Sao_Paulo), que foi a causa do bug de horário incorreto.
+  static DateTime? parseConsulta(dynamic raw) {
+    if (raw == null) return null;
+    final dt = DateTime.tryParse(raw.toString());
+    return dt?.toLocal();
+  }
+
+  /// Formata data e hora de uma consulta a partir do valor bruto do banco.
+  static String formatConsultaDateTime(dynamic raw) {
+    final dt = parseConsulta(raw);
+    return dt != null ? formatDateTime(dt) : '--';
+  }
+
+  /// Formata apenas a data de uma consulta a partir do valor bruto do banco.
+  static String formatConsultaDate(dynamic raw) {
+    final dt = parseConsulta(raw);
+    return dt != null ? formatDate(dt) : '--';
+  }
+
+  /// Formata apenas a hora de uma consulta a partir do valor bruto do banco.
+  static String formatConsultaTime(dynamic raw) {
+    final dt = parseConsulta(raw);
+    return dt != null ? formatTime(dt) : '--';
+  }
 }
 
 

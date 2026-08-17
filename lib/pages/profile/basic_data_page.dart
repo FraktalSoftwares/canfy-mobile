@@ -490,8 +490,10 @@ class _BasicDataPageState extends State<BasicDataPage> {
             'Salvando médico: cpf=$cpfRaw, crm=$crm, uf=$ufCrm, data=$dataNascimento, endereco=$endereco');
 
         // Atualizar diretamente via API para garantir que os dados são enviados
+        // Telefone não entra aqui: profiles.telefone (acima) é a origem, e um
+        // trigger no banco mantém medicos.telefone em sincronia. Assim, uma
+        // colisão de CRM/CPF neste update não impede o telefone de propagar.
         final updateData = <String, dynamic>{};
-        if (telefoneRaw.isNotEmpty) updateData['telefone'] = telefoneRaw;
         if (cpfRaw.isNotEmpty) updateData['cpf'] = cpfRaw;
         if (crm.isNotEmpty) updateData['crm'] = crm;
         if (ufCrm != null && ufCrm.isNotEmpty) updateData['uf_crm'] = ufCrm;

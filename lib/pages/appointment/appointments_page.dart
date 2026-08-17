@@ -7,6 +7,7 @@ import '../../services/api/configuracoes_service.dart';
 import '../../widgets/common/bottom_navigation_bar_doctor.dart';
 import '../../widgets/common/doctor_app_bar_avatar.dart';
 import '../../widgets/common/circle_icon_button.dart';
+import '../../utils/date_formatter.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
@@ -215,9 +216,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
   }
 
   Widget _buildCard(Map<String, dynamic> c, {required bool isHistory}) {
-    final dt = DateTime.tryParse(c['data_consulta']?.toString() ?? '');
-    final data = dt != null ? _fmtDate(dt) : '--';
-    final hora = dt != null ? _fmtTime(dt) : '--';
+    final data = DateFormatter.formatConsultaDate(c['data_consulta']);
+    final hora = DateFormatter.formatConsultaTime(c['data_consulta']);
     final paciente = (c['paciente_nome'] as String?)?.trim();
     final naFila = c['na_fila'] == true;
     final id = c['id'] as String;
@@ -376,13 +376,4 @@ class _AppointmentsPageState extends State<AppointmentsPage>
     );
   }
 
-  String _fmtDate(DateTime d) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(d.day)}/${two(d.month)}/${two(d.year % 100)}';
-  }
-
-  String _fmtTime(DateTime d) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(d.hour)}:${two(d.minute)}';
-  }
 }

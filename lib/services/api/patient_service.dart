@@ -5,6 +5,45 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class PatientService {
   final ApiService _apiService = ApiService();
 
+  /// Busca os dados públicos de um médico (nome, CRM, especialidade, foto)
+  /// via RPC get_medico_publico. Necessário porque RLS de `profiles` não
+  /// permite paciente ler a linha do médico diretamente — sem essa RPC,
+  /// `doctorAvatar` sempre voltava null e a UI caía no placeholder.
+  Future<Map<String, dynamic>> _fetchMedicoPublico(String medicoId) async {
+    String doctorName = 'Médico não informado';
+    String doctorSpecialty = 'Especialidade não informada';
+    String? doctorAvatar;
+    String? doctorCrm;
+
+    try {
+      final result = await ApiService.client.rpc(
+        'get_medico_publico',
+        params: {'p_medico_id': medicoId},
+      ) as List;
+
+      if (result.isNotEmpty) {
+        final medico = result[0] as Map<String, dynamic>;
+        doctorName = medico['nome'] as String? ?? doctorName;
+        doctorSpecialty = medico['especialidade_nome'] as String? ?? doctorSpecialty;
+        doctorAvatar = medico['foto_perfil_url'] as String?;
+        final crm = medico['crm'] as String?;
+        final ufCrm = medico['uf_crm'] as String?;
+        if (crm != null && crm.isNotEmpty) {
+          doctorCrm = ufCrm != null && ufCrm.isNotEmpty ? 'CRM $crm-$ufCrm' : 'CRM $crm';
+        }
+      }
+    } catch (_) {
+      // mantém os valores padrão em caso de falha na RPC
+    }
+
+    return {
+      'doctorName': doctorName,
+      'doctorSpecialty': doctorSpecialty,
+      'doctorAvatar': doctorAvatar,
+      'doctorCrm': doctorCrm,
+    };
+  }
+
   /// Lista produtos do catálogo (visão do paciente).
   Future<Map<String, dynamic>> getProdutos({int limit = 50}) {
     return _apiService.getFiltered('produtos', limit: limit);
@@ -677,54 +716,11 @@ class PatientService {
 
         final medicoId = c['medico_id'] as String?;
         if (medicoId != null) {
-          final medicoResult = await _apiService.getFiltered(
-            'medicos',
-            filters: {'id': medicoId},
-            limit: 1,
-          );
-          if (medicoResult['success'] == true && medicoResult['data'] != null) {
-            final medicos = medicoResult['data'] as List;
-            if (medicos.isNotEmpty) {
-              final medico = medicos[0];
-              doctorName = medico['nome'] as String? ?? doctorName;
-              final crm = medico['crm'] as String?;
-              final ufCrm = medico['uf_crm'] as String?;
-              if (crm != null && crm.isNotEmpty) {
-                doctorCrm = ufCrm != null && ufCrm.isNotEmpty
-                    ? 'CRM $crm-$ufCrm'
-                    : 'CRM $crm';
-              }
-              final espId = medico['especialidade_id'] as String?;
-              if (espId != null) {
-                final espResult = await _apiService.getFiltered(
-                  'especialidades',
-                  filters: {'id': espId},
-                  limit: 1,
-                );
-                if (espResult['success'] == true &&
-                    espResult['data'] != null &&
-                    (espResult['data'] as List).isNotEmpty) {
-                  doctorSpecialty =
-                      (espResult['data'] as List)[0]['nome'] as String? ??
-                          doctorSpecialty;
-                }
-              }
-              final userId = medico['user_id'] as String?;
-              if (userId != null) {
-                final profileResult = await _apiService.getFiltered(
-                  'profiles',
-                  filters: {'id': userId},
-                  limit: 1,
-                );
-                if (profileResult['success'] == true &&
-                    profileResult['data'] != null &&
-                    (profileResult['data'] as List).isNotEmpty) {
-                  doctorAvatar = (profileResult['data'] as List)[0]
-                      ['foto_perfil_url'] as String?;
-                }
-              }
-            }
-          }
+          final medicoPublico = await _fetchMedicoPublico(medicoId);
+          doctorName = medicoPublico['doctorName'] as String;
+          doctorSpecialty = medicoPublico['doctorSpecialty'] as String;
+          doctorAvatar = medicoPublico['doctorAvatar'] as String?;
+          doctorCrm = medicoPublico['doctorCrm'] as String?;
         }
 
         final consultaId = c['id'];
@@ -1060,54 +1056,11 @@ class PatientService {
 
       final medicoId = c['medico_id'] as String?;
       if (medicoId != null) {
-        final medicoResult = await _apiService.getFiltered(
-          'medicos',
-          filters: {'id': medicoId},
-          limit: 1,
-        );
-        if (medicoResult['success'] == true && medicoResult['data'] != null) {
-          final medicos = medicoResult['data'] as List;
-          if (medicos.isNotEmpty) {
-            final medico = medicos[0];
-            doctorName = medico['nome'] as String? ?? doctorName;
-            final crm = medico['crm'] as String?;
-            final ufCrm = medico['uf_crm'] as String?;
-            if (crm != null && crm.isNotEmpty) {
-              doctorCrm = ufCrm != null && ufCrm.isNotEmpty
-                  ? 'CRM $crm-$ufCrm'
-                  : 'CRM $crm';
-            }
-            final espId = medico['especialidade_id'] as String?;
-            if (espId != null) {
-              final espResult = await _apiService.getFiltered(
-                'especialidades',
-                filters: {'id': espId},
-                limit: 1,
-              );
-              if (espResult['success'] == true &&
-                  espResult['data'] != null &&
-                  (espResult['data'] as List).isNotEmpty) {
-                doctorSpecialty =
-                    (espResult['data'] as List)[0]['nome'] as String? ??
-                        doctorSpecialty;
-              }
-            }
-            final userId = medico['user_id'] as String?;
-            if (userId != null) {
-              final profileResult = await _apiService.getFiltered(
-                'profiles',
-                filters: {'id': userId},
-                limit: 1,
-              );
-              if (profileResult['success'] == true &&
-                  profileResult['data'] != null &&
-                  (profileResult['data'] as List).isNotEmpty) {
-                doctorAvatar = (profileResult['data'] as List)[0]
-                    ['foto_perfil_url'] as String?;
-              }
-            }
-          }
-        }
+        final medicoPublico = await _fetchMedicoPublico(medicoId);
+        doctorName = medicoPublico['doctorName'] as String;
+        doctorSpecialty = medicoPublico['doctorSpecialty'] as String;
+        doctorAvatar = medicoPublico['doctorAvatar'] as String?;
+        doctorCrm = medicoPublico['doctorCrm'] as String?;
       }
 
       final dataConsulta = c['data_consulta'];
