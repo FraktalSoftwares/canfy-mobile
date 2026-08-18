@@ -87,8 +87,18 @@ class _AppointmentsPageState extends State<AppointmentsPage>
       );
       _load();
     } else {
+      final message = (res['message'] as String? ?? '');
+      final String feedback;
+      if (message.contains('ainda não é sua vez nesta fila')) {
+        feedback =
+            'Essa consulta ainda não chegou no seu nível de prioridade na fila.';
+      } else if (message.contains('consulta indisponivel')) {
+        feedback = 'Outro médico já assumiu essa consulta.';
+      } else {
+        feedback = 'Consulta indisponível. Atualize a lista.';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Consulta indisponível. Atualize a lista.')),
+        SnackBar(content: Text(feedback)),
       );
       _load();
     }
@@ -222,6 +232,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
     final naFila = c['na_fila'] == true;
     final id = c['id'] as String;
     final status = c['status'] as String? ?? '';
+    final sintomas = (c['sintomas'] as List?)?.cast<String>() ?? const [];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -283,6 +294,18 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                 ),
             ],
           ),
+          if (naFila && sintomas.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text('Queixas', style: AppTextStyles.bodySm(color: AppTokens.neutral600)),
+            const SizedBox(height: 4),
+            Text(
+              sintomas.join(', '),
+              style: AppTextStyles.bodyMd(
+                color: AppTokens.neutral900,
+                weight: AppTokens.weightSemibold,
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           Row(
             children: [

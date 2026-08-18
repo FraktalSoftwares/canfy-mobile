@@ -36,6 +36,13 @@
     <key>FlutterDeepLinkingEnabled</key>
     <true/>
 
+	<!-- Push (FCM/APNs): permite receber notificação com o app em background. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
 
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>

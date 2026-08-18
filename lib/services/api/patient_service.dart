@@ -581,6 +581,8 @@ class PatientService {
         return 'Finalizada';
       case 'cancelada':
         return 'Cancelada';
+      case 'expirada':
+        return 'Não confirmada';
       default:
         return status;
     }
@@ -885,21 +887,11 @@ class PatientService {
         };
       }
 
-      // Consulta nova (não é retorno com médico já escolhido): atribui
-      // automaticamente ao médico disponível naquele dia/horário que
-      // atendeu menos até agora. Se ninguém corresponder, a consulta
-      // permanece na fila manual (trigger existente já notifica os médicos).
-      if (medicoId == null || medicoId.isEmpty) {
-        try {
-          await ApiService.client.rpc(
-            'atribuir_medico_automatico',
-            params: {'p_consulta_id': id},
-          );
-        } catch (_) {
-          // Falha na atribuição automática não deve bloquear a criação da
-          // consulta — ela segue disponível na fila manual como fallback.
-        }
-      }
+      // Consulta nova (não é retorno com médico já escolhido): a atribuição
+      // do médico passa pelo motor de despacho por nível de prioridade
+      // (trigger notify_medicos_nova_consulta_fila -> despachar_nivel),
+      // disparado automaticamente no INSERT acima. Nenhuma ação adicional
+      // é necessária aqui.
 
       return {
         'success': true,

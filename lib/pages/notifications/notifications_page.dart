@@ -36,6 +36,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
       if (!mounted) return;
       setState(() => notificacao['lida'] = true);
     }
+    final rota = notificacao['rota'] as String?;
+    if (rota != null && rota.isNotEmpty && mounted) {
+      context.push(rota);
+    }
   }
 
   Future<void> _markAllAsRead() async {

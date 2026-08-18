@@ -193,6 +193,10 @@ class _ConsultationsPageState extends State<ConsultationsPage>
         statusColor = AppColors.statusCancelBg;
         statusTextColor = AppColors.statusCancelText;
         break;
+      case 'Não confirmada':
+        statusColor = AppColors.statusCancelBg;
+        statusTextColor = AppColors.statusCancelText;
+        break;
       default:
         statusColor = AppColors.statusGrey;
         statusTextColor = AppColors.statusGreyDark;

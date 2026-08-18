@@ -88,3 +88,12 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.0"
 }
+
+// Push (FCM): só aplica o plugin do google-services se o arquivo de config
+// existir. Sem isso, o build falharia para quem ainda não gerou o
+// google-services.json no Firebase Console — a integração de push funciona
+// como qualquer outra deste projeto sem credencial: some do build até ser
+// configurada, em vez de quebrar a compilação de todo o app.
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}

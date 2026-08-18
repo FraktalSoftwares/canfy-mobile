@@ -2,6 +2,8 @@
     package="com.mycompany.canfymobile"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Necessária no Android 13+ para exibir push notifications (FCM). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
 
     <application

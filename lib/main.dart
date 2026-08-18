@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -8,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'constants/supabase_config.dart';
+import 'services/push/push_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,11 +26,23 @@ void main() async {
       'Obtenha a chave em: https://supabase.com/dashboard/project/agqqxxfrnpuriwrmwdrq/settings/api'
     );
   }
-  
+
   await Supabase.initialize(
     url: SupabaseConfig.supabaseUrl,
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
+
+  // Push (FCM/APNs) é opcional: sem google-services.json/GoogleService-Info.plist
+  // configurados nativamente, Firebase.initializeApp() lança e o app segue
+  // funcionando normalmente sem push, como qualquer outra integração externa
+  // não configurada neste projeto.
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    await PushService.instance.init();
+  } catch (e) {
+    debugPrint('Push notifications não configuradas: $e');
+  }
 
   runApp(const MyApp());
 }
