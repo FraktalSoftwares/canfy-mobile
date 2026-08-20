@@ -47,9 +47,13 @@ class ApiService {
   ///   filters: {'status': 'active'},
   /// );
   /// ```
+  /// [inFilters] aplica `.inFilter(coluna, valores)` — use para buscar varios
+  /// registros de uma vez (ex.: todos os produtos de uma receita) em lugar de
+  /// uma query por id.
   Future<Map<String, dynamic>> getFiltered(
     String table, {
     Map<String, dynamic>? filters,
+    Map<String, List<dynamic>>? inFilters,
     int? limit,
     String? orderBy,
     bool ascending = true,
@@ -60,6 +64,12 @@ class ApiService {
       if (filters != null) {
         filters.forEach((key, value) {
           query = (query as dynamic).eq(key, value);
+        });
+      }
+
+      if (inFilters != null) {
+        inFilters.forEach((key, values) {
+          query = (query as dynamic).inFilter(key, values);
         });
       }
 

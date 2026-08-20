@@ -1,3 +1,48 @@
+/// Um produto prescrito dentro do pedido.
+///
+/// A receita pode indicar mais de um produto; cada um tem o seu próprio preço,
+/// então o pedido precisa carregar a lista e não um único produto.
+class OrderItem {
+  final String produtoId;
+  final String nome;
+  final double precoUnitario;
+  final int quantidade;
+
+  const OrderItem({
+    required this.produtoId,
+    required this.nome,
+    required this.precoUnitario,
+    required this.quantidade,
+  });
+
+  double get subtotal => precoUnitario * quantidade;
+
+  OrderItem copyWith({
+    String? produtoId,
+    String? nome,
+    double? precoUnitario,
+    int? quantidade,
+  }) {
+    return OrderItem(
+      produtoId: produtoId ?? this.produtoId,
+      nome: nome ?? this.nome,
+      precoUnitario: precoUnitario ?? this.precoUnitario,
+      quantidade: quantidade ?? this.quantidade,
+    );
+  }
+
+  /// Constrói a partir do mapa devolvido por
+  /// `PatientService._carregarItensReceita`.
+  factory OrderItem.fromReceitaItem(Map<String, dynamic> item) {
+    return OrderItem(
+      produtoId: item['produto_id'] as String? ?? '',
+      nome: item['produto_nome'] as String? ?? 'Produto não especificado',
+      precoUnitario: (item['preco_unitario'] as num?)?.toDouble() ?? 0.0,
+      quantidade: item['quantidade_prescrita'] as int? ?? 0,
+    );
+  }
+}
+
 /// Dados do formulário de novo pedido, passados entre as etapas.
 class NewOrderFormData {
   /// ID da receita selecionada (step 1)
@@ -38,6 +83,12 @@ class NewOrderFormData {
 
   /// Valor unitário usado no pedido (para cálculo)
   final double precoUnitario;
+
+  /// Itens prescritos na receita, cada um com seu preço.
+  ///
+  /// Quando vazia, o pedido cai no comportamento antigo de produto único
+  /// (`produtoId` + `precoUnitario` + `quantity`).
+  final List<OrderItem> itens;
 
   /// URL do documento RG/CNH (step 3)
   final String? rgDocumentUrl;
@@ -118,6 +169,7 @@ class NewOrderFormData {
     this.concentracaoCbd,
     this.concentracaoThc,
     this.precoUnitario = 0.0,
+    this.itens = const [],
     this.rgDocumentUrl,
     this.rgFileName,
     this.addressProofUrl,
@@ -160,9 +212,17 @@ class NewOrderFormData {
   String get canalDisplay =>
       (canalNome != null && canalNome!.isNotEmpty) ? canalNome! : canalAquisicao;
 
-  /// Valor do produto (quantidade * preço unitário)
-  double get productValue =>
-      (precoUnitario > 0 ? precoUnitario : valorTotal) * quantity;
+  /// Valor dos produtos.
+  ///
+  /// Com múltiplos itens, soma o subtotal de cada um (preço do próprio produto
+  /// × quantidade prescrita). Sem itens, mantém o cálculo antigo de produto
+  /// único.
+  double get productValue {
+    if (itens.isNotEmpty) {
+      return itens.fold<double>(0.0, (total, item) => total + item.subtotal);
+    }
+    return (precoUnitario > 0 ? precoUnitario : valorTotal) * quantity;
+  }
 
   /// Total com frete
   double get totalWithShipping => productValue + shippingCost;
@@ -181,6 +241,7 @@ class NewOrderFormData {
     String? concentracaoCbd,
     String? concentracaoThc,
     double? precoUnitario,
+    List<OrderItem>? itens,
     String? rgDocumentUrl,
     String? rgFileName,
     String? addressProofUrl,
@@ -217,6 +278,7 @@ class NewOrderFormData {
       concentracaoCbd: concentracaoCbd ?? this.concentracaoCbd,
       concentracaoThc: concentracaoThc ?? this.concentracaoThc,
       precoUnitario: precoUnitario ?? this.precoUnitario,
+      itens: itens ?? this.itens,
       rgDocumentUrl: rgDocumentUrl ?? this.rgDocumentUrl,
       rgFileName: rgFileName ?? this.rgFileName,
       addressProofUrl: addressProofUrl ?? this.addressProofUrl,

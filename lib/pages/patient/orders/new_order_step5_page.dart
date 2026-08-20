@@ -105,7 +105,23 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
 
   Future<void> _cotarFrete(String cep) async {
     final f = widget.formData!;
-    if (f.produtoId == null || f.produtoId!.isEmpty) {
+    // A cotação aceita N itens (a edge function melhor-envio-cotar resolve os
+    // produtos com `.in`), então envia a receita inteira quando há mais de um.
+    final itensCotacao = f.itens.isNotEmpty
+        ? f.itens
+            .where((item) => item.produtoId.isNotEmpty)
+            .map((item) => {
+                  'produto_id': item.produtoId,
+                  'quantidade': item.quantidade,
+                })
+            .toList()
+        : (f.produtoId != null && f.produtoId!.isNotEmpty
+            ? [
+                {'produto_id': f.produtoId, 'quantidade': f.quantity},
+              ]
+            : const <Map<String, dynamic>>[]);
+
+    if (itensCotacao.isEmpty) {
       setState(() {
         _cotacaoError = 'Produto não identificado para cotação.';
       });
@@ -121,9 +137,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
     });
     final result = await _meService.cotar(
       cepDestino: cep,
-      itens: [
-        {'produto_id': f.produtoId, 'quantidade': f.quantity},
-      ],
+      itens: itensCotacao,
     );
     if (!mounted) return;
     if (result['success'] == true) {
@@ -304,6 +318,7 @@ class _NewOrderStep5PageState extends State<NewOrderStep5Page> {
         formaPagamento: _paymentMethod,
         produtoId: f.produtoId,
         precoUnitario: f.precoUnitario > 0 ? f.precoUnitario : f.valorTotal,
+        itens: f.itens,
         rgDocumentUrl: f.rgDocumentUrl,
         addressProofUrl: f.addressProofUrl,
         anvisaDocumentUrl: f.anvisaDocumentUrl,

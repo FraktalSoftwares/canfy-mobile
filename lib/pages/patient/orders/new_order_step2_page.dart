@@ -82,6 +82,11 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
   int get quantity => _quantity;
   int _quantity = 1;
 
+  /// Itens prescritos na receita. Com mais de um produto as quantidades vêm da
+  /// própria receita, então o seletor de quantidade não se aplica.
+  List<OrderItem> get _itens => formData.itens;
+  bool get _multiplosItens => _itens.length > 1;
+
   /// Rótulo amigável da forma farmacêutica (mesmo mapeamento do web FORMA_LABEL).
   String get _formaLabel {
     const labels = {
@@ -98,6 +103,11 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
   }
 
   double get _productValue {
+    // Com vários produtos prescritos, o valor é a soma de preço × quantidade de
+    // cada um — aplicar o preço do primeiro a todos cobrava o pedido errado.
+    if (_multiplosItens) {
+      return _itens.fold<double>(0.0, (total, item) => total + item.subtotal);
+    }
     final unitPrice = _precoUnitario ?? formData.valorTotal;
     return unitPrice * _quantity;
   }
@@ -239,6 +249,7 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                             ],
                           ),
                         ),
+                        if (!_multiplosItens)
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -294,6 +305,58 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                   ],
                 ),
               ),
+              if (_multiplosItens) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7F7F5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Produtos prescritos',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF3F3F3D),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ..._itens.map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${item.quantidade}x ${item.nome}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF3F3F3D),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                CurrencyFormatter.formatBRL(item.subtotal),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF007A3B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -466,8 +529,20 @@ class _NewOrderStep2PageState extends State<NewOrderStep2Page> {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () {
+                    // Produto único: a quantidade escolhida no seletor vale
+                    // para o item. Vários produtos: as quantidades vêm da receita.
+                    final itensAtualizados = _multiplosItens
+                        ? _itens
+                        : _itens
+                            .map((item) => item.copyWith(
+                                  quantidade: _quantity,
+                                  precoUnitario: _precoUnitario ??
+                                      item.precoUnitario,
+                                ))
+                            .toList();
                     final updated = formData.copyWith(
                       quantity: _quantity,
+                      itens: itensAtualizados,
                       precoUnitario: _precoUnitario ?? formData.valorTotal,
                       produtoId: _produtoId,
                       prescriberComments: _prescriberComments,

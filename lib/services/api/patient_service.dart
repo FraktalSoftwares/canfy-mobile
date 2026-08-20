@@ -1,5 +1,6 @@
 import '../api/api_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../models/order/new_order_form_data.dart';
 
 /// Serviço para operações relacionadas a pacientes
 class PatientService {
@@ -1178,6 +1179,125 @@ class PatientService {
     });
   }
 
+  /// Converte um valor vindo do Postgres (num ou String) em double.
+  double _parsePreco(dynamic valor) {
+    if (valor == null) return 0.0;
+    if (valor is num) return valor.toDouble();
+    if (valor is String) return double.tryParse(valor) ?? 0.0;
+    return 0.0;
+  }
+
+  /// Carrega os itens de uma receita já com nome e preço **de cada produto**.
+  ///
+  /// Antes, o fluxo de pedido só consultava o produto de `itens[0]` e aplicava
+  /// aquele preço a todos os itens: uma receita com mais de um produto era
+  /// cobrada errado e, se o primeiro produto estivesse sem preço, o total dava
+  /// zero e o app mostrava "não foi possível calcular o valor".
+  ///
+  /// Aqui os produtos são buscados de uma vez com `.inFilter`, e os itens vêm
+  /// ordenados por `created_at` para que a ordem seja estável entre execuções
+  /// (sem `order`, o PostgREST devolve em ordem arbitrária).
+  Future<List<Map<String, dynamic>>> _carregarItensReceita(
+      String receitaId) async {
+    final itensResult = await _apiService.getFiltered(
+      'receita_itens',
+      filters: {'receita_id': receitaId},
+      orderBy: 'created_at',
+    );
+
+    if (itensResult['success'] != true || itensResult['data'] == null) {
+      return [];
+    }
+
+    final itensBrutos = (itensResult['data'] as List)
+        .cast<Map<String, dynamic>>();
+    if (itensBrutos.isEmpty) return [];
+
+    final produtoIds = itensBrutos
+        .map((i) => i['produto_id'] as String?)
+        .whereType<String>()
+        .toSet()
+        .toList();
+
+    final produtosPorId = <String, Map<String, dynamic>>{};
+    if (produtoIds.isNotEmpty) {
+      final produtosResult = await _apiService.getFiltered(
+        'produtos',
+        inFilters: {'id': produtoIds},
+      );
+      if (produtosResult['success'] == true && produtosResult['data'] != null) {
+        for (final produto in (produtosResult['data'] as List)) {
+          final mapa = produto as Map<String, dynamic>;
+          final id = mapa['id'] as String?;
+          if (id != null) produtosPorId[id] = mapa;
+        }
+      }
+    }
+
+    final itens = <Map<String, dynamic>>[];
+    for (final item in itensBrutos) {
+      final produtoId = item['produto_id'] as String?;
+      final produto = produtoId != null ? produtosPorId[produtoId] : null;
+      final quantidade = item['quantidade_prescrita'] as int? ?? 0;
+
+      // `preco` é a coluna oficial; `preco_brl` cobre registros antigos que
+      // só foram gravados pelo cadastro web.
+      var precoUnitario = _parsePreco(produto?['preco']);
+      if (precoUnitario <= 0) {
+        precoUnitario = _parsePreco(produto?['preco_brl']);
+      }
+
+      // Último recurso: preço praticado em algum pedido anterior deste paciente.
+      if (precoUnitario <= 0 && produtoId != null) {
+        final precoResult = await _apiService.getFiltered(
+          'pedido_itens',
+          filters: {'produto_id': produtoId},
+          orderBy: 'created_at',
+          ascending: false,
+          limit: 1,
+        );
+        if (precoResult['success'] == true &&
+            precoResult['data'] != null &&
+            (precoResult['data'] as List).isNotEmpty) {
+          precoUnitario =
+              _parsePreco((precoResult['data'] as List)[0]['preco_unitario']);
+        }
+      }
+
+      itens.add({
+        'produto_id': produtoId,
+        'quantidade_prescrita': quantidade,
+        'produto_nome': produto?['nome_comercial'] as String? ??
+            'Produto não especificado',
+        'preco_unitario': precoUnitario,
+        'produto': produto,
+      });
+    }
+
+    return itens;
+  }
+
+  /// Soma preço × quantidade de cada item — o total correto da receita.
+  double _totalDosItens(List<Map<String, dynamic>> itens) {
+    var total = 0.0;
+    for (final item in itens) {
+      final preco = item['preco_unitario'] as double? ?? 0.0;
+      final quantidade = item['quantidade_prescrita'] as int? ?? 0;
+      total += preco * quantidade;
+    }
+    return total;
+  }
+
+  /// Rótulo de exibição da receita: nome do primeiro produto e, quando há mais
+  /// de um, quantos outros acompanham.
+  String _rotuloProdutos(List<Map<String, dynamic>> itens) {
+    if (itens.isEmpty) return 'Produto não especificado';
+    final primeiro = itens.first['produto_nome'] as String;
+    if (itens.length == 1) return primeiro;
+    final outros = itens.length - 1;
+    return '$primeiro + $outros ${outros == 1 ? "outro" : "outros"}';
+  }
+
   /// Buscar receitas do paciente (ativas e válidas)
   Future<Map<String, dynamic>> getPrescriptions(
       {bool onlyActive = true}) async {
@@ -1290,83 +1410,10 @@ class PatientService {
           }
         }
 
-        // Buscar produtos da receita
-        final itensResult = await _apiService.getFiltered(
-          'receita_itens',
-          filters: {'receita_id': receitaId},
-        );
-
-        String produtoNome = 'Produto não especificado';
-        double valorTotal = 0.0;
-
-        if (itensResult['success'] && itensResult['data'] != null) {
-          final itens = itensResult['data'] as List;
-          if (itens.isNotEmpty) {
-            final primeiroItem = itens[0];
-            final produtoId = primeiroItem['produto_id'] as String?;
-
-            if (produtoId != null) {
-              final produtoResult = await _apiService.getFiltered(
-                'produtos',
-                filters: {'id': produtoId},
-                limit: 1,
-              );
-
-              double precoUnitario = 0.0;
-              if (produtoResult['success'] && produtoResult['data'] != null) {
-                final produtos = produtoResult['data'] as List;
-                if (produtos.isNotEmpty) {
-                  produtoNome = produtos[0]['nome_comercial'] as String? ??
-                      'Produto não especificado';
-                  // Usar preço do produto (campo preco na tabela produtos)
-                  final precoProduto = produtos[0]['preco'];
-                  if (precoProduto != null) {
-                    try {
-                      precoUnitario = precoProduto is String
-                          ? double.tryParse(precoProduto) ?? 0.0
-                          : (precoProduto as num).toDouble();
-                    } catch (_) {
-                      precoUnitario = 0.0;
-                    }
-                  }
-                }
-              }
-              // Fallback: preço do último pedido_itens se produto.preco não estiver definido
-              if (precoUnitario <= 0) {
-                final precoResult = await _apiService.getFiltered(
-                  'pedido_itens',
-                  filters: {'produto_id': produtoId},
-                  orderBy: 'created_at',
-                  ascending: false,
-                  limit: 1,
-                );
-                if (precoResult['success'] &&
-                    precoResult['data'] != null &&
-                    (precoResult['data'] as List).isNotEmpty &&
-                    (precoResult['data'] as List)[0]['preco_unitario'] !=
-                        null) {
-                  try {
-                    final p =
-                        (precoResult['data'] as List)[0]['preco_unitario'];
-                    precoUnitario = p is String
-                        ? double.tryParse(p) ?? 0.0
-                        : (p as num).toDouble();
-                  } catch (_) {
-                    precoUnitario = 0.0;
-                  }
-                }
-              }
-
-              // Calcular valor total: somar todos os itens da receita
-              for (var item in itens) {
-                final quantidade = item['quantidade_prescrita'] as int? ?? 0;
-                if (precoUnitario > 0) {
-                  valorTotal += precoUnitario * quantidade;
-                }
-              }
-            }
-          }
-        }
+        // Itens da receita, cada um com o preço do SEU produto.
+        final itens = await _carregarItensReceita(receitaId);
+        final produtoNome = _rotuloProdutos(itens);
+        final valorTotal = _totalDosItens(itens);
 
         // Formatar datas
         String dataEmissao = _formatDateDDMMYYYY(receita['data_emissao']);
@@ -1379,6 +1426,7 @@ class PatientService {
           'issueDate': dataEmissao,
           'validity': validade,
           'valorTotal': valorTotal,
+          'itens': itens,
         });
       }
 
@@ -1601,12 +1649,10 @@ class PatientService {
         }
       }
 
-      final itensResult = await _apiService.getFiltered(
-        'receita_itens',
-        filters: {'receita_id': receitaId},
-      );
+      // Itens já enriquecidos com nome e preço de cada produto.
+      final itens = await _carregarItensReceita(receitaId);
+      final valorTotal = _totalDosItens(itens);
 
-      final itens = <Map<String, dynamic>>[];
       String produtoNome = 'Produto não especificado';
       String? primeiroProdutoId;
       double precoUnitario = 0.0;
@@ -1616,81 +1662,33 @@ class PatientService {
       String? canalNome;
       String? canalTipo;
 
-      if (itensResult['success'] && itensResult['data'] != null) {
-        final itensList = itensResult['data'] as List;
-        if (itensList.isNotEmpty) {
-          final primeiroItem = itensList[0];
-          primeiroProdutoId = primeiroItem['produto_id'] as String?;
+      if (itens.isNotEmpty) {
+        final primeiro = itens.first;
+        primeiroProdutoId = primeiro['produto_id'] as String?;
+        produtoNome = primeiro['produto_nome'] as String? ?? produtoNome;
+        precoUnitario = primeiro['preco_unitario'] as double? ?? 0.0;
 
-          if (primeiroProdutoId != null) {
-            final produtoResult = await _apiService.getFiltered(
-              'produtos',
-              filters: {'id': primeiroProdutoId},
+        final produto = primeiro['produto'] as Map<String, dynamic>?;
+        if (produto != null) {
+          formaFarmaceutica = produto['forma_farmaceutica'] as String?;
+          concentracaoCbd = produto['concentracao_cbd'] as String?;
+          concentracaoThc = produto['concentracao_thc'] as String?;
+
+          // Canal de aquisição real: fornecedor (associação/marca) do produto
+          final associacaoMarcaId = produto['associacao_marca_id'] as String?;
+          if (associacaoMarcaId != null) {
+            final fornecedorResult = await _apiService.getFiltered(
+              'associacoes_marcas',
+              filters: {'id': associacaoMarcaId},
               limit: 1,
             );
-            if (produtoResult['success'] &&
-                produtoResult['data'] != null &&
-                (produtoResult['data'] as List).isNotEmpty) {
-              final produto = (produtoResult['data'] as List)[0];
-              produtoNome = produto['nome_comercial'] as String? ?? produtoNome;
-              formaFarmaceutica = produto['forma_farmaceutica'] as String?;
-              concentracaoCbd = produto['concentracao_cbd'] as String?;
-              concentracaoThc = produto['concentracao_thc'] as String?;
-              // Canal de aquisição real: fornecedor (associação/marca) do produto
-              final associacaoMarcaId = produto['associacao_marca_id'] as String?;
-              if (associacaoMarcaId != null) {
-                final fornecedorResult = await _apiService.getFiltered(
-                  'associacoes_marcas',
-                  filters: {'id': associacaoMarcaId},
-                  limit: 1,
-                );
-                if (fornecedorResult['success'] &&
-                    fornecedorResult['data'] != null &&
-                    (fornecedorResult['data'] as List).isNotEmpty) {
-                  final fornecedor = (fornecedorResult['data'] as List)[0];
-                  canalNome = fornecedor['nome'] as String?;
-                  canalTipo = fornecedor['tipo'] as String?;
-                }
-              }
-              // Usar preço do produto (campo preco na tabela produtos)
-              final precoProduto = produto['preco'];
-              if (precoProduto != null) {
-                precoUnitario = precoProduto is String
-                    ? double.tryParse(precoProduto) ?? 0.0
-                    : (precoProduto as num).toDouble();
-              }
+            if (fornecedorResult['success'] &&
+                fornecedorResult['data'] != null &&
+                (fornecedorResult['data'] as List).isNotEmpty) {
+              final fornecedor = (fornecedorResult['data'] as List)[0];
+              canalNome = fornecedor['nome'] as String?;
+              canalTipo = fornecedor['tipo'] as String?;
             }
-            // Fallback: preço do último pedido_itens se produto.preco não estiver definido
-            if (precoUnitario <= 0) {
-              final precoResult = await _apiService.getFiltered(
-                'pedido_itens',
-                filters: {'produto_id': primeiroProdutoId},
-                orderBy: 'created_at',
-                ascending: false,
-                limit: 1,
-              );
-              if (precoResult['success'] &&
-                  precoResult['data'] != null &&
-                  (precoResult['data'] as List).isNotEmpty) {
-                final p = (precoResult['data'] as List)[0]['preco_unitario'];
-                if (p != null) {
-                  precoUnitario = p is String
-                      ? double.tryParse(p) ?? 0.0
-                      : (p as num).toDouble();
-                }
-              }
-            }
-          }
-
-          for (var item in itensList) {
-            final prodId = item['produto_id'] as String?;
-            final qtd = item['quantidade_prescrita'] as int? ?? 0;
-            itens.add({
-              'produto_id': prodId,
-              'quantidade_prescrita': qtd,
-              'produto_nome': produtoNome,
-              'preco_unitario': precoUnitario,
-            });
           }
         }
       }
@@ -1708,6 +1706,8 @@ class PatientService {
           'produto_nome': produtoNome,
           'produto_id': primeiroProdutoId,
           'preco_unitario': precoUnitario,
+          // Total já somando preço × quantidade de cada item da receita.
+          'valor_total': valorTotal,
           'forma_farmaceutica': formaFarmaceutica,
           'concentracao_cbd': concentracaoCbd,
           'concentracao_thc': concentracaoThc,
@@ -1735,6 +1735,9 @@ class PatientService {
     required String formaPagamento,
     required String? produtoId,
     required double precoUnitario,
+    /// Itens da receita, um por produto prescrito. Quando vazia, cai no
+    /// comportamento antigo de gravar um único `pedido_itens`.
+    List<OrderItem> itens = const [],
     String? rgDocumentUrl,
     String? addressProofUrl,
     String? anvisaDocumentUrl,
@@ -1806,17 +1809,27 @@ class PatientService {
         };
       }
 
-      // pedido_itens.produto_id é UUID obrigatório no Supabase
-      if (produtoId != null && produtoId.isNotEmpty) {
-        final precoTotal = precoUnitario * quantity;
-        final itemData = {
+      // pedido_itens.produto_id é UUID obrigatório no Supabase.
+      // Uma linha por produto prescrito — a receita pode indicar mais de um.
+      if (itens.isNotEmpty) {
+        for (final item in itens) {
+          if (item.produtoId.isEmpty) continue;
+          await _apiService.post('pedido_itens', {
+            'pedido_id': pedidoId,
+            'produto_id': item.produtoId,
+            'quantidade': item.quantidade,
+            'preco_unitario': item.precoUnitario,
+            'preco_total': item.subtotal,
+          });
+        }
+      } else if (produtoId != null && produtoId.isNotEmpty) {
+        await _apiService.post('pedido_itens', {
           'pedido_id': pedidoId,
           'produto_id': produtoId,
           'quantidade': quantity,
           'preco_unitario': precoUnitario,
-          'preco_total': precoTotal,
-        };
-        await _apiService.post('pedido_itens', itemData);
+          'preco_total': precoUnitario * quantity,
+        });
       }
 
       // documentos.tipo no Supabase é enum: identidade | comprovante_residencia | autorizacao_anvisa | laudo_medico | exame | outro

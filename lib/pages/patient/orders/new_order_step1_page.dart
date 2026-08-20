@@ -315,6 +315,12 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
                             );
                             return;
                           }
+                          // A receita pode indicar mais de um produto; leva
+                          // todos adiante, cada um com o seu preço.
+                          final itens = ((p['itens'] as List?) ?? const [])
+                              .cast<Map<String, dynamic>>()
+                              .map(OrderItem.fromReceitaItem)
+                              .toList();
                           final formData = NewOrderFormData(
                             prescriptionId: p['id'] as String,
                             productName: p['product'] as String? ?? 'Produto',
@@ -325,6 +331,7 @@ class _NewOrderStep1PageState extends State<NewOrderStep1Page> {
                             validity: p['validity'] as String?,
                             precoUnitario:
                                 (p['valorTotal'] as num?)?.toDouble() ?? 0.0,
+                            itens: itens,
                           );
                           context.push(
                             '/patient/orders/new/step2',
