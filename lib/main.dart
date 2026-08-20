@@ -11,6 +11,7 @@ import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'constants/supabase_config.dart';
 import 'services/push/push_service.dart';
+import 'services/docusign_deep_link_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,9 @@ void main() async {
   } catch (e) {
     debugPrint('Push notifications não configuradas: $e');
   }
+
+  // Retorno da assinatura da procuração (DocuSign) por deep link.
+  await DocusignDeepLinkService.iniciar();
 
   runApp(const MyApp());
 }

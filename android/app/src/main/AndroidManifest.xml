@@ -42,7 +42,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             <!-- Deep linking -->
-            <meta-data android:name="flutter_deeplinking_enabled" android:value="true" />
+            <!-- Desligado de proposito: o roteamento automatico substitui a pilha
+                 inteira e destruiria o pedido em montagem no retorno do DocuSign.
+                 O link e tratado em DocusignDeepLinkService. -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

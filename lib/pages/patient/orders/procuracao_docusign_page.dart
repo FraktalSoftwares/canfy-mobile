@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,6 +10,8 @@ import '../../../services/api/patient_service.dart';
 import '../../../widgets/patient/new_order_step_header.dart';
 import '../../../widgets/patient/new_order_step_progress.dart';
 import '../../../widgets/patient/patient_app_bar.dart';
+import '../../../services/docusign_deep_link_service.dart';
+import '../../../services/storage/procuracao_draft_storage.dart';
 
 /// Etapa opcional do fluxo de novo pedido: assinatura da procuração Canfy
 /// via DocuSign.
@@ -52,10 +55,35 @@ class _ProcuracaoDocusignPageState extends State<ProcuracaoDocusignPage> {
   void initState() {
     super.initState();
     _loadPatientData();
+    DocusignRetorno.telaViva = true;
+    DocusignRetorno.sinal.addListener(_onRetornoDocusign);
+    _retomarAssinaturaPendente();
+  }
+
+  /// Restaura o envelope em andamento quando o app foi encerrado durante a
+  /// assinatura e reaberto pelo deep link de retorno.
+  Future<void> _retomarAssinaturaPendente() async {
+    final rascunho = await ProcuracaoDraftStorage.ler();
+    if (!mounted || rascunho == null) return;
+    setState(() {
+      _envelopeId = rascunho.envelopeId;
+      _assinaturaIniciada = true;
+    });
+    await _verificarAssinatura();
+  }
+
+  /// Chamado quando o deep link de retorno do DocuSign traz o app de volta.
+  void _onRetornoDocusign() {
+    if (!mounted || _envelopeId == null || _assinaturaConcluida) return;
+    if (DocusignRetorno.ultimoEvento == 'signing_complete') {
+      _verificarAssinatura();
+    }
   }
 
   @override
   void dispose() {
+    DocusignRetorno.telaViva = false;
+    DocusignRetorno.sinal.removeListener(_onRetornoDocusign);
     _nomeController.dispose();
     _nacionalidadeController.dispose();
     _cpfController.dispose();
@@ -91,6 +119,8 @@ class _ProcuracaoDocusignPageState extends State<ProcuracaoDocusignPage> {
   }
 
   void _continuar() {
+    // Saiu da etapa: não há mais assinatura pendente para retomar.
+    ProcuracaoDraftStorage.limpar();
     final updated = (widget.formData ?? NewOrderFormData(
       prescriptionId: '',
       productName: '',
@@ -137,6 +167,8 @@ class _ProcuracaoDocusignPageState extends State<ProcuracaoDocusignPage> {
     });
     final res = await _docusignService.getSigningUrl(
       procuracao: campos.map((k, c) => MapEntry(k, c.text.trim())),
+      // Em web não há deep link: a Edge Function usa a página HTTPS padrão.
+      returnUrl: kIsWeb ? null : DocusignService.returnDeepLink,
     );
     if (!mounted) return;
     if (res['success'] != true) {
@@ -152,6 +184,15 @@ class _ProcuracaoDocusignPageState extends State<ProcuracaoDocusignPage> {
     final data = res['data'] as Map<String, dynamic>;
     final url = data['url'] as String;
     final envelopeId = data['envelopeId'] as String?;
+    // Guarda o pedido em montagem antes de sair para o navegador: se o Android
+    // encerrar o app durante a assinatura, o fluxo é retomado de onde parou.
+    if (envelopeId != null) {
+      await ProcuracaoDraftStorage.salvar(
+        formData: widget.formData,
+        envelopeId: envelopeId,
+      );
+    }
+
     final uri = Uri.tryParse(url);
     if (uri != null) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -180,6 +221,8 @@ class _ProcuracaoDocusignPageState extends State<ProcuracaoDocusignPage> {
     if (!mounted) return;
     final data = res['data'] as Map<String, dynamic>?;
     final concluida = data?['completed'] == true;
+    if (concluida) await ProcuracaoDraftStorage.limpar();
+    if (!mounted) return;
     setState(() {
       _verificando = false;
       _assinaturaConcluida = concluida;

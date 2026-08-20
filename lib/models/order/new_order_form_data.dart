@@ -31,6 +31,22 @@ class OrderItem {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+        'produtoId': produtoId,
+        'nome': nome,
+        'precoUnitario': precoUnitario,
+        'quantidade': quantidade,
+      };
+
+  factory OrderItem.fromJson(Map<String, dynamic> json) {
+    return OrderItem(
+      produtoId: json['produtoId'] as String? ?? '',
+      nome: json['nome'] as String? ?? '',
+      precoUnitario: (json['precoUnitario'] as num?)?.toDouble() ?? 0.0,
+      quantidade: (json['quantidade'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   /// Constrói a partir do mapa devolvido por
   /// `PatientService._carregarItensReceita`.
   factory OrderItem.fromReceitaItem(Map<String, dynamic> item) {
@@ -192,6 +208,89 @@ class NewOrderFormData {
     this.procuracaoAssinada = false,
     this.procuracaoEnvelopeId,
   });
+
+  /// Serializa o rascunho do pedido para guardar em disco enquanto o paciente
+  /// assina a procuração no navegador — se o Android encerrar o app nesse
+  /// intervalo, o fluxo é retomado de onde parou.
+  Map<String, dynamic> toJson() => {
+        'prescriptionId': prescriptionId,
+        'productName': productName,
+        'doctorName': doctorName,
+        'valorTotal': valorTotal,
+        'issueDate': issueDate,
+        'validity': validity,
+        'quantity': quantity,
+        'canalAquisicao': canalAquisicao,
+        'canalNome': canalNome,
+        'formaFarmaceutica': formaFarmaceutica,
+        'concentracaoCbd': concentracaoCbd,
+        'concentracaoThc': concentracaoThc,
+        'precoUnitario': precoUnitario,
+        'itens': itens.map((i) => i.toJson()).toList(),
+        'rgDocumentUrl': rgDocumentUrl,
+        'rgFileName': rgFileName,
+        'addressProofUrl': addressProofUrl,
+        'addressProofFileName': addressProofFileName,
+        'anvisaDocumentUrl': anvisaDocumentUrl,
+        'anvisaFileName': anvisaFileName,
+        'complementarDocumentUrl': complementarDocumentUrl,
+        'complementarFileName': complementarFileName,
+        'laudoDocumentUrl': laudoDocumentUrl,
+        'laudoFileName': laudoFileName,
+        'anvisaSolicitadaCanfy': anvisaSolicitadaCanfy,
+        'deliveryAddress': deliveryAddress,
+        'paymentMethod': paymentMethod,
+        'shippingCost': shippingCost,
+        'prescriberComments': prescriberComments,
+        'deliveryDeadline': deliveryDeadline,
+        'produtoId': produtoId,
+        'shippingServiceId': shippingServiceId,
+        'shippingServiceName': shippingServiceName,
+        'procuracaoAssinada': procuracaoAssinada,
+        'procuracaoEnvelopeId': procuracaoEnvelopeId,
+      };
+
+  factory NewOrderFormData.fromJson(Map<String, dynamic> json) {
+    return NewOrderFormData(
+      prescriptionId: json['prescriptionId'] as String? ?? '',
+      productName: json['productName'] as String? ?? '',
+      doctorName: json['doctorName'] as String? ?? '',
+      valorTotal: (json['valorTotal'] as num?)?.toDouble() ?? 0.0,
+      issueDate: json['issueDate'] as String?,
+      validity: json['validity'] as String?,
+      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
+      canalAquisicao: json['canalAquisicao'] as String? ?? 'associacao',
+      canalNome: json['canalNome'] as String?,
+      formaFarmaceutica: json['formaFarmaceutica'] as String?,
+      concentracaoCbd: json['concentracaoCbd'] as String?,
+      concentracaoThc: json['concentracaoThc'] as String?,
+      precoUnitario: (json['precoUnitario'] as num?)?.toDouble() ?? 0.0,
+      itens: (json['itens'] as List<dynamic>? ?? [])
+          .map((i) => OrderItem.fromJson(i as Map<String, dynamic>))
+          .toList(),
+      rgDocumentUrl: json['rgDocumentUrl'] as String?,
+      rgFileName: json['rgFileName'] as String?,
+      addressProofUrl: json['addressProofUrl'] as String?,
+      addressProofFileName: json['addressProofFileName'] as String?,
+      anvisaDocumentUrl: json['anvisaDocumentUrl'] as String?,
+      anvisaFileName: json['anvisaFileName'] as String?,
+      complementarDocumentUrl: json['complementarDocumentUrl'] as String?,
+      complementarFileName: json['complementarFileName'] as String?,
+      laudoDocumentUrl: json['laudoDocumentUrl'] as String?,
+      laudoFileName: json['laudoFileName'] as String?,
+      anvisaSolicitadaCanfy: json['anvisaSolicitadaCanfy'] as bool? ?? false,
+      deliveryAddress: json['deliveryAddress'] as String?,
+      paymentMethod: json['paymentMethod'] as String?,
+      shippingCost: (json['shippingCost'] as num?)?.toDouble() ?? 0.0,
+      prescriberComments: json['prescriberComments'] as String?,
+      deliveryDeadline: json['deliveryDeadline'] as String?,
+      produtoId: json['produtoId'] as String?,
+      shippingServiceId: (json['shippingServiceId'] as num?)?.toInt(),
+      shippingServiceName: json['shippingServiceName'] as String?,
+      procuracaoAssinada: json['procuracaoAssinada'] as bool? ?? false,
+      procuracaoEnvelopeId: json['procuracaoEnvelopeId'] as String?,
+    );
+  }
 
   /// Rótulo amigável da forma farmacêutica (mesmo mapeamento do web FORMA_LABEL).
   String get formaLabel {

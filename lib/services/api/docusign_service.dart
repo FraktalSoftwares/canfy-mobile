@@ -9,6 +9,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class DocusignService {
   static SupabaseClient get _client => Supabase.instance.client;
 
+  /// Deep link que o DocuSign usa para devolver o paciente ao app depois de
+  /// assinar. O esquema/host precisam bater com os registrados no
+  /// AndroidManifest.xml e no Info.plist — um esquema não registrado deixa o
+  /// navegador carregando para sempre.
+  static const String returnDeepLink =
+      'canfymobile://canfymobile.com/docusign/retorno';
+
   /// Cria um envelope de assinatura da procuração e retorna a URL de assinatura.
   ///
   /// [procuracao] são os dados preenchidos pelo paciente (nome, cpf, endereço...),
@@ -71,32 +78,31 @@ class DocusignService {
 
   /// Consulta o status atual de um envelope.
   ///
-  /// Lê direto de `docusign_envelopes` (RLS libera apenas as linhas do próprio
-  /// usuário). O status é atualizado pelo webhook `docusign-webhook`; enquanto o
-  /// DocuSign não notificar, permanece `sent`.
+  /// A Edge Function pergunta direto à API do DocuSign e sincroniza a linha em
+  /// `docusign_envelopes` — não depende do webhook do DocuSign Connect estar
+  /// configurado.
   Future<Map<String, dynamic>> getEnvelopeStatus(String envelopeId) async {
     try {
-      final row = await _client
-          .from('docusign_envelopes')
-          .select('status, completed_at')
-          .eq('envelope_id', envelopeId)
-          .maybeSingle();
+      final res = await _client.functions.invoke(
+        'docusign-signing-url',
+        body: {'action': 'status', 'envelopeId': envelopeId},
+      );
 
-      if (row == null) {
+      if (res.status != 200) {
+        final err = res.data is Map ? (res.data as Map)['error'] : res.data;
         return {
           'success': false,
           'data': null,
-          'message': 'Envelope não encontrado',
+          'message': err?.toString() ?? 'Erro ao consultar assinatura',
         };
       }
 
-      final status = row['status'] as String?;
+      final data = res.data is Map ? res.data as Map<String, dynamic> : null;
       return {
         'success': true,
         'data': {
-          'status': status,
-          'completed': status == 'completed',
-          'completedAt': row['completed_at'] as String?,
+          'status': data?['status'] as String?,
+          'completed': data?['completed'] == true,
         },
         'message': 'Status consultado',
       };
