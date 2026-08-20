@@ -39,6 +39,10 @@ class _ProcuracaoDocusignPageState extends State<ProcuracaoDocusignPage> {
 
   bool _loading = true;
   bool _assinando = false;
+  bool _verificando = false;
+  /// Assinatura aberta no navegador — ainda não confirmada.
+  bool _assinaturaIniciada = false;
+  /// Assinatura confirmada pelo status real do envelope.
   bool _assinaturaConcluida = false;
   String? _erro;
   bool? _naoConfigurado;
@@ -99,13 +103,41 @@ class _ProcuracaoDocusignPageState extends State<ProcuracaoDocusignPage> {
     context.push('/patient/orders/new/step4', extra: updated);
   }
 
+  /// Campos obrigatórios da procuração, na ordem em que aparecem no formulário.
+  Map<String, TextEditingController> get _camposProcuracao => {
+        'nome': _nomeController,
+        'nacionalidade': _nacionalidadeController,
+        'cpf': _cpfController,
+        'rg': _rgController,
+        'endereco': _enderecoController,
+        'numero': _numeroController,
+        'cep': _cepController,
+        'estado': _estadoController,
+        'cidade': _cidadeController,
+        'bairro': _bairroController,
+      };
+
   Future<void> _assinarProcuracao() async {
+    final campos = _camposProcuracao;
+    final faltando = campos.entries
+        .where((e) => e.value.text.trim().isEmpty)
+        .isNotEmpty;
+    if (faltando) {
+      setState(() {
+        _erro = 'Preencha todos os campos antes de assinar a procuração.';
+        _naoConfigurado = null;
+      });
+      return;
+    }
+
     setState(() {
       _assinando = true;
       _erro = null;
       _naoConfigurado = null;
     });
-    final res = await _docusignService.getSigningUrl();
+    final res = await _docusignService.getSigningUrl(
+      procuracao: campos.map((k, c) => MapEntry(k, c.text.trim())),
+    );
     if (!mounted) return;
     if (res['success'] != true) {
       setState(() {
@@ -127,8 +159,36 @@ class _ProcuracaoDocusignPageState extends State<ProcuracaoDocusignPage> {
     if (!mounted) return;
     setState(() {
       _assinando = false;
-      _assinaturaConcluida = true;
+      _assinaturaIniciada = true;
       _envelopeId = envelopeId;
+    });
+  }
+
+  /// Confirma a assinatura pelo status real do envelope — o paciente pode ter
+  /// fechado o navegador sem assinar.
+  Future<void> _verificarAssinatura() async {
+    final envelopeId = _envelopeId;
+    if (envelopeId == null) {
+      setState(() => _erro = 'Não foi possível identificar a assinatura.');
+      return;
+    }
+    setState(() {
+      _verificando = true;
+      _erro = null;
+    });
+    final res = await _docusignService.getEnvelopeStatus(envelopeId);
+    if (!mounted) return;
+    final data = res['data'] as Map<String, dynamic>?;
+    final concluida = data?['completed'] == true;
+    setState(() {
+      _verificando = false;
+      _assinaturaConcluida = concluida;
+      _erro = concluida
+          ? null
+          : (res['success'] == true
+              ? 'Ainda não recebemos a confirmação da assinatura. '
+                  'Conclua a assinatura no navegador e tente novamente.'
+              : res['message'] as String?);
     });
   }
 
@@ -196,7 +256,7 @@ class _ProcuracaoDocusignPageState extends State<ProcuracaoDocusignPage> {
                     valueText: 'DocuSign',
                   ),
                   const SizedBox(height: 24),
-                  if (_assinaturaConcluida) ...[
+                  if (_assinaturaIniciada) ...[
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 40),
@@ -209,28 +269,69 @@ class _ProcuracaoDocusignPageState extends State<ProcuracaoDocusignPage> {
                           Container(
                             width: 72,
                             height: 72,
-                            decoration: const BoxDecoration(
-                              color: AppColors.canfyGreen,
+                            decoration: BoxDecoration(
+                              color: _assinaturaConcluida
+                                  ? AppColors.canfyGreen
+                                  : AppColors.neutral300,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.check,
-                                color: Colors.white, size: 36),
+                            child: Icon(
+                                _assinaturaConcluida
+                                    ? Icons.check
+                                    : Icons.hourglass_empty,
+                                color: Colors.white,
+                                size: 36),
                           ),
                           const SizedBox(height: 24),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: Text(
-                              'Assinatura iniciada no navegador. Assim que você'
-                              ' concluir a assinatura da procuração, poderá'
-                              ' continuar com o seu pedido.',
+                              _assinaturaConcluida
+                                  ? 'Procuração assinada com sucesso. Você já'
+                                      ' pode continuar com o seu pedido.'
+                                  : 'Assinatura aberta no navegador. Depois de'
+                                      ' assinar, toque em "Já assinei" para'
+                                      ' confirmarmos.',
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 14, color: AppColors.neutral600),
                             ),
                           ),
                         ],
                       ),
                     ),
+                    if (_erro != null) ...[
+                      const SizedBox(height: 12),
+                      Text(_erro!,
+                          style: const TextStyle(
+                              fontSize: 13, color: AppColors.error)),
+                    ],
+                    if (!_assinaturaConcluida) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed:
+                              _verificando ? null : _verificarAssinatura,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.canfyGreen,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                          child: _verificando
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text('Já assinei'),
+                        ),
+                      ),
+                    ],
                   ] else ...[
                     Row(
                       children: [
@@ -298,7 +399,7 @@ class _ProcuracaoDocusignPageState extends State<ProcuracaoDocusignPage> {
                     ],
                   ],
                   const SizedBox(height: 24),
-                  if (!_assinaturaConcluida)
+                  if (!_assinaturaIniciada)
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(

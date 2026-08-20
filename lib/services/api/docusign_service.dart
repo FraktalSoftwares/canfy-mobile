@@ -9,14 +9,22 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class DocusignService {
   static SupabaseClient get _client => Supabase.instance.client;
 
-  /// Cria um envelope de assinatura e retorna a URL de assinatura embutida.
-  Future<Map<String, dynamic>> getSigningUrl({String? returnUrl}) async {
+  /// Cria um envelope de assinatura da procuração e retorna a URL de assinatura.
+  ///
+  /// [procuracao] são os dados preenchidos pelo paciente (nome, cpf, endereço...),
+  /// usados pelo backend para gerar o PDF da procuração.
+  Future<Map<String, dynamic>> getSigningUrl({
+    String? returnUrl,
+    Map<String, String>? procuracao,
+  }) async {
     try {
       final res = await _client.functions.invoke(
         'docusign-signing-url',
         body: {
           if (returnUrl != null && returnUrl.isNotEmpty)
             'returnUrl': returnUrl,
+          if (procuracao != null && procuracao.isNotEmpty)
+            'procuracao': procuracao,
         },
       );
 
@@ -56,6 +64,47 @@ class DocusignService {
         'success': false,
         'data': null,
         'message': 'Erro ao gerar link de assinatura: ${e.toString()}',
+        'error': e.toString(),
+      };
+    }
+  }
+
+  /// Consulta o status atual de um envelope.
+  ///
+  /// Lê direto de `docusign_envelopes` (RLS libera apenas as linhas do próprio
+  /// usuário). O status é atualizado pelo webhook `docusign-webhook`; enquanto o
+  /// DocuSign não notificar, permanece `sent`.
+  Future<Map<String, dynamic>> getEnvelopeStatus(String envelopeId) async {
+    try {
+      final row = await _client
+          .from('docusign_envelopes')
+          .select('status, completed_at')
+          .eq('envelope_id', envelopeId)
+          .maybeSingle();
+
+      if (row == null) {
+        return {
+          'success': false,
+          'data': null,
+          'message': 'Envelope não encontrado',
+        };
+      }
+
+      final status = row['status'] as String?;
+      return {
+        'success': true,
+        'data': {
+          'status': status,
+          'completed': status == 'completed',
+          'completedAt': row['completed_at'] as String?,
+        },
+        'message': 'Status consultado',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'data': null,
+        'message': 'Erro ao consultar assinatura: ${e.toString()}',
         'error': e.toString(),
       };
     }
