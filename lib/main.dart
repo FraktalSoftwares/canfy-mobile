@@ -62,7 +62,7 @@ class MyApp extends StatelessWidget {
         builder: (context, themeNotifier, _) {
           return MaterialApp.router(
             debugShowCheckedModeBanner: false,
-            title: 'Canfy Mobile',
+            title: 'Canfy',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeNotifier.themeMode,

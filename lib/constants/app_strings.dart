@@ -1,7 +1,7 @@
 /// Constantes de strings do aplicativo
 class AppStrings {
   // Títulos gerais
-  static const String appName = 'Canfy Mobile';
+  static const String appName = 'Canfy';
   static const String welcome = 'Boas Vindas';
   
   // Navegação
